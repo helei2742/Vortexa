@@ -1,0 +1,40 @@
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+dubbo:
+  application:
+    logger: slf4j
+    serialize-check-status: WARN
+  registry:
+    #    id: zk-registry
+    #    address: zookeeper://127.0.0.1:2181
+    id: nacos-registry
+    address: nacos://localhost:8848
+  consumer:
+    timeout: 60000
+
+
+bot:
+  botKey: ''
+  filePathConfig:
+    proxyFileBotConfigPath: "proxy.xlsx"
+    browserEnvFileBotConfigPath: "browser_env.xlsx"
+    twitterFileBotConfigPath: "twitter_account.xlsx"
+    discordFileBotConfigPathL: "discord_account.xlsx"
+    telegramFileBotConfigPath: "telegram_account.xlsx"
+    baseAccountFileBotConfigPath: "base_account.xlsx"
+  accountConfig:
+    configFilePath: ""
+
+
+logging:
+  level:
+    org:
+      apache:
+        dubbo: WARN
+        zookeeper: WARN
+
+
+server:
+  port: 10012

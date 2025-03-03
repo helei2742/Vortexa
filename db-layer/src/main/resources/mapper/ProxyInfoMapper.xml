@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.helei.db_layer.mapper.ProxyInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.helei.common.entity.ProxyInfo">
+        <id column="id" property="id"/>
+        <result column="proxy_type" property="proxyType"/>
+        <result column="proxy_protocol" property="proxyProtocol"/>
+        <result column="host" property="host"/>
+        <result column="port" property="port"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="usable" property="usable"/>
+        <result column="params" property="params"/>
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="is_valid" property="isValid"/>
+    </resultMap>
+
+
+    <insert id="insertOrUpdate" parameterType="cn.com.helei.common.entity.ProxyInfo">
+        INSERT INTO t_proxy_info
+        (proxy_type, proxy_protocol, host, port, username, password, usable, params, insert_datetime, update_datetime,
+         is_valid)
+        VALUES (#{proxyType}, #{proxyProtocol}, #{host}, #{port}, #{username}, #{password}, #{usable}, #{params},
+                #{insertDatetime}, #{updateDatetime}, #{isValid}) ON CONFLICT(host, port) DO
+        UPDATE SET
+            proxy_type = excluded.proxy_type,
+            proxy_protocol = excluded.proxy_protocol,
+            username = excluded.username,
+            password = excluded.password,
+            usable = excluded.usable,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime;
+    </insert>
+
+    <select id="multipleConditionQuery"
+            parameterType="cn.com.helei.common.entity.ProxyInfo"
+            resultType="cn.com.helei.common.entity.ProxyInfo">
+        select
+            t.id as id,
+        t.proxy_type as proxyType,
+        t.proxy_protocol as proxyProtocol,
+        t.host, t.port, t.username,
+        t.password, t.usable, t.params,
+        t.insert_datetime as insertDatetime,
+        t.update_datetime as updateDatetime,
+        t.is_valid as isValid
+        from
+        t_proxy_info as t
+        <if test="params != null and !params.isEmpty()">
+            left join json_each(t.params) json_each
+        </if>
+        <where>
+            is_valid = 1
+            <if test="id != null">
+                and t.id = #{id}
+            </if>
+            <if test="proxyType != null">
+                and t.proxy_type = #{proxyType}
+            </if>
+            <if test="proxyProtocol != null">
+                and t.proxy_protocol = #{proxyProtocol}
+            </if>
+            <if test="host != null">
+                and t.host = #{host}
+            </if>
+            <if test="port != null">
+                and t.port = #{port}
+            </if>
+            <if test="username != null">
+                and t.username = #{username}
+            </if>
+            <if test="password != null">
+                and t.password = #{password}
+            </if>
+            <if test="usable != null">
+                and t.usable = #{usable}
+            </if>
+            <if test="params != null and !params.isEmpty()">
+                and
+                <foreach collection="params" item='entry' index='key' separator='AND'>
+                    json_each.key = #{key} and json_each.value = #{entry}
+                </foreach>
+            </if>
+        </where>
+    </select>
+</mapper>

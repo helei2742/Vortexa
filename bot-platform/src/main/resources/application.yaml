@@ -1,0 +1,23 @@
+
+spring:
+  datasource:
+    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/depinbot/DepinBot/A_back/botData/db/auto_bot.db"
+
+dubbo:
+  application:
+    name: bot-platform
+    logger: slf4j
+  registry:
+#    id: zk-registry
+#    address: zookeeper://127.0.0.1:2181
+    id: nacos-registry
+    address: nacos://localhost:8848
+
+logging:
+  level:
+    org:
+      apache:
+        dubbo: WARN
+        zookeeper: WARN
+server:
+  port: 10010

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.helei.db_layer.mapper.DiscordAccountMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.helei.common.entity.DiscordAccount">
+        <id column="id" property="id"/>
+        <result column="password" property="password"/>
+        <result column="username" property="username"/>
+        <result column="bind_email" property="bindEmail"/>
+        <result column="bind_email_password" property="bindEmailPassword"/>
+        <result column="token" property="token"/>
+        <result column="params" property="params"/>
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="is_valid" property="isValid"/>
+    </resultMap>
+
+    <insert id="insertOrUpdate" parameterType="cn.com.helei.common.entity.DiscordAccount">
+        INSERT INTO t_discord_account
+        (password, username, bind_email, bind_email_password, token, params, insert_datetime, update_datetime, is_valid)
+        VALUES (#{password}, #{username}, #{bindEmail}, #{bindEmailPassword}, #{token}, #{params}, #{insertDatetime},
+                #{updateDatetime}, #{isValid}) ON CONFLICT(username) DO
+        UPDATE SET
+            password = excluded.password,
+            bind_email = excluded.bind_email,
+            bind_email_password = excluded.bind_email_password,
+            token = excluded.token,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime;
+    </insert>
+
+    <select id="multipleConditionQuery"
+            parameterType="cn.com.helei.common.entity.DiscordAccount"
+            resultType="cn.com.helei.common.entity.DiscordAccount">
+        select
+        t.id as id,
+        t.password, t.username, t.bind_email as bindEmail,
+        t.bind_email_password as bindEmailPassword, t.token, t.params,
+        t.insert_datetime as insertDatetime,
+        t.update_datetime as updateDatetime,
+        t.is_valid as isValid
+        from
+        t_discord_account as t
+        <if test="params != null and !params.isEmpty()">
+            left join json_each(t.params) json_each
+        </if>
+        <where>
+            is_valid = 1
+            <if test="id != null">
+                and t.id = #{id}
+            </if>
+            <if test="password != null">
+                and t.password = #{password}
+            </if>
+            <if test="username != null">
+                and t.username = #{username}
+            </if>
+            <if test="bindEmail != null">
+                and t.bind_email = #{bindEmail}
+            </if>
+            <if test="bindEmailPassword != null">
+                and t.bind_email_password = #{bindEmailPassword}
+            </if>
+            <if test="token != null">
+                and t.token = #{token}
+            </if>
+            <if test="params != null and !params.isEmpty()">
+                and
+                <foreach collection="params" item='entry' index='key' separator='AND'>
+                    json_each.key = #{key} and json_each.value = #{entry}
+                </foreach>
+            </if>
+        </where>
+    </select>
+</mapper>

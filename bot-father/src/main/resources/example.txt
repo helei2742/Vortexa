@@ -1,0 +1,7 @@
+--bot.botKey=test
+--bot.customConfig.invite_code=test_invite_code
+--bot.customConfig.harvested_data=test_harvested_data
+--bot.customConfig.harvested_url=test.harvested_url
+-Ddubbo.application.qos.enable=true
+-Ddubbo.application.qos.port=30010
+-Ddubbo.application.qos.accept.foreign.ip=false

@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    quartz:
+      url: jdbc:mysql://localhost:3306/job_store
+      username: root
+      password: 962464HeLei
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      type: com.zaxxer.hikari.HikariDataSource
+
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      table-prefix: QRTZ_
+      driver-class: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/job_store
+      user: root
+      password: 962464HeLei
+      scheduler:
+        instance-name: QuartzScheduler

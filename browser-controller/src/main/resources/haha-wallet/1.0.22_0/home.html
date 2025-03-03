@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html dir="ltr" style="overflow: hidden;">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1 user-scalable=no" />
+        <title>HaHa</title>
+        <link rel="stylesheet" href="./css/index.css" />
+    </head>
+    <body style="width: 100vw; height: 100vh; background: linear-gradient(45deg,  #27a3ff 0%,#8788ff 50%,#e96bff 100%);">
+        <div id="app-content">
+            <img class="loading-logo" src="../images/icon-white.png" alt="" loading="lazy" />
+            <img class="loading-spinner" src="../images/spinner.gif" alt="" loading="lazy" />
+        </div>
+        <div id="popover-content"></div>
+
+        <div id="error-message" style="display: none; text-align: center; padding: 20px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+            <p>Failed to load the app. Please try again or reinstall the extension.</p>
+        </div>
+        
+        <script src="../scripts/loadApp.js" async></script>
+    </body>
+</html>

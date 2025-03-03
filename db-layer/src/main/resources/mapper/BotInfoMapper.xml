@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.helei.db_layer.mapper.BotInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.helei.common.entity.BotInfo">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="describe" property="describe" />
+        <result column="image" property="image" />
+        <result column="limit_project_ids" property="limitProjectIds" />
+        <result column="job_params" property="jobParams" />
+        <result column="params" property="params" />
+        <result column="insert_datetime" property="insertDatetime" />
+        <result column="update_datetime" property="updateDatetime" />
+        <result column="is_valid" property="isValid" />
+    </resultMap>
+
+
+    <insert id="insertOrUpdate" parameterType="cn.com.helei.common.entity.BotInfo">
+        INSERT INTO t_bot_info
+        (name, describe, limit_project_ids, image, job_params, params, insert_datetime, update_datetime, is_valid)
+        VALUES (#{name}, #{describe}, #{limitProjectIds}, #{image}, #{jobParams}, #{params}, #{insertDatetime}, #{updateDatetime},
+                #{isValid})
+            ON CONFLICT(name)
+DO
+        UPDATE SET
+            describe = excluded.describe,
+            limit_project_ids = excluded.limit_project_ids,
+            image = excluded.image,
+            job_params = excluded.job_params,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime;
+    </insert>
+
+    <select id="multipleConditionQuery"
+            parameterType="cn.com.helei.common.entity.BotInfo"
+            resultType="cn.com.helei.common.entity.BotInfo">
+        select
+        t.id as id,
+        t.name,
+        t.describe,
+        t.image,
+        t.job_params as jobParams,
+        t.params,
+        t.insert_datetime as insertDatetime,
+        t.update_datetime as updateDatetime,
+        t.is_valid as isValid
+        from
+        t_bot_info as t
+        <if test="params != null and !params.isEmpty()">
+            left join json_each(t.params) json_each
+        </if>
+        <where>
+            is_valid = 1
+            <if test="name != null">
+                and t.name = #{name}
+            </if>
+            <if test="describe != null">
+                and t.describe = #{describe}
+            </if>
+            <if test="image != null">
+                and t.image = #{image}
+            </if>
+            <if test="jobParams != null and !params.isEmpty()">
+                and t.job_params = #{jobParams}
+            </if>
+            <if test="params != null and !params.isEmpty()">
+                and
+                <foreach collection="params" item='entry' index='key' separator='AND'>
+                    json_each.key = #{key} and json_each.value = #{entry}
+                </foreach>
+            </if>
+        </where>
+    </select>
+</mapper>
