@@ -40,3 +40,5 @@ build/
 botData/
 nacos/
 A_back//
+
+**/.db

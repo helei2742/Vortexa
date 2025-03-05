@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="bot_test" uuid="a38a439e-3d33-42dc-ae11-80cf4bd9f23f">
+    <data-source source="LOCAL" name="plantfrom.db" uuid="8570730a-efba-48a2-be52-461aeff0f316">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/botData/config/app/test/bot_test.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/botData/db/plantfrom.db</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="bot_haha_wallet_test" uuid="64c68e01-8c3a-4baa-8de2-9602c9069d47">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/botData/config/app/haha_wallet_test/bot_haha_wallet_test.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>
@@ -16,7 +23,7 @@
         </library>
       </libraries>
     </data-source>
-    <data-source source="LOCAL" name="maclocal" uuid="79e24c24-cc34-4438-93ce-ed072f537b79">
+    <data-source source="LOCAL" name="job_store@localhost" uuid="db254503-376b-429a-9be3-b587288fce1f">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>

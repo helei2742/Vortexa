@@ -15,4 +15,5 @@ public interface AccountPersistenceManager {
 
     void registerPersistenceListener(List<AccountContext> targetList);
 
+    public void fillAccountInfo(AccountContext accountContext);
 }

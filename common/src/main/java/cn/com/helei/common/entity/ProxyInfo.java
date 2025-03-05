@@ -122,4 +122,9 @@ public class ProxyInfo implements Serializable {
     public String generateAddressStr() {
         return host + ":" + port;
     }
+
+    @Override
+    public String toString() {
+        return generateAddressStr();
+    }
 }

@@ -38,6 +38,8 @@ public class AutoBotJobParam implements Serializable {
 
     private Boolean uniqueAccount;
 
+    private Boolean syncExecute;
+
     private Boolean dynamicTrigger;
 
     private Integer dynamicTimeWindowMinute = 0;

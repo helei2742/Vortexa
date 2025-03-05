@@ -62,6 +62,8 @@ public @interface BotMethod {
 
     boolean dynamicTrigger() default false;
 
+    boolean syncExecute() default false;
+
     int dynamicTimeWindowMinute() default 120;
 
     BotWSMethodConfig bowWsConfig() default @BotWSMethodConfig();

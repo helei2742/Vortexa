@@ -203,7 +203,10 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
                 filter.put("botId", getBot().getBotInfo().getId());
                 filter.put("botKey", getBot().getAutoBotConfig().getBotKey());
 
-                return getBot().getBotApi().getBotAccountRPC().conditionPageQuery(pageNum, pageSize, filter);
+                PageResult<AccountContext> pageResult = getBot().getBotApi().getBotAccountRPC().conditionPageQuery(pageNum, pageSize, filter);
+                pageResult.getList().forEach(getBot().getPersistenceManager()::fillAccountInfo);
+
+                return pageResult;
             } catch (SQLException e) {
                 getBot().logger.error("查询账号列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
                 return null;

@@ -126,7 +126,7 @@
         t.id,
         t.bot_id as botId, t.bot_key as botKey, t.account_base_info_id as accountBaseInfoId,
         t.twitter_id as twitterId, t.discord_id as discordId, t.proxy_id as proxyId,
-        t.browser_env_id as browsserEnvId, t.telegram_id as telegramId,
+        t.browser_env_id as browserEnvId, t.telegram_id as telegramId,
         t.wallet_id as walletId, t.reward_id as rewardId, t.status,
         t.params,
         t.insert_datetime as insertDatetime,

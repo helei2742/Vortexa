@@ -92,30 +92,9 @@ public class QuartzBotJobService implements BotJobService {
             switch (status) {
                 case PARSED -> resumeJob(jobKey);
                 case STARTED -> {
-                    // 检查是否发生变化
-                    JobDetail jobDetail = scheduler.getJobDetail(jobKey);
-                    JobDataMap jobDataMap = jobDetail.getJobDataMap();
-
-                    // 提取JobDataMap里的参数
-                    AutoBotJobParam dbParam = (AutoBotJobParam) jobDataMap.get(BOT_JOB_PARAM_KEY);
-
-                    // 发生变化，修改trigger，和jobDetail重新启动
-                    if (refreshTrigger && !dbParam.equals(jobParam)) {
-
-                        jobDataMap.put(BOT_JOB_PARAM_KEY, jobParam);
-
-                        // 更新 JobDetail 到调度器
-                        scheduler.deleteJob(jobKey);
-
-                        Trigger trigger = generateTriggerFromParam(jobKey, jobParam);
-                        scheduler.scheduleJob(jobDetail, trigger);
-
-                        // 重新调度，确保 JobDataMap 更新
-                        log.info("[{}] trigger 修改成功 new trigger [{}]", jobKey, trigger);
-                    } else {
-                        result.setSuccess(false);
-                        result.setErrorMsg("job exist");
-                    }
+                    scheduler.deleteJob(jobKey);
+                    registerJobInvoker(jobKey, invoker);
+//                    updateTrigger(jobParam, refreshTrigger, jobKey, result);
                 }
                 case NOT_REGISTER -> registryAndStartJob(jobKey, jobParam);
             }
@@ -128,6 +107,7 @@ public class QuartzBotJobService implements BotJobService {
 
         return result;
     }
+
 
     @Override
     public BotACJobResult startJob(String group, String jobName, AutoBotJobParam autoBotJobParam, AutoBotJobInvoker invoker) {
@@ -251,4 +231,31 @@ public class QuartzBotJobService implements BotJobService {
         return triggerBuilder.build();
     }
 
+
+    private void updateTrigger(AutoBotJobParam jobParam, boolean refreshTrigger, JobKey jobKey, BotACJobResult result) throws SchedulerException {
+        // 检查是否发生变化
+        JobDetail jobDetail = scheduler.getJobDetail(jobKey);
+        JobDataMap jobDataMap = jobDetail.getJobDataMap();
+
+        // 提取JobDataMap里的参数
+        AutoBotJobParam dbParam = (AutoBotJobParam) jobDataMap.get(BOT_JOB_PARAM_KEY);
+
+        // 发生变化，修改trigger，和jobDetail重新启动
+        if (refreshTrigger && !dbParam.equals(jobParam)) {
+
+            jobDataMap.put(BOT_JOB_PARAM_KEY, jobParam);
+
+            // 更新 JobDetail 到调度器
+            scheduler.deleteJob(jobKey);
+
+            Trigger trigger = generateTriggerFromParam(jobKey, jobParam);
+            scheduler.scheduleJob(jobDetail, trigger);
+
+            // 重新调度，确保 JobDataMap 更新
+            log.info("[{}] trigger 修改成功 new trigger [{}]", jobKey, trigger);
+        } else {
+            result.setSuccess(false);
+            result.setErrorMsg("job exist");
+        }
+    }
 }

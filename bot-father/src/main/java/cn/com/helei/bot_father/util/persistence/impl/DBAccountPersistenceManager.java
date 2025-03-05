@@ -98,7 +98,8 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
      *
      * @param accountContext accountContext
      */
-    private void fillAccountInfo(AccountContext accountContext) {
+    @Override
+    public void fillAccountInfo(AccountContext accountContext) {
 
         // Step 2.1 绑定基础账号信息
         if (accountContext.getAccountBaseInfoId() != null) {

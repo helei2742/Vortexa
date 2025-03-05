@@ -42,6 +42,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
     /**
      * 持久化管理器
      */
+    @Getter
     private AccountPersistenceManager persistenceManager;
 
     @Override
@@ -118,6 +119,35 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         );
     }
 
+    public CompletableFuture<ACListOptResult> uniqueSyncForACList(
+            BiFunction<AccountContext, List<AccountContext>, CompletableFuture<Result>> buildResultFuture,
+            BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
+            String jobName
+    ) {
+
+        return syncForACList(
+                new ArrayList<>(uniqueACList),
+                accountContext -> buildResultFuture.apply(accountContext, acMap.get(accountContext.getAccountBaseInfoId())),
+                resultHandler,
+                jobName
+        );
+    }
+
+    /**
+     * 遍历账户
+     *
+     * @param buildResultFuture buildResultFuture   具体执行的方法
+     * @param resultHandler     resultHandler   处理结果的方法
+     * @return CompletableFuture<ACListOptResult>
+     */
+    public CompletableFuture<ACListOptResult> syncForACList(
+            Function<AccountContext, CompletableFuture<Result>> buildResultFuture,
+            BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
+            String jobName
+    ) {
+        return syncForACList(getAccountContexts(), buildResultFuture, resultHandler, jobName);
+    }
+
     /**
      * 异步遍历账户
      *
@@ -131,6 +161,55 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
             String jobName
     ) {
         return asyncForACList(getAccountContexts(), buildResultFuture, resultHandler, jobName);
+    }
+
+    /**
+     * 同步遍历账户
+     *
+     * @param buildResultFuture buildResultFuture   具体执行的方法
+     * @param resultHandler     resultHandler   处理结果的方法
+     * @return CompletableFuture<ACListOptResult>
+     */
+    public CompletableFuture<ACListOptResult> syncForACList(
+            List<AccountContext> accountContexts,
+            Function<AccountContext, CompletableFuture<Result>> buildResultFuture,
+            BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
+            String jobName
+    ) {
+        return CompletableFuture.supplyAsync(() -> {
+            List<BotACJobResult> results = new ArrayList<>();
+            int successCount = 0;
+            for (AccountContext accountContext : accountContexts) {
+                if (checkAccountContainsParams(accountContext)) {
+                    BotACJobResult botACJobResult = new BotACJobResult(
+                            getBotInfo().getId(),
+                            getBotInfo().getName(),
+                            jobName,
+                            accountContext.getId()
+                    );
+
+                    CompletableFuture<Result> future = buildResultFuture.apply(accountContext);
+
+                    try {
+                        Result result = future.get();
+                        if (result.getSuccess()) successCount++;
+                        botACJobResult = resultHandler.apply(accountContext, botACJobResult.setResult(result));
+                        results.add(botACJobResult);
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
+            return ACListOptResult.builder()
+                    .botId(getBotInfo().getId())
+                    .botName(getBotInfo().getName())
+                    .jobName(jobName)
+                    .successCount(successCount)
+                    .success(true)
+                    .results(results)
+                    .build();
+        }, getExecutorService());
     }
 
 

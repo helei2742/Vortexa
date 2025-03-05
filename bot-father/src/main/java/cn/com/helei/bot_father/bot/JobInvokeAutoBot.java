@@ -62,14 +62,16 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
 
         // Step 2 调用执行方法
         logger.info("开始执行[%s]定时任务".formatted(jobName));
+
         CompletableFuture<ACListOptResult> future = null;
         if (BooleanUtil.isTrue(jobParam.getUniqueAccount())) {
-            future = uniqueForEachAccount(runtimeParam, jobName, this::uniqueInvoke);
+            future = uniqueForEachAccount(runtimeParam, jobName, jobParam, this::uniqueInvoke);
         } else {
-            future = normalForEachAccount(runtimeParam, jobName, this::normalInvoke);
+            future = normalForEachAccount(runtimeParam, jobName, jobParam, this::normalInvoke);
         }
 
         acListOptResultHandler(future);
+
 
         logger.info("[%s]定时任务执行完毕".formatted(jobName));
     }
@@ -129,6 +131,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
                     .uniqueAccount(botJobMethodAnno.uniqueAccount())
                     .dynamicTrigger(botJobMethodAnno.dynamicTrigger())
                     .dynamicTimeWindowMinute(botJobMethodAnno.dynamicTimeWindowMinute())
+                    .syncExecute(botJobMethodAnno.syncExecute())
                     .build();
 
             // Step 4 设置
@@ -214,22 +217,32 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
      *
      * @param runtimeParam runtimeParam
      * @param jobName      jobName
+     * @param jobParam jobParam
      * @return CompletableFuture<ACListOptResult>
      */
     private CompletableFuture<ACListOptResult> normalForEachAccount(
             AutoBotJobRuntimeParam runtimeParam,
             String jobName,
+            AutoBotJobParam jobParam,
             AccountJobMethodInvokeHandler handler
     ) {
         Object[] extraParams = runtimeParam.getExtraParams();
         Method jobMethod = runtimeParam.getMethod();
         Object invokeObj = runtimeParam.getTarget();
 
-        return asyncForACList(
-                accountContext -> handler.invoke(accountContext, null, extraParams, jobMethod, invokeObj),
-                (accountContext, result) -> result,
-                jobName
-        );
+        if (BooleanUtil.isTrue(jobParam.getSyncExecute())) {
+            return syncForACList(
+                    accountContext -> handler.invoke(accountContext, null, extraParams, jobMethod, invokeObj),
+                    (accountContext, result) -> result,
+                    jobName
+            );
+        } else {
+            return asyncForACList(
+                    accountContext -> handler.invoke(accountContext, null, extraParams, jobMethod, invokeObj),
+                    (accountContext, result) -> result,
+                    jobName
+            );
+        }
     }
 
     /**
@@ -237,18 +250,27 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
      *
      * @param runtimeParam runtimeParam
      * @param jobName      jobName
+     * @param jobParam  jobParam
      * @return CompletableFuture<ACListOptResult>
      */
-    private CompletableFuture<ACListOptResult> uniqueForEachAccount(AutoBotJobRuntimeParam runtimeParam, String jobName, AccountJobMethodInvokeHandler handler) {
+    private CompletableFuture<ACListOptResult> uniqueForEachAccount(AutoBotJobRuntimeParam runtimeParam, String jobName, AutoBotJobParam jobParam, AccountJobMethodInvokeHandler handler) {
         Object[] extraParams = runtimeParam.getExtraParams();
         Method jobMethod = runtimeParam.getMethod();
         Object invokeObj = runtimeParam.getTarget();
 
-        return uniqueAsyncForACList(
-                (accountContext, accountContexts) -> handler.invoke(accountContext, accountContexts, extraParams, jobMethod, invokeObj),
-                (accountContext, result) -> result,
-                jobName
-        );
+        if (BooleanUtil.isTrue(jobParam.getSyncExecute())) {
+            return uniqueSyncForACList(
+                    (accountContext, accountContexts) -> handler.invoke(accountContext, accountContexts, extraParams, jobMethod, invokeObj),
+                    (accountContext, result) -> result,
+                    jobName
+            );
+        } else {
+            return uniqueAsyncForACList(
+                    (accountContext, accountContexts) -> handler.invoke(accountContext, accountContexts, extraParams, jobMethod, invokeObj),
+                    (accountContext, result) -> result,
+                    jobName
+            );
+        }
     }
 
 

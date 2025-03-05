@@ -1,32 +1,20 @@
 package cn.com.helei.browser_control;
 
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class SeleniumProxyAuth {
-    public static void main(String[] args) throws IOException {
-        String PROXY_HOST = "46.203.161.123";
-        int PROXY_PORT = 5620;
-        String PROXY_USER = "hldjmuos";
-        String PROXY_PASS = "545n41b7z20x";
 
-        // 创建扩展文件
-        String extensionFile = createProxyAuthExtension(PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS);
-
-        // 设置 ChromeOptions
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--start-maximized");
-        options.addExtensions(new File(extensionFile));
-
-        WebDriver driver = new ChromeDriver(options);
-        driver.get("http://www.example.com");
-    }
+    private static final String BASE_DIR = System.getProperty("user.dir") + File.separator + "botData" + File.separator + "extensions";
 
     public static String createProxyAuthExtension(String host, int port, String user, String pass) throws IOException {
-        String pluginPath = "proxy_auth_plugin.zip";
+        String pluginPath = BASE_DIR + File.separator + "proxy_auth_plugin_%s_%s.zip".formatted(host, port);
+
+        if (new File(pluginPath).exists()) {
+            return pluginPath;
+        }
 
         String manifestJson = """
                 {
@@ -59,7 +47,7 @@ public class SeleniumProxyAuth {
                                     host: "%s",
                                     port: parseInt(%s)
                                   },
-                                  bypassList: []
+                                  bypassList: ["foobar.com"]
                                 }
                               };
                         chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
@@ -78,8 +66,13 @@ public class SeleniumProxyAuth {
                         );
                         """.formatted(host, port, user, pass);
 
-        File dir = new File("proxy_auth_extension");
-        dir.mkdir();
+        Path dirPath = Paths.get(BASE_DIR + File.separator + "proxy_auth_extension_%s_%s".formatted(host, port));
+
+        if (!Files.exists(dirPath)) {
+            Files.createDirectories(dirPath);
+        }
+
+        File dir = dirPath.toFile();
         writeToFile(new File(dir, "manifest.json"), manifestJson);
         writeToFile(new File(dir, "background.js"), backgroundJs);
 
@@ -94,6 +87,7 @@ public class SeleniumProxyAuth {
         }
 
         return pluginPath;
+
     }
 
     private static void writeToFile(File file, String content) throws IOException {

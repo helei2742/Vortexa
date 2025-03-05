@@ -1,0 +1,13 @@
+.loading-logo {
+    width: 6rem;
+    height: 6rem;
+    align-self: center;
+    margin: 14rem 0 0 0;
+}
+
+.loading-spinner {
+    width: 4rem;
+    height: 4rem;
+    align-self: center;
+    margin-top: 1rem;
+}
