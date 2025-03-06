@@ -43,13 +43,12 @@ public class HaHaWalletBot extends AutoLaunchBot<HaHaWalletBot> {
     }
 
     @BotMethod(jobType = BotJobType.TIMED_TASK, intervalInSecond = 60 * 60 * 24,
-            dynamicTrigger = false, dynamicTimeWindowMinute = 60 * 10, concurrentCount = 1, syncExecute = true)
+            dynamicTrigger = false, dynamicTimeWindowMinute = 60 * 5, syncExecute = true)
     public void dailyTask(AccountContext accountContext) throws IOException, InterruptedException {
-//        if (accountContext.getAccountBaseInfoId() != 1) return;
         logger.info("[%s] start daily task".formatted(accountContext.getSimpleInfo()));
 
         HahaWalletSelenium hahaWalletSelenium = new HahaWalletSelenium(this, accountContext);
-        hahaWalletSelenium.start();
+        hahaWalletSelenium.syncStart();
 
         logger.info("[%s] daily task finish".formatted(accountContext.getSimpleInfo()));
     }

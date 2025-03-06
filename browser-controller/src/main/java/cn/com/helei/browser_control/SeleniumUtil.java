@@ -1,48 +1,49 @@
 package cn.com.helei.browser_control;
 
+import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
 
 import java.io.*;
 
+@Slf4j
 public class SeleniumUtil {
-    private static final String COOKIE_FILE = "cookies.data";
 
-    public static void main(String[] args) {
+    private static final String SELENIUNM_FILE = System.getProperty("user.dir") + File.separator + "selenium_data";
 
-        WebDriver driver = new ChromeDriver();
-        driver.get("https://www.example.com");
+    private static final String COOKIE_DIR = "cookie";
 
-        // 登录后保存 Cookies
-        saveCookies(driver);
+    private static final String USER_DATA_DIR = "user_data_dir";
 
-        driver.quit();
-
-        // 重新启动浏览器并加载 Cookies
-        WebDriver newDriver = new ChromeDriver();
-        newDriver.get("https://www.example.com");
-        loadCookies(newDriver);
-        newDriver.navigate().refresh(); // 刷新页面以应用 Cookies
-    }
-    // 保存 Cookies
-    public static void saveCookies(WebDriver driver) {
-        try (FileWriter fileWriter = new FileWriter(COOKIE_FILE);
+    /**
+     * 保存 Cookies
+     *
+     * @param driver driver
+     * @param key    key
+     * @throws IOException IOException
+     */
+    public static void saveCookies(WebDriver driver, String key) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(getCookieFile(key));
              BufferedWriter writer = new BufferedWriter(fileWriter)) {
             for (Cookie cookie : driver.manage().getCookies()) {
                 writer.write(cookie.getName() + ";" + cookie.getValue() + ";" + cookie.getDomain() +
                         ";" + cookie.getPath() + ";" + cookie.getExpiry() + ";" + cookie.isSecure());
                 writer.newLine();
             }
-            System.out.println("✅ Cookies 已保存！");
-        } catch (IOException e) {
-            e.printStackTrace();
+            log.info("key [{}] ✅ Cookies 已保存！", key);
         }
     }
 
-    // 读取 Cookies 并重新加载
-    public static void loadCookies(WebDriver driver) {
-        try (FileReader fileReader = new FileReader(COOKIE_FILE);
+    /**
+     * 读取 Cookies 并重新加载
+     *
+     * @param driver driver
+     * @param key    key
+     * @throws IOException IOException
+     */
+    public static void loadCookies(WebDriver driver, String key) throws IOException {
+        try (FileReader fileReader = new FileReader(getCookieFile(key));
              BufferedReader reader = new BufferedReader(fileReader)) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -50,9 +51,32 @@ public class SeleniumUtil {
                 Cookie cookie = new Cookie(parts[0], parts[1], parts[2], parts[3], null, Boolean.parseBoolean(parts[5]));
                 driver.manage().addCookie(cookie);
             }
-            System.out.println("✅ Cookies 已加载！");
-        } catch (IOException e) {
-            e.printStackTrace();
+            log.info("key [{}] ✅ Cookies 已加载！", key);
         }
     }
+
+
+    public static void saveLocalStorage(WebDriver driver, String key) {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+    }
+
+
+    public static String getUserDataDir(String key) {
+        return getUserDataRootDir() + File.separator + key;
+    }
+
+
+    public static String getUserDataRootDir() {
+        return SELENIUNM_FILE + File.separator + USER_DATA_DIR;
+    }
+
+
+    public static String getCookieFile(String key) {
+        return getCookieRootDir() + File.separator + key;
+    }
+
+    public static String getCookieRootDir() {
+        return SELENIUNM_FILE + File.separator + COOKIE_DIR;
+    }
+
 }

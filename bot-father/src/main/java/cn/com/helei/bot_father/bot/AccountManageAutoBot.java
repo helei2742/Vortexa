@@ -179,7 +179,8 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         return CompletableFuture.supplyAsync(() -> {
             List<BotACJobResult> results = new ArrayList<>();
             int successCount = 0;
-            for (AccountContext accountContext : accountContexts) {
+
+            for (AccountContext accountContext : new HashSet<>(accountContexts)) {
                 if (checkAccountContainsParams(accountContext)) {
                     BotACJobResult botACJobResult = new BotACJobResult(
                             getBotInfo().getId(),
