@@ -1,7 +1,7 @@
 
 spring:
   datasource:
-    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/depinbot/DepinBot/A_back/botData/db/auto_bot.db"
+    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/plantfrom.db"
 
 dubbo:
   application:

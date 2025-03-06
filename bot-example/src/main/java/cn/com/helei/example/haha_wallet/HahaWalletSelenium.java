@@ -4,6 +4,7 @@ import cn.com.helei.browser_control.*;
 import cn.com.helei.common.entity.AccountContext;
 import cn.com.helei.common.entity.BrowserEnv;
 import cn.com.helei.common.entity.ProxyInfo;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -32,6 +33,8 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
     private static final Logger log = LoggerFactory.getLogger(HahaWalletSelenium.class);
 
     private final AccountContext accountContext;
+
+    private int todayCount;
 
     public static void main(String[] args) throws IOException, InterruptedException {
         AccountContext testAC = new AccountContext();
@@ -62,9 +65,31 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
                 ),
                 getParams(accountContext)
         );
+
         String email = accountContext.getParam(HaHaWalletBot.USERNAME_KEY);
         String password = accountContext.getParam(HaHaWalletBot.PASSWORD_KEY);
+        String todayCountStr = accountContext.getParam(TODAY_COUNT_KEY);
+
+        String lastRunDay = accountContext.getParam(TODAY_KEY);
+        String today = DateTime.now().toString();
+
+        if (StrUtil.isBlank(todayCountStr) || StrUtil.isBlank(lastRunDay) || !today.equals(todayCountStr)) {
+            todayCount = getRandom().nextInt(10, 13);
+        } else {
+            todayCount = Integer.parseInt(todayCountStr);
+        }
+
+        accountContext.setParam(TODAY_KEY, today);
+        accountContext.setParam(TODAY_COUNT_KEY, todayCount);
+
+
+        bot.logger.info("[%s] remained [%s] today".formatted(accountContext.getAccountBaseInfoId(), todayCount));
+
         String wallet = accountContext.getParam(WALLET_KEY);
+
+        if (todayCount == 0) {
+            throw new RuntimeException("today total finish");
+        }
 
         if (StrUtil.isBlank(wallet) || StrUtil.isBlank(email) || StrUtil.isBlank(password)) {
             bot.logger.warn("%s no email or password or wallet".formatted(accountContext.getSimpleInfo()));
@@ -92,13 +117,7 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
                 .addExecuteFun(ExecuteGroup.builder()
                         .name("登录HaHa")
                         .enterCondition((webDriver, params) -> {
-                            try {
-                                String flag = xPathFindElement("//*[@id=\"app-content\"]/div/div[2]/div[2]/div/button[2]").getText();
-                                // 已登录，需要解锁
-                                return !"Forgot Pin Code?".equals(flag);
-                            }catch (Exception e){
-                               return true;
-                            }
+                            return !xPathExist("//*[@id=\"app-content\"]/div/div[2]/div[2]/div/button[2]");
                         })
                         .executeItems(List.of(
                                 ExecuteItem.builder().name("切换到目标页面").executeLogic(this::changeToTargetPage).build(),
@@ -110,9 +129,7 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
                 .addExecuteFun(ExecuteGroup.builder()
                         .name("解锁钱包")
                         .enterCondition((webDriver, params) -> {
-                            String flag = xPathFindElement("//*[@id=\"app-content\"]/div/div[2]/div[2]/div/button[2]").getText();
-                            // 已登录，需要解锁
-                            return "Forgot Pin Code?".equals(flag);
+                            return xPathExist("//*[@id=\"app-content\"]/div/div[2]/div[2]/div/button[2]");
                         })
                         .executeItems(List.of(
                                 ExecuteItem.builder().name("输入Pin Code").executeLogic(((webDriver, seleniumInstance) -> {
@@ -141,16 +158,17 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
 
     private void sepoliaSwapPage(WebDriver webDriver, SeleniumInstance seleniumInstance) {
 
-        xPathClick("//*[@id=\"app-content\"]/div[1]/div[2]/div[2]/div[3]/ul/li[2]");
+        // 点击进入legacyPage
+        xPathClick("//p[text()='Legacy Wallet']");
 
-        //.点击选择网络界面
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[1]");
+        // 点击网络选择按钮
+        xPathClick("//div[text()='Sepolia' or text()='Monad Testnet']");
 
-        // 点击选择测试网络
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[4]/div[2]/div[2]/ul/li[2]");
+        // 点击选择测试网
+        xPathClick("//li[text()='Testnet']");
 
-        // 选择sepolia
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[4]/div[2]/div[2]/div[2]/button[4]");
+        // 点击选择Sepolia
+        xPathClick("//p[text()='Sepolia (ETH)']");
 
         randomWait();
 
@@ -167,11 +185,10 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
     }
 
     private void sepoliaSwap(WebDriver webDriver, SeleniumInstance seleniumInstance) {
-        // 点击进入legacyPage
-        xPathClick("//*[@id=\"app-content\"]/div[1]/div[2]/div[2]/div[3]/ul/li[2]");
 
-        // 进入发送界面
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[3]/div[2]/div[1]/div[1]/div[2]/div[2]/button[1]");
+        // 点击send页面
+        xPathClick("//p[text()='Send']");
+
         randomWait();
 
         // 选择代币
@@ -180,23 +197,25 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
         selectionBtnList.get(select).click();
 
         // 选择自己的地址
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[4]/button");
+        xPathClick("//div[contains(text(), 'Account 1')]", 60);
         randomWait();
 
         WebElement countP = xPathFindElement("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[3]/p");
-        ;
+        if (countP.getText().isEmpty()) {
+            countP = xPathFindElement("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[3]/p");
+        }
         double total = Double.parseDouble(countP.getText());
-        double count = seleniumInstance.getRandom().nextDouble(0.1, 0.7) * total;
+        double count = seleniumInstance.getRandom().nextDouble(0.01, 0.07) * total;
 
         // 输入数量
         WebElement countInput = xPathFindElement("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[1]/div[2]/div[5]/div/div[2]/input");
         countInput.sendKeys("%.6f".formatted(count));
 
         // 点击下一步
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[2]/div[2]/button");
+        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[2]/div[2]/button", 120);
 
         // 点击确认
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[2]/div[2]/button");
+        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[2]/div[2]/button", 120);
     }
 
 
@@ -218,20 +237,20 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
             randomWait();
             token2List.get(random.nextInt(token2List.size())).click();
 
-
             double count = random.nextDouble(0.0001, 0.001);
             swapCountInput.sendKeys("");
             swapCountInput.sendKeys("%.4f".formatted(count));
 
-            // 等待按钮可点击
-            try {
-                // 点击确认
-                xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[6]/button");
-                xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[3]/div[2]/div/button");
-                successTimes++;
-            } catch (TimeoutException timeoutException) {
-                System.out.println("超时");
-            }
+            randomWait();
+            // 点击确认
+            xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[6]/button");
+
+            randomWait();
+            xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[3]/div[2]/div/button", 120);
+            successTimes++;
+
+            todayCount--;
+            accountContext.setParam(TODAY_COUNT_KEY, todayCount);
         }
 
         // 点击返回按钮
@@ -241,21 +260,21 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
     private void enterMonadSwapPage(WebDriver webDriver, SeleniumInstance seleniumInstance) {
 
         // 点击进入legacyPage
-        xPathClick("//*[@id=\"app-content\"]/div[1]/div[2]/div[2]/div[3]/ul/li[2]");
+        xPathClick("//p[text()='Legacy Wallet']");
 
         // 点击网络选择按钮
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[1]");
+        xPathClick("//div[text()='Sepolia' or text()='Monad Testnet']");
 
         // 点击选择测试网
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[4]/div[2]/div[2]/ul/li[2]");
+        xPathClick("//li[text()='Testnet']");
 
         // 点击选择Monad
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[4]/div[2]/div[2]/div[2]/button[1]");
+        xPathClick("//p[text()='Monad Testnet']");
 
         randomWait();
 
         // 点击swap页面
-        xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[3]/div[2]/div[1]/div[1]/div[2]/div[2]/button[3]");
+        xPathClick("//p[text()='Swap']");
 
         randomWait();
     }

@@ -31,6 +31,9 @@ public class HaHaWalletBot extends AutoLaunchBot<HaHaWalletBot> {
 
     public static final String PASSWORD_KEY = "haha_password";
 
+    public static final String TODAY_COUNT_KEY = "haha_today_count";
+
+    public static final String TODAY_KEY = "haha_today_count";
 
     @Override
     protected void botInitialized(AutoBotConfig botConfig, BotApi botApi) {

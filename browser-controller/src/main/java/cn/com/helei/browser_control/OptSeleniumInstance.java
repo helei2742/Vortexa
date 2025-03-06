@@ -64,6 +64,16 @@ public class OptSeleniumInstance extends SeleniumInstance {
         return element;
     }
 
+    public boolean xPathExist(String xPath) {
+        try {
+            WebElement element = getWebDriver().findElement(By.xpath(xPath));
+            return element != null;
+        }catch (Exception e) {
+            return false;
+        }
+    }
+
+
 
     public List<WebElement> xPathFindElements(String xPath) {
         return getWebDriver().findElements(By.xpath(xPath));
