@@ -171,8 +171,8 @@ public class RestApiClient {
 
         Request.Builder builder = new Request.Builder();
 
-
-        MediaType JSON = MediaType.get("application/json; charset=utf-8");
+        MediaType JSON = MediaType.parse("application/" + headers.getOrDefault("Content-Type",
+                headers.getOrDefault("content-type", "application/json; charset=utf-8")));
 
         RequestBody requestBody = null;
         if (body != null) {
@@ -246,14 +246,14 @@ public class RestApiClient {
                     }
                     log.warn("请求[{}]失败, code[{}]-body[{}]，尝试重新请求 [{}}/{}],",
                             url, response.code(), body, i, retryTimes);
-                    exception = new NetworkException("请求[%s]失败, code[%s]-body[%s]".formatted( url, response.code(), body));
+                    exception = new NetworkException("请求[%s]失败, code[%s]-body[%s]".formatted(url, response.code(), body));
                 }
             } catch (SocketTimeoutException e) {
                 log.warn("请求[{}]超时，尝试重新请求 [{}}/{}],", url, i, retryTimes);
                 exception = e;
             } catch (IOException e) {
                 log.warn("请求[{}]失败, exception[{}]，尝试重新请求 [{}}/{}],",
-                        url, e.getCause() != null ?  e.getCause().getMessage() : e.getMessage(), i, retryTimes);
+                        url, e.getCause() != null ? e.getCause().getMessage() : e.getMessage(), i, retryTimes);
                 exception = e;
             } catch (Exception e) {
                 throw new NetworkException("未知异常", e);

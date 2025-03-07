@@ -7,9 +7,9 @@ import java.util.Properties;
 public class IMAPMailReader {
 
     public static void main(String[] args) {
-        String host = "imap.mailxw.com"; // IMAP服务器地址
-        String username = "tqgaerniml@mailxw.com";
-        String password = "123456789helei"; // 应用专用密码或授权码
+        String host = "imap.gmail.com"; // IMAP服务器地址
+        String username = "shaylavaltin802@gmail.com";
+        String password = "rnkhevfsbnkhverh"; // 应用专用密码或授权码
 
         Properties properties = new Properties();
         properties.put("mail.store.protocol", "imap");
@@ -32,11 +32,11 @@ public class IMAPMailReader {
             Message[] messages = inbox.getMessages();
             System.out.println("总邮件数: " + messages.length);
 
-            for (int i = 0; i < Math.min(10, messages.length); i++) {
+            for (int i = 0; i < Math.min(100, messages.length); i++) {
                 Message message = messages[i];
                 System.out.println("邮件 " + (i + 1) + " 主题: " + message.getSubject());
                 System.out.println("发件人: " + message.getFrom()[0]);
-                System.out.println("内容: " + getTextFromMessage(message));
+//                System.out.println("内容: " + getTextFromMessage(message));
             }
 
             // 关闭连接

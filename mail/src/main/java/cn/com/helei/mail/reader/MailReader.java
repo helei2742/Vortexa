@@ -37,7 +37,7 @@ public class MailReader {
             Session session = Session.getInstance(properties);
             // 连接到邮件存储
             Store store = session.getStore(properties.getProperty("mail.store.protocol"));
-            store.connect(username, password);
+            store.connect(username, password.replace(" ", "").replace(" ", ""));
 
             // 打开收件箱
             Folder inbox = store.getFolder("INBOX");

@@ -142,7 +142,6 @@ public abstract class SeleniumInstance {
             if (isEnter != null && isEnter) {
                 // Step 3.1.1 能够进入，开始执行group的逻辑
                 log.info("[{}]-[{}] group can execute", instanceId, groupName);
-
                 executeGroup.getExecuteItems().forEach(item -> {
                     // Step 3.1.1.1 带重试
                     Integer retryTimes = item.getRetryTimes() == null ? 1 : item.getRetryTimes();
