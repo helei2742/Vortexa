@@ -420,7 +420,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 throw new BotMethodInvokeException(String.format(
                         "执行[%s]-[%s]方法发生异常",
                         getBotInfo().getName(),
-                        registerMethod.getName()
+                        method.getName()
                 ), e);
             }
         }, getExecutorService());

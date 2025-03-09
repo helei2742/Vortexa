@@ -238,22 +238,20 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
                         throw new RuntimeException(e);
                     }
 
-                    BotACJobResult botACJobResult;
+                    BotACJobResult botACJobResult  = new BotACJobResult(
+                            getBotInfo().getId(),
+                            getBotInfo().getName(),
+                            jobName,
+                            accountContext.getId()
+                    );
                     CompletableFuture<Result> future;
 
                     try {
-                        botACJobResult = new BotACJobResult(
-                                getBotInfo().getId(),
-                                getBotInfo().getName(),
-                                jobName,
-                                accountContext.getId()
-                        );
-
                         future = buildResultFuture.apply(accountContext);
-
                     } catch (Exception e) {
                         getCcSemaphore(jobName).release();
-                        throw new RuntimeException(e);
+                        botACJobResult.setErrorMsg(e.getMessage());
+                        return CompletableFuture.completedFuture(botACJobResult);
                     }
 
                     return future.thenApplyAsync(botACJobResult::setResult, getExecutorService())

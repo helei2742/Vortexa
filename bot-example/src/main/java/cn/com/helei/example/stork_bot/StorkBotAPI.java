@@ -15,22 +15,19 @@ import org.slf4j.LoggerFactory;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 public class StorkBotAPI {
-    private static final String CLIENT_ID = "5msns4n49hmg3dftp2tp1t2iuh";
+
+    private static final String AWS_CLIENT_ID = "5msns4n49hmg3dftp2tp1t2iuh";
 
     private static final String STORK_SITE_APi = "https://cognito-idp.ap-northeast-1.amazonaws.com/";
-
-    private static final String LOGIN_API = "";
 
     private static final String STORK_SIGNED_PRICE_API = "https://app-api.jp.stork-oracle.network/v1/stork_signed_prices";
 
@@ -53,9 +50,9 @@ public class StorkBotAPI {
 
     private final StorkBot bot;
 
-
     public StorkBotAPI(StorkBot bot) {
         this.bot = bot;
+
     }
 
 
@@ -68,11 +65,17 @@ public class StorkBotAPI {
      * @return Result
      */
     public Result signup(AccountContext exampleAC, List<AccountContext> sameABIACList, String inviteCode) {
+        if (exampleAC.getAccountBaseInfoId() != 50) return Result.fail("");
         bot.logger.info("%s start signup".formatted(exampleAC.getSimpleInfo()));
 
         CompletableFuture<String> signupFuture = sendSignUpRequest(exampleAC, inviteCode)
                 .thenApplyAsync(responseStr -> {
                     bot.logger.info("%s signup request sent, %s".formatted(exampleAC.getSimpleInfo(), responseStr));
+                    try {
+                        TimeUnit.SECONDS.sleep(0);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                     return queryCheckCode(exampleAC);
                 })
                 .thenApplyAsync(checkCode -> confirmSignup(exampleAC, checkCode));
@@ -99,35 +102,12 @@ public class StorkBotAPI {
      * @return Result
      */
     public Result login(AccountContext accountContext) {
-        bot.logger.info("%s start login".formatted(accountContext.getSimpleInfo()));
-
-        Map<String, String> headers = accountContext.getBrowserEnv().generateHeaders();
-        headers.put("Accept", "/");
-
-        JSONObject body = new JSONObject();
-        body.put("grant_type", "refresh_token");
-        body.put("ClientId", CLIENT_ID);
-
-        try {
-            String responseStr = bot.syncRequest(
-                    accountContext.getProxy(),
-                    LOGIN_API,
-                    HttpMethod.POST,
-                    headers,
-                    null,
-                    body,
-                    () -> accountContext.getSimpleInfo() + " start login"
-            ).get();
-
-            JSONObject result = JSONObject.parseObject(responseStr);
-            bot.logger.info("%s login success, %s".formatted(accountContext.getSimpleInfo(), responseStr));
-            return Result.ok();
-        } catch (InterruptedException | ExecutionException e) {
-            String errorMsg = "%s login error, %s".formatted(accountContext.getSimpleInfo(),
-                    e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
-            bot.logger.error(errorMsg, e);
-            return Result.fail(errorMsg);
+        if (accountContext.getAccountBaseInfoId() != 1) {
+            return Result.fail("test");
         }
+
+
+        return Result.ok();
     }
 
 
@@ -223,7 +203,7 @@ public class StorkBotAPI {
         JSONObject body = new JSONObject();
         body.put("Username", exampleAC.getAccountBaseInfo().getEmail());
         body.put("ConfirmationCode", checkCode);
-        body.put("ClientId", CLIENT_ID);
+        body.put("ClientId", AWS_CLIENT_ID);
 
         CompletableFuture<String> future = bot.syncRequest(
                 exampleAC.getProxy(),
@@ -314,7 +294,7 @@ public class StorkBotAPI {
         headers.put("referer", "https://app.stork.network/");
 
         JSONObject body = new JSONObject();
-        body.put("ClientId", CLIENT_ID);
+        body.put("ClientId", AWS_CLIENT_ID);
         body.put("Username", exampleAC.getAccountBaseInfo().getEmail());
 
         // Step 1 注册请求
@@ -349,7 +329,7 @@ public class StorkBotAPI {
         String email = exampleAC.getAccountBaseInfo().getEmail();
         body.put("Username", email);
         body.put("Password", exampleAC.getParam(PASSWORD_KEY));
-        body.put("ClientId", CLIENT_ID);
+        body.put("ClientId", AWS_CLIENT_ID);
 
         JSONArray userAtributes = new JSONArray();
         JSONObject ua1 = new JSONObject();

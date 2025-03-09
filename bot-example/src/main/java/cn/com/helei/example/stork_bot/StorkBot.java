@@ -43,7 +43,7 @@ public class StorkBot extends AutoLaunchBot<StorkBot> {
         return storkBotAPI.login(accountContext);
     }
 
-    @BotMethod(jobType = BotJobType.TIMED_TASK, intervalInSecond = 60*5)
+    @BotMethod(jobType = BotJobType.TIMED_TASK, intervalInSecond = 60 * 5)
     public void keepAlive(AccountContext accountContext) {
         storkBotAPI.keepAlive(accountContext);
     }

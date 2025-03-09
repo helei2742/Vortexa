@@ -8,6 +8,7 @@ import cn.com.helei.bot_father.view.commandMenu.DefaultMenuType;
 import cn.com.helei.bot_father.view.commandMenu.MenuNodeMethod;
 import cn.com.helei.bot_father.config.AutoBotConfig;
 import cn.com.helei.bot_father.view.commandMenu.PageMenuNode;
+import cn.com.helei.common.dto.ACListOptResult;
 import cn.com.helei.common.dto.PageResult;
 import cn.com.helei.common.entity.AccountContext;
 import cn.com.helei.common.entity.BrowserEnv;
@@ -25,7 +26,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.*;
-        import java.util.function.BiFunction;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import static cn.com.helei.bot_father.constants.MapConfigKey.*;
@@ -154,7 +157,16 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
      */
     private CommandMenuNode buildQueryTokenMenuNode() {
         return new CommandMenuNode("获取token", "开始获取token", () -> {
-            return JSON.toJSONString(getBot().loginAndTakeTokenAccount());
+            CompletableFuture<ACListOptResult> getToken = getBot().loginAndTakeTokenAccount();
+            try {
+                ACListOptResult acListOptResult = getToken.get();
+
+                return  acListOptResult.printStr();
+            } catch (InterruptedException | ExecutionException e) {
+                getBot().logger.error("获取token异常, " +
+                        (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
+                return "";
+            }
         });
     }
 

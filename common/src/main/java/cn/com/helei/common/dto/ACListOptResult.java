@@ -1,12 +1,14 @@
 package cn.com.helei.common.dto;
 
 
+import com.alibaba.fastjson.JSONObject;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -35,5 +37,16 @@ public class ACListOptResult {
             String errorMsg
     ) {
         return new ACListOptResult(botId, botName, jobName, false, errorMsg, null, 0);
+    }
+
+    public String printStr() {
+        return """
+                bot: %s
+                jobName: %s
+                success: %s
+                errorMsg: %s
+                results: %s
+                """.formatted(botName, jobName, success, errorMsg,
+                results == null ? "" : results.stream().map(JSONObject::toJSONString).collect(Collectors.joining("\n")));
     }
 }
