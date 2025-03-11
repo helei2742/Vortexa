@@ -147,8 +147,8 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
                         })
                         .executeItems(List.of(
                                 ExecuteItem.builder().name("进入monad Swap页面").executeLogic(this::enterMonadSwapPage).build(),
-                                ExecuteItem.builder().name("交换Monad").executeLogic(this::monadSwap).build(),
-                                ExecuteItem.builder().name("trans sepolia Eth").executeLogic(this::sepoliaSwapPage).build()
+                                ExecuteItem.builder().name("交换Monad").executeLogic(this::monadSwap).build()
+//                                ExecuteItem.builder().name("trans sepolia Eth").executeLogic(this::sepoliaSwapPage).build()
                         ))
                         .build()
                 );
@@ -223,34 +223,41 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
         WebElement swapCountInput = xPathFindElement("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[1]/div[2]/div/div[3]/input");
 
         Random random = new Random();
-        int monCount = random.nextInt(2, 4);
+        int monCount = random.nextInt(10, 13);
         int successTimes = 0;
-
+        int errorTimes = 0;
         while (successTimes < monCount) {
-            // 点击进入交换代币选择界面
-            xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[3]/div[1]/button");
+            try {
+                // 点击进入交换代币选择界面
+                xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[3]/div[1]/button");
 
-            // 随机选择代币
-            List<WebElement> token2List = xPathFindElements("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[3]/div[2]/div[3]/div//button");
-            token2List.removeFirst();
+                // 随机选择代币
+                List<WebElement> token2List = xPathFindElements("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[3]/div[2]/div[3]/div//button");
+                token2List.removeFirst();
 
-            randomWait();
-            token2List.get(random.nextInt(token2List.size())).click();
+                randomWait();
+                token2List.get(random.nextInt(token2List.size())).click();
 
-            double count = random.nextDouble(0.0001, 0.001);
-            swapCountInput.sendKeys("");
-            swapCountInput.sendKeys("%.4f".formatted(count));
+                double count = random.nextDouble(0.0001, 0.001);
+                swapCountInput.clear();
+                swapCountInput.sendKeys("%.4f".formatted(count));
 
-            randomWait();
-            // 点击确认
-            xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[6]/button");
+                randomWait();
+                // 点击确认
+                xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/div[6]/button");
 
-            randomWait();
-            xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[3]/div[2]/div/button", 120);
-            successTimes++;
+                randomWait();
+                xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[3]/div[2]/div/button", 120);
+                successTimes++;
 
-            todayCount--;
-            accountContext.setParam(TODAY_COUNT_KEY, todayCount);
+                todayCount--;
+                accountContext.setParam(TODAY_COUNT_KEY, todayCount);
+            } catch (Exception e) {
+                log.error("{} monad swap error", getInstanceId(), e);
+                if (errorTimes++ > 3) {
+                    break;
+                }
+            }
         }
 
         // 点击返回按钮
@@ -297,7 +304,8 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
         xPathClick("//*[@id=\"app-content\"]/div/div[2]/div[2]/div[2]/button");
 
         // 点击跳过按钮
-        xPathClick("//*[@id=\"app-content\"]/div[2]/div[2]/div[3]/button[2]");
+//            xPathClick("//*[@id=\"app-content\"]/div[2]/div[2]/div[3]/button[2]");
+
 
         randomWait();
     }
@@ -350,7 +358,7 @@ public class HahaWalletSelenium extends OptSeleniumInstance {
         } catch (AWTException e) {
             throw new RuntimeException(e);
         }
-        robot.delay(5000); // 等待弹框出现
+        robot.delay(10000); // 等待弹框出现
 
         // 输入用户名
         for (char c : instance.getProxy().getUsername().toCharArray()) {

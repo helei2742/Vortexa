@@ -3,31 +3,38 @@ package cn.com.helei.example.stork_bot;
 import cn.com.helei.common.constants.HttpMethod;
 import cn.com.helei.common.dto.Result;
 import cn.com.helei.common.entity.AccountContext;
+import cn.com.helei.common.util.aws.AWSAuthSRPFLOWClient;
+import cn.com.helei.common.util.aws.AwsToken;
 import cn.com.helei.mail.constants.MailProtocolType;
 import cn.com.helei.mail.factory.MailReaderFactory;
 import cn.com.helei.mail.reader.MailReader;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 public class StorkBotAPI {
 
     private static final String AWS_CLIENT_ID = "5msns4n49hmg3dftp2tp1t2iuh";
 
-    private static final String STORK_SITE_APi = "https://cognito-idp.ap-northeast-1.amazonaws.com/";
+    private static final String AWS_URL = "https://cognito-idp.ap-northeast-1.amazonaws.com/";
+
+    private static final String AWS_REFRESH_URL = "https://stork-prod-apps.auth.ap-northeast-1.amazoncognito.com/oauth2/token";
+
+    private static final String AWS_USER_POOL_ID = "ap-northeast-1_M22I44OpC";
 
     private static final String STORK_SIGNED_PRICE_API = "https://app-api.jp.stork-oracle.network/v1/stork_signed_prices";
 
@@ -41,18 +48,17 @@ public class StorkBotAPI {
 
     public static final String IMAP_PASSWORD_KEY = "imap_password";
 
-    public static final String TOKEN_KEY = "stork_token";
-
+    public static final String AWS_TOKEN_KEY = "aws_token";
 
     private static final MailReader mailReader = MailReaderFactory.getMailReader(MailProtocolType.imap,
             "imap.gmail.com", "993", true);
-    private static final Logger log = LoggerFactory.getLogger(StorkBotAPI.class);
+
+    private static final ConcurrentHashMap<AccountContext, AWSAuthSRPFLOWClient> acAWSMap = new ConcurrentHashMap<>();
 
     private final StorkBot bot;
 
     public StorkBotAPI(StorkBot bot) {
         this.bot = bot;
-
     }
 
 
@@ -65,7 +71,6 @@ public class StorkBotAPI {
      * @return Result
      */
     public Result signup(AccountContext exampleAC, List<AccountContext> sameABIACList, String inviteCode) {
-        if (exampleAC.getAccountBaseInfoId() != 50) return Result.fail("");
         bot.logger.info("%s start signup".formatted(exampleAC.getSimpleInfo()));
 
         CompletableFuture<String> signupFuture = sendSignUpRequest(exampleAC, inviteCode)
@@ -95,19 +100,49 @@ public class StorkBotAPI {
         }
     }
 
+
     /**
-     * 登录
+     * 刷新token
      *
      * @param accountContext accountContext
-     * @return Result
      */
-    public Result login(AccountContext accountContext) {
-        if (accountContext.getAccountBaseInfoId() != 1) {
-            return Result.fail("test");
-        }
+    public void refreshToken(AccountContext accountContext) {
+        acAWSMap.compute(accountContext, (k, client) -> {
+            if (client == null) {
+                client = new AWSAuthSRPFLOWClient(AWS_URL, AWS_REFRESH_URL, AWS_USER_POOL_ID, AWS_CLIENT_ID);
+            }
+
+            Map<String, String> headers = accountContext.getBrowserEnv().generateHeaders();
+            headers.put("origin", "https://app.stork.network");
+            headers.put("referer", "https://app.stork.network/");
+
+            AwsToken awsToken = JSONObject.parseObject(accountContext.getParam(AWS_TOKEN_KEY), AwsToken.class);
+            if (awsToken == null) {
+                // 登录获取refresh token
+                bot.logger.info(accountContext.getSimpleInfo() + " first login, query refresh token...");
 
 
-        return Result.ok();
+                awsToken = client.userSrpLogin(
+                        accountContext.getProxy(),
+                        accountContext.getAccountBaseInfo().getEmail(),
+                        accountContext.getParam(PASSWORD_KEY),
+                        headers
+                );
+            } else {
+                // 刷新token
+                awsToken = client.refreshToken(
+                        accountContext.getProxy(),
+                        awsToken,
+                        headers
+                );
+            }
+
+            accountContext.setParam(AWS_TOKEN_KEY, JSONObject.toJSONString(awsToken));
+
+            bot.logger.info(accountContext.getSimpleInfo() + " token refresh finish...");
+
+            return client;
+        });
     }
 
 
@@ -117,13 +152,17 @@ public class StorkBotAPI {
      * @param accountContext accountContext
      */
     public void keepAlive(AccountContext accountContext) {
-        // TODO check token refresh it
-        if (accountContext.getAccountBaseInfoId() != 1) return;
-
         try {
-            String msgHash = getSignedPrice(accountContext).get();
+            AwsToken token = JSONObject.parseObject(accountContext.getParam(AWS_TOKEN_KEY), AwsToken.class);
 
-            String response = validateSignedPrice(accountContext, msgHash).get();
+            if (token == null) {
+                bot.logger.warn(accountContext.getSimpleInfo() + " token is null, skip it");
+                return;
+            }
+
+            String msgHash = getSignedPrice(accountContext, token).get();
+
+            String response = validateSignedPrice(accountContext, token, msgHash).get();
 
             bot.logger.info(accountContext + "%s keep alive success, " + response);
         } catch (InterruptedException | ExecutionException e) {
@@ -132,12 +171,11 @@ public class StorkBotAPI {
     }
 
 
-    private CompletableFuture<String> validateSignedPrice(AccountContext accountContext, String msgHash) {
-        bot.logger.info(accountContext.getSimpleInfo() + " start validate signed price ");
-        String token = accountContext.getParam(TOKEN_KEY);
+    private CompletableFuture<String> validateSignedPrice(AccountContext accountContext, AwsToken token, String msgHash) {
+        bot.logger.debug(accountContext.getSimpleInfo() + " start validate signed price ");
 
         Map<String, String> headers = accountContext.getBrowserEnv().generateHeaders();
-        headers.put("Authorization", "Bearer " + token);
+        headers.put("Authorization", token.getAuthorization());
 
         JSONObject body = new JSONObject();
         body.put("msg_hash", msgHash);
@@ -149,19 +187,17 @@ public class StorkBotAPI {
                 HttpMethod.POST,
                 headers,
                 null,
-                body,
-                () -> accountContext.getSimpleInfo() + " send validate signed price request"
+                body
         );
     }
 
 
-    private CompletableFuture<String> getSignedPrice(AccountContext accountContext) {
-        bot.logger.info(accountContext.getSimpleInfo() + " start get signed price ");
+    private CompletableFuture<String> getSignedPrice(AccountContext accountContext, AwsToken token) {
+        bot.logger.debug(accountContext.getSimpleInfo() + " start get signed price ");
 
-        String token = accountContext.getParam(TOKEN_KEY);
 
         Map<String, String> headers = accountContext.getBrowserEnv().generateHeaders();
-        headers.put("Authorization", "Bearer " + token);
+        headers.put("Authorization", token.getAuthorization());
 
         return bot.syncRequest(
                 accountContext.getProxy(),
@@ -169,20 +205,20 @@ public class StorkBotAPI {
                 HttpMethod.GET,
                 headers,
                 null,
-                null,
-                () -> accountContext.getSimpleInfo() + " send get signed price request"
+                null
         ).thenApplyAsync(responseStr -> {
             JSONObject signedPrices = JSONObject.parseObject(responseStr);
-            bot.logger.info(accountContext.getSimpleInfo() + " signed price is " + signedPrices);
+            bot.logger.debug(accountContext.getSimpleInfo() + " signed price get success");
 
-            JSONArray prices = signedPrices.getJSONArray("data");
-            for (int i = 0; i < prices.size(); i++) {
-                JSONObject price = prices.getJSONObject(i);
+            JSONObject prices = signedPrices.getJSONObject("data");
+            for (String symbol : prices.keySet()) {
+                JSONObject price = prices.getJSONObject(symbol);
                 JSONObject timestampedSignature = price.getJSONObject("timestamped_signature");
                 if (timestampedSignature != null) {
                     return timestampedSignature.getString("msg_hash");
                 }
             }
+
             throw new RuntimeException("signed price is empty");
         });
     }
@@ -207,7 +243,7 @@ public class StorkBotAPI {
 
         CompletableFuture<String> future = bot.syncRequest(
                 exampleAC.getProxy(),
-                STORK_SITE_APi,
+                AWS_URL,
                 HttpMethod.POST,
                 headers,
                 null,
@@ -267,7 +303,7 @@ public class StorkBotAPI {
         // Step 1 注册请求
         return bot.syncRequest(
                 exampleAC.getProxy(),
-                STORK_SITE_APi,
+                AWS_URL,
                 HttpMethod.POST,
                 headers,
                 null,
@@ -300,7 +336,7 @@ public class StorkBotAPI {
         // Step 1 注册请求
         return bot.syncRequest(
                 exampleAC.getProxy(),
-                STORK_SITE_APi,
+                AWS_URL,
                 HttpMethod.POST,
                 headers,
                 null,

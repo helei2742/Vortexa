@@ -38,9 +38,9 @@ public class StorkBot extends AutoLaunchBot<StorkBot> {
         return storkBotAPI.signup(exampleAC, sameABIList, inviteCode);
     }
 
-    @BotMethod(jobType = BotJobType.LOGIN)
-    public Result login(AccountContext accountContext) {
-        return storkBotAPI.login(accountContext);
+    @BotMethod(jobType = BotJobType.TIMED_TASK, intervalInSecond = 60 * 50)
+    public void tokenRefresh(AccountContext accountContext) {
+        storkBotAPI.refreshToken(accountContext);
     }
 
     @BotMethod(jobType = BotJobType.TIMED_TASK, intervalInSecond = 60 * 5)

@@ -28,6 +28,10 @@ public class AppendLogger {
         log.info("\033[32m" + getPrefix(context) + "\033[0m");
     }
 
+    public void debug(Object context) {
+        log.info("\033[90m" + getPrefix(context) + "\033[0m");
+    }
+
     public void warn(Object context) {
         log.warn("\033[33m" + getPrefix(context) + "\033[0m");
     }

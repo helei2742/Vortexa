@@ -46,7 +46,7 @@ public class HaHaWalletBot extends AutoLaunchBot<HaHaWalletBot> {
     }
 
     @BotMethod(jobType = BotJobType.TIMED_TASK, intervalInSecond = 60 * 60 * 24,
-            dynamicTrigger = false, dynamicTimeWindowMinute = 60 * 5, syncExecute = true)
+            dynamicTrigger = false, dynamicTimeWindowMinute = 60, syncExecute = true)
     public void dailyTask(AccountContext accountContext) throws IOException, InterruptedException {
         logger.info("[%s] start daily task".formatted(accountContext.getSimpleInfo()));
 
