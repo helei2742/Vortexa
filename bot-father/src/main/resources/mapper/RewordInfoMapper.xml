@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.com.helei.bot_father.mapper.RewordInfoMapper">
+<mapper namespace="cn.com.vortexa.bot_father.mapper.RewordInfoMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.com.helei.common.entity.RewordInfo">
+    <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.RewordInfo">
         <id column="project_account_id" property="projectAccountId" />
         <result column="total_points" property="totalPoints" />
         <result column="session" property="session" />

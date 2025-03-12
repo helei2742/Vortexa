@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.com.helei.db_layer.mapper.BotInstanceMapper">
+<mapper namespace="cn.com.vortexa.db_layer.mapper.BotInstanceMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.com.helei.common.entity.BotInstance">
+    <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.BotInstance">
         <id column="id" property="id"/>
         <result column="bot_id" property="botId"/>
         <result column="bot_key" property="botKey"/>
@@ -14,7 +14,7 @@
         <result column="is_valid" property="isValid"/>
     </resultMap>
 
-    <insert id="insertOrUpdate" parameterType="cn.com.helei.common.entity.BotInstance">
+    <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.BotInstance">
         INSERT INTO t_bot_instance
         (bot_id, bot_key, account_table_name, params, insert_datetime, update_datetime, is_valid)
         VALUES (#{botId}, #{botKey}, #{accountTableName}, #{params}, #{insertDatetime}, #{updateDatetime},
@@ -29,8 +29,8 @@ DO
 
 
     <select id="multipleConditionQuery"
-            parameterType="cn.com.helei.common.entity.BotInstance"
-            resultType="cn.com.helei.common.entity.BotInstance">
+            parameterType="cn.com.vortexa.common.entity.BotInstance"
+            resultType="cn.com.vortexa.common.entity.BotInstance">
         select
         t.id as id,
         t.bot_id as botId,

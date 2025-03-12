@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-cn.com.helei.db_layer.DBLayerAutoConfig
+cn.com.vortexa.db_layer.DBLayerAutoConfig

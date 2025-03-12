@@ -28,7 +28,7 @@
               <createDependencyReducedPom>true</createDependencyReducedPom>
               <transformers>
                 <transformer>
-                  <mainClass>cn.com.helei.DepinBot.DepinBotApp</mainClass>
+                  <mainClass>cn.com.vortexa.DepinBot.DepinBotApp</mainClass>
                 </transformer>
               </transformers>
             </configuration>

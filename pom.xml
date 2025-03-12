@@ -3,11 +3,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.com.helei</groupId>
-    <artifactId>BotFramework</artifactId>
+    <artifactId>Vortexa</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>BotFramework</name>
+    <name>Vortexa</name>
     <url>http://maven.apache.org</url>
     <modules>
         <module>bot-father</module>
@@ -22,6 +22,9 @@
         <module>job</module>
         <module>browser-controller</module>
         <module>web3</module>
+        <module>nameserver-base</module>
+        <module>nameserver-server</module>
+        <module>nameserver-client</module>
     </modules>
 
     <properties>

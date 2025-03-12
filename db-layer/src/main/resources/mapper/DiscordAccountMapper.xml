@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.com.helei.db_layer.mapper.DiscordAccountMapper">
+<mapper namespace="cn.com.vortexa.db_layer.mapper.DiscordAccountMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.com.helei.common.entity.DiscordAccount">
+    <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.DiscordAccount">
         <id column="id" property="id"/>
         <result column="password" property="password"/>
         <result column="username" property="username"/>
@@ -16,7 +16,7 @@
         <result column="is_valid" property="isValid"/>
     </resultMap>
 
-    <insert id="insertOrUpdate" parameterType="cn.com.helei.common.entity.DiscordAccount">
+    <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.DiscordAccount">
         INSERT INTO t_discord_account
         (password, username, bind_email, bind_email_password, token, params, insert_datetime, update_datetime, is_valid)
         VALUES (#{password}, #{username}, #{bindEmail}, #{bindEmailPassword}, #{token}, #{params}, #{insertDatetime},
@@ -31,8 +31,8 @@
     </insert>
 
     <select id="multipleConditionQuery"
-            parameterType="cn.com.helei.common.entity.DiscordAccount"
-            resultType="cn.com.helei.common.entity.DiscordAccount">
+            parameterType="cn.com.vortexa.common.entity.DiscordAccount"
+            resultType="cn.com.vortexa.common.entity.DiscordAccount">
         select
         t.id as id,
         t.password, t.username, t.bind_email as bindEmail,

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.com.helei.bot_father.mapper.BotAccountContextMapper">
+<mapper namespace="cn.com.vortexa.bot_father.mapper.BotAccountContextMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.com.helei.common.entity.AccountContext">
+    <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.AccountContext">
         <id column="id" property="id"/>
         <result column="bot_id" property="botId"/>
         <result column="bot_key" property="botKey"/>
@@ -78,7 +78,7 @@
 
     </insert>
 
-    <insert id="insertOrUpdate" parameterType="cn.com.helei.common.entity.AccountContext">
+    <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.AccountContext">
 
         INSERT INTO t_bot_account_context
         (bot_id, bot_key, account_base_info_id, twitter_id, discord_id, proxy_id, browser_env_id, telegram_id,
@@ -120,8 +120,8 @@
     </select>
 
     <select id="multipleConditionQuery"
-            parameterType="cn.com.helei.common.entity.AccountContext"
-            resultType="cn.com.helei.common.entity.AccountContext">
+            parameterType="cn.com.vortexa.common.entity.AccountContext"
+            resultType="cn.com.vortexa.common.entity.AccountContext">
         select
         t.id,
         t.bot_id as botId, t.bot_key as botKey, t.account_base_info_id as accountBaseInfoId,

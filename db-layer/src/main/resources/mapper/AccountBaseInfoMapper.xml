@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.com.helei.db_layer.mapper.AccountBaseInfoMapper">
+<mapper namespace="cn.com.vortexa.db_layer.mapper.AccountBaseInfoMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.com.helei.common.entity.AccountBaseInfo">
+    <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.AccountBaseInfo">
         <id column="id" property="id"/>
         <result column="type" property="type"/>
         <result column="name" property="name"/>
@@ -15,7 +15,7 @@
         <result column="is_valid" property="isValid"/>
     </resultMap>
 
-    <insert id="insertOrUpdate" parameterType="cn.com.helei.common.entity.AccountBaseInfo">
+    <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.AccountBaseInfo">
         INSERT INTO t_account_base_info
         (id, type, name, email, password, params, insert_datetime, update_datetime, is_valid)
         VALUES (NULL, #{type}, #{name}, #{email}, #{password}, #{params}, #{insertDatetime}, #{updateDatetime},
@@ -30,8 +30,8 @@
     </insert>
 
     <select id="multipleConditionQuery"
-            parameterType="cn.com.helei.common.entity.AccountBaseInfo"
-            resultType="cn.com.helei.common.entity.AccountBaseInfo">
+            parameterType="cn.com.vortexa.common.entity.AccountBaseInfo"
+            resultType="cn.com.vortexa.common.entity.AccountBaseInfo">
         select
         t.id, t.type, t.name, t.email, t.password, t.params,
         t.insert_datetime as insertDatetime,

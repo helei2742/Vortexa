@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.com.helei.db_layer.mapper.ProxyInfoMapper">
+<mapper namespace="cn.com.vortexa.db_layer.mapper.ProxyInfoMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.com.helei.common.entity.ProxyInfo">
+    <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.ProxyInfo">
         <id column="id" property="id"/>
         <result column="proxy_type" property="proxyType"/>
         <result column="proxy_protocol" property="proxyProtocol"/>
@@ -19,7 +19,7 @@
     </resultMap>
 
 
-    <insert id="insertOrUpdate" parameterType="cn.com.helei.common.entity.ProxyInfo">
+    <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.ProxyInfo">
         INSERT INTO t_proxy_info
         (proxy_type, proxy_protocol, host, port, username, password, usable, params, insert_datetime, update_datetime,
          is_valid)
@@ -36,8 +36,8 @@
     </insert>
 
     <select id="multipleConditionQuery"
-            parameterType="cn.com.helei.common.entity.ProxyInfo"
-            resultType="cn.com.helei.common.entity.ProxyInfo">
+            parameterType="cn.com.vortexa.common.entity.ProxyInfo"
+            resultType="cn.com.vortexa.common.entity.ProxyInfo">
         select
             t.id as id,
         t.proxy_type as proxyType,
