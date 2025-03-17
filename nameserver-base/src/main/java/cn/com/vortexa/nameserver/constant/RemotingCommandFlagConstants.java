@@ -24,17 +24,6 @@ public class RemotingCommandFlagConstants {
      */
     public static final int PONG = -100;
 
-
-    /**
-     *  客户端初始化
-     */
-    public static final int CLIENT_INIT = 101;
-
-    /**
-     *  客户端初始化的响应
-     */
-    public static final int CLIENT_INIT_RESPONSE = -101;
-
     /**
      *  客户端服务注册的消息
      */

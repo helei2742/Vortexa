@@ -5,15 +5,26 @@ import cn.com.vortexa.common.constants.ConnectStatus;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.websocket.netty.base.AbstractWebsocketClient;
 import cn.com.vortexa.websocket.netty.constants.WebsocketClientStatus;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
+import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
 @Getter
-public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient<Req, Resp> {
+public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient<Req, Resp, Object> {
+
+    private static final int MAX_FRAME_SIZE = 10 * 1024 * 1024;  // 10 MB or set to your desired size
 
     /**
      * client对应的账号
@@ -23,7 +34,7 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
     public BaseBotWSClient(
             AccountContext accountContext,
             String connectUrl,
-            BaseBotWSClientHandler<Req, Resp> handler
+            BaseBotWSClientHandler<Req, Resp,Object> handler
     ) {
         super(connectUrl, handler);
 
@@ -48,6 +59,32 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
     public abstract Object getResponseId(Resp response);
 
     public void whenAccountClientStatusChange(WebsocketClientStatus clientStatus) {}
+
+    @Override
+    public void addPipeline(ChannelPipeline p) {
+        p.addLast("http-chunked", new ChunkedWriteHandler()); // 支持大数据流
+
+        p.addLast(new HttpClientCodec());
+        p.addLast(new HttpObjectAggregator(81920));
+        p.addLast(new IdleStateHandler(0, 0, allIdleTimeSecond, TimeUnit.SECONDS));
+        p.addLast(new ChunkedWriteHandler());
+
+        p.addLast(new WebSocketFrameAggregator(MAX_FRAME_SIZE));  // 设置聚合器的最大帧大小
+
+        p.addLast(handler);
+    }
+
+    @Override
+    public void sendPing() {
+        log.debug("client [{}] send ping to [{}]", getName(), url);
+        getChannel().writeAndFlush(new PingWebSocketFrame());
+    }
+
+    @Override
+    public void sendPong() {
+        log.debug("client [{}] send pong {}", getName(), url);
+        getChannel().writeAndFlush(new PongWebSocketFrame());
+    }
 
     /**
      * ws客户端状态改变，同步更新账户状态

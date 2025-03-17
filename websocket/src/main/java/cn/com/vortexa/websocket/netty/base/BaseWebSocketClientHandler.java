@@ -3,10 +3,9 @@ package cn.com.vortexa.websocket.netty.base;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import cn.com.vortexa.websocket.netty.constants.WebsocketClientStatus;
 import io.netty.channel.*;
-import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.util.CharsetUtil;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -14,24 +13,20 @@ import lombok.extern.slf4j.Slf4j;
  * WebSocket客户端处理器基础类
  * 处理连接握手
  *
- * @param <P>
- * @param <T>
+ * @param <Req>
+ * @param <Resp>
  */
 @Slf4j
 @ChannelHandler.Sharable
-public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInboundHandler<Object> {
+public abstract class BaseWebSocketClientHandler<Req, Resp, T> extends SimpleChannelInboundHandler<T> {
+
+    @Getter
     private WebSocketClientHandshaker handshaker;
 
+    @Getter
     private ChannelPromise handshakeFuture;
 
-    protected AbstractWebsocketClient<P, T> websocketClient;
-
-    /**
-     * 收到消息处理
-     *ˆ
-     * @param text 消息字符串
-     */
-    protected abstract void whenReceiveMessage(String text);
+    protected AbstractWebsocketClient<Req, Resp, T> websocketClient;
 
 
     public void init(WebSocketClientHandshaker handshaker) {
@@ -65,49 +60,6 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
 
         if (!websocketClient.getClientStatus().equals(WebsocketClientStatus.SHUTDOWN)) {
             websocketClient.reconnect();
-        }
-    }
-
-    @Override
-    public void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-        Channel ch = ctx.channel();
-        // 如果握手未完成，处理 FullHttpResponse
-        if (handshaker != null && !handshaker.isHandshakeComplete()) {
-            if (msg instanceof FullHttpResponse response) {
-                try {
-
-                    handshaker.finishHandshake(ch, response);
-                    log.info("WebSocket client [{}] Handshake complete!", ch.attr(NettyConstants.CLIENT_NAME).get());
-                    handshakeFuture.setSuccess();
-
-                    connectCompleteHandler(ch);
-                } catch (WebSocketHandshakeException e) {
-                    log.info("WebSocket client [{}] Handshake failed!", ch.attr(NettyConstants.CLIENT_NAME).get());
-                    handshakeFuture.setFailure(e);
-                }
-                return;
-            }
-        }
-
-        if (msg instanceof FullHttpResponse response) {
-            if (response.status().code() / 100 > 3) {
-                throw new IllegalStateException(
-                        "Unexpected FullHttpResponse (getStatus=" + response.status() +
-                                ", content=" + response.content().toString(CharsetUtil.UTF_8) + ')');
-            }
-        } else if (msg instanceof WebSocketFrame frame) {
-            switch (frame) {
-                case TextWebSocketFrame textFrame -> {
-                    log.debug("websocket client [{}] 接收到的消息：{}", ch.attr(NettyConstants.CLIENT_NAME).get(), textFrame.text());
-                    whenReceiveMessage(textFrame.text());
-                }
-                case PongWebSocketFrame pongWebSocketFrame -> handlerPong(ch, pongWebSocketFrame);
-                case PingWebSocketFrame pingWebSocketFrame -> handlerPing(ch, pingWebSocketFrame);
-                case CloseWebSocketFrame closeWebSocketFrame -> handlerClose(ch, closeWebSocketFrame);
-                default -> {
-                    log.warn("channel[{}]收到位置类型的消息[{}]", ch.attr(NettyConstants.CLIENT_NAME).get(), frame.getClass().getName());
-                }
-            }
         }
     }
 
@@ -150,40 +102,6 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
         log.debug("websocket active");
     }
 
-    /**
-     * 处理close消息
-     *
-     * @param ch                  Channel ch
-     * @param closeWebSocketFrame closeWebSocketFrame
-     */
-    protected void handlerClose(Channel ch, CloseWebSocketFrame closeWebSocketFrame) {
-        log.warn("websocket client关闭");
-        ch.close();
-    }
-
-
-    /**
-     * 处理pong消息
-     *
-     * @param ch                 Channel ch
-     * @param pongWebSocketFrame pongWebSocketFrame
-     */
-    protected void handlerPong(Channel ch, PongWebSocketFrame pongWebSocketFrame) {
-        log.info("WebSocket Client [{}] received pong", ch.attr(NettyConstants.CLIENT_NAME).get());
-
-    }
-
-
-    /**
-     * 处理ping消息
-     *
-     * @param ch                 ch
-     * @param pingWebSocketFrame pingWebSocketFrame
-     */
-    protected void handlerPing(Channel ch, PingWebSocketFrame pingWebSocketFrame) {
-        log.info("WebSocket Client [{}] received ping", ch.attr(NettyConstants.CLIENT_NAME).get());
-        websocketClient.sendPong();
-    }
 
     /**
      * 超过限定时间channel没有读时触发

@@ -113,7 +113,7 @@ public class NameserverService {
      * @param nameserverServerConfig nameServerConfig
      */
     private void init(NameserverServerConfig nameserverServerConfig) {
-        NameserverProcessorAdaptor adaptor = new NameserverProcessorAdaptor(this, eventHandler);
+        NameserverProcessorAdaptor adaptor = new NameserverProcessorAdaptor(this);
 
         serverBootstrap = new ServerBootstrap()
                 .group(new NioEventLoopGroup(nameserverServerConfig.getNioThreadCount()), new NioEventLoopGroup())
@@ -138,7 +138,6 @@ public class NameserverService {
 
                         ch.pipeline().addLast(new RemotingCommandDecoder());
                         ch.pipeline().addLast(new RemotingCommandEncoder());
-
                         ch.pipeline().addLast(adaptor);
                     }
                 });

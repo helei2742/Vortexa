@@ -8,8 +8,7 @@ package cn.com.vortexa.nameserver.constant;
 public enum RegistryState {
     OK,
     PARAM_ERROR,
-    VALIDATE_ACCESS,
-    APPEND_LOCAL,
+    STORE_ERROR,
     UNKNOWN_ERROR
     ;
 }

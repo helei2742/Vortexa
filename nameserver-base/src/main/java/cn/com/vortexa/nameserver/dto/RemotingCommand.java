@@ -3,10 +3,12 @@ package cn.com.vortexa.nameserver.dto;
 import cn.com.vortexa.nameserver.constant.LanguageCode;
 import cn.com.vortexa.nameserver.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.nameserver.constant.RemotingCommandFlagConstants;
+import cn.com.vortexa.nameserver.protocol.Serializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 
@@ -17,6 +19,8 @@ public class RemotingCommand {
 
     public static final RemotingCommand TIME_OUT_COMMAND;
     public static final RemotingCommand PARAMS_ERROR;
+    public static final RemotingCommand PING_COMMAND;
+    public static final RemotingCommand PONG_COMMAND;
 
     public static final String TRANSACTION_ID_KEY = "transaction_id";
     public static final String GROUP_KEY = "group";
@@ -31,6 +35,14 @@ public class RemotingCommand {
         PARAMS_ERROR = new RemotingCommand();
         PARAMS_ERROR.setFlag(RemotingCommandFlagConstants.PARAMS_ERROR);
         PARAMS_ERROR.setCode(RemotingCommandCodeConstants.FAIL);
+
+        PING_COMMAND = new RemotingCommand();
+        PING_COMMAND.setFlag(RemotingCommandFlagConstants.PING);
+        PING_COMMAND.setCode(RemotingCommandCodeConstants.SUCCESS);
+
+        PONG_COMMAND = new RemotingCommand();
+        PONG_COMMAND.setFlag(RemotingCommandFlagConstants.PONG);
+        PONG_COMMAND.setCode(RemotingCommandCodeConstants.SUCCESS);
     }
 
     private Integer flag;
@@ -115,6 +127,9 @@ public class RemotingCommand {
         this.extFields.put(key, value);
     }
 
+    public void setBodyFromObject(Object body) {
+        this.body = Serializer.Algorithm.Protostuff.serialize(body);
+    }
 
     public void release() {
     }

@@ -4,6 +4,7 @@ package cn.com.vortexa.nameserver.dto;
 import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
  * @since 2025-03-12
  */
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ConnectEntry {

@@ -2,10 +2,10 @@ package cn.com.vortexa.websocket.netty.base;
 
 
 import cn.com.vortexa.common.entity.ProxyInfo;
+import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import cn.com.vortexa.websocket.netty.constants.WebsocketClientStatus;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -16,8 +16,6 @@ import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -36,11 +34,11 @@ import java.util.function.Consumer;
 /**
  * Websocket客户端
  *
- * @param <P> 请求体的类型
- * @param <T> 返回值的类型
+ * @param <Req>  请求体的类型
+ * @param <Resp> 返回值的类型
  */
 @Slf4j
-public abstract class AbstractWebsocketClient<P, T> {
+public abstract class AbstractWebsocketClient<Req, Resp, T> {
 
     private static final int MAX_FRAME_SIZE = 10 * 1024 * 1024;  // 10 MB or set to your desired size
 
@@ -52,7 +50,7 @@ public abstract class AbstractWebsocketClient<P, T> {
     /**
      * netty pipeline 最后一个执行的handler
      */
-    protected final AbstractWebSocketClientHandler<P, T> handler;
+    protected final AbstractWebSocketClientHandler<Req, Resp, T> handler;
 
     /**
      * 执行回调的线程池
@@ -113,8 +111,8 @@ public abstract class AbstractWebsocketClient<P, T> {
     private Consumer<WebsocketClientStatus> clientStatusChangeHandler = socketCloseStatus -> {
     };
 
-    @Setter
     @Getter
+    @Setter
     private String name;
 
     protected Bootstrap bootstrap;
@@ -134,22 +132,21 @@ public abstract class AbstractWebsocketClient<P, T> {
 
     public AbstractWebsocketClient(
             String url,
-            AbstractWebSocketClientHandler<P, T> handler
+            AbstractWebSocketClientHandler<Req, Resp, T> handler
     ) {
         this.url = url;
         this.handler = handler;
         this.handler.websocketClient = this;
 
-        this.callbackInvoker = Executors.newVirtualThreadPerTaskExecutor();
+        this.callbackInvoker = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(getName()));
 
         this.eventLoopGroup = new NioEventLoopGroup();
     }
 
     protected void init() throws SSLException, URISyntaxException {
-        WebSocketClientHandshaker handshaker = WebSocketClientHandshakerFactory.newHandshaker(
+        handler.init(WebSocketClientHandshakerFactory.newHandshaker(
                 uri, WebSocketVersion.V13, null, true, headers, MAX_FRAME_SIZE
-        );
-        handler.init(handshaker);
+        ));
 
         final SslContext sslCtx;
         if (useSSL) {
@@ -185,21 +182,17 @@ public abstract class AbstractWebsocketClient<P, T> {
                             p.addLast(sslCtx.newHandler(ch.alloc(), uri.getHost(), port));
                         }
 
-                        p.addLast("http-chunked", new ChunkedWriteHandler()); // 支持大数据流
-
-
-                        p.addLast(new HttpClientCodec());
-                        p.addLast(new HttpObjectAggregator(81920));
-                        p.addLast(new IdleStateHandler(0, 0, allIdleTimeSecond, TimeUnit.SECONDS));
-                        p.addLast(new ChunkedWriteHandler());
-
-                        p.addLast(new WebSocketFrameAggregator(MAX_FRAME_SIZE));  // 设置聚合器的最大帧大小
-
-
-                        p.addLast(handler);
+                        addPipeline(p);
                     }
                 });
     }
+
+    /**
+     * 添加 pipeline
+     *
+     * @param p p
+     */
+    public abstract void addPipeline(ChannelPipeline p);
 
 
     /**
@@ -429,28 +422,22 @@ public abstract class AbstractWebsocketClient<P, T> {
      * @param message message
      * @return CompletableFuture<Void>
      */
-    public CompletableFuture<Void> sendMessage(P message) {
+    public CompletableFuture<Void> sendMessage(Req message) {
         return CompletableFuture.runAsync(() -> {
             if (message == null) {
                 throw new IllegalArgumentException("message is null");
             }
 
-            try {
-                convertToChannelWriteData(channel, message);
-            } catch (Exception e) {
-                throw new RuntimeException("send message [" + message + "] error");
-            }
+            doSendMessage(message, false);
         }, callbackInvoker);
     }
-
-    ;
 
     /**
      * 发送请求, 注册响应监听
      *
      * @param request 请求体
      */
-    public CompletableFuture<T> sendRequest(P request) {
+    public CompletableFuture<Resp> sendRequest(Req request) {
         return CompletableFuture.supplyAsync(() -> {
             if (request == null) {
                 log.error("request is null");
@@ -458,7 +445,7 @@ public abstract class AbstractWebsocketClient<P, T> {
             }
 
             CountDownLatch latch = new CountDownLatch(1);
-            AtomicReference<T> jb = new AtomicReference<>(null);
+            AtomicReference<Resp> jb = new AtomicReference<>(null);
 
             boolean flag = handler.registryRequest(request, response -> {
                 latch.countDown();
@@ -466,9 +453,7 @@ public abstract class AbstractWebsocketClient<P, T> {
             });
 
             if (flag) {
-                log.info("send request [{}]", request);
-                convertToChannelWriteData(channel, request);
-                log.debug("send request [{}] success", request);
+                doSendMessage(request, true);
             } else {
                 log.error("request id registered");
                 return null;
@@ -488,19 +473,12 @@ public abstract class AbstractWebsocketClient<P, T> {
     /**
      * 发送ping
      */
-    public void sendPing() {
-        log.debug("client [{}] send ping {}", name, url);
-        channel.writeAndFlush(new PingWebSocketFrame());
-    }
+    public abstract void sendPing();
 
     /**
      * 发送pong
      */
-    public void sendPong() {
-        log.debug("client [{}] send pong {}", name, url);
-        channel.writeAndFlush(new PongWebSocketFrame());
-    }
-
+    public abstract void sendPong();
 
     /**
      * 更新status
@@ -529,12 +507,27 @@ public abstract class AbstractWebsocketClient<P, T> {
     /**
      * 转换为写入channel的数据
      *
-     * @param channel channel
      * @param request request
      */
-    protected void convertToChannelWriteData(Channel channel, P request) {
-        channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(request)));
+    protected abstract T convertToChannelWriteData(Req request);
+
+
+    /**
+     * 发送消息
+     *
+     * @param message   message
+     * @param isRequest isRequest
+     */
+    protected void doSendMessage(Req message, boolean isRequest) {
+        try {
+            log.debug("send request [{}]", message);
+            channel.writeAndFlush(convertToChannelWriteData(message));
+            log.debug("send request [{}] success", message);
+        } catch (Exception e) {
+            throw new RuntimeException("send message [" + message + "] error");
+        }
     }
+
 
     /**
      * 解析参数

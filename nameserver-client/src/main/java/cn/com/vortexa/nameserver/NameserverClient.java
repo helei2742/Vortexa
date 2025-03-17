@@ -4,32 +4,34 @@ package cn.com.vortexa.nameserver;
 import cn.com.vortexa.nameserver.config.NameserverClientConfig;
 import cn.com.vortexa.nameserver.constant.NameserverSystemConstants;
 import cn.com.vortexa.nameserver.dto.RemotingCommand;
-import cn.com.vortexa.nameserver.processor.NameServerWSClientProcessor;
+import cn.com.vortexa.nameserver.dto.ServiceInstance;
+import cn.com.vortexa.nameserver.processor.NameClientProcessorAdaptor;
+import cn.com.vortexa.nameserver.util.DistributeIdMaker;
 import cn.com.vortexa.nameserver.util.RemotingCommandDecoder;
 import cn.com.vortexa.nameserver.util.RemotingCommandEncoder;
 import cn.com.vortexa.websocket.netty.base.AbstractWebsocketClient;
-import io.netty.bootstrap.Bootstrap;
+import cn.hutool.core.util.StrUtil;
 import io.netty.channel.*;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Optional;
 
 /**
  * @author helei
  * @since 2025-03-13
  */
 @Slf4j
-public class NameserverClient extends AbstractWebsocketClient<RemotingCommand, RemotingCommand> {
+public class NameserverClient extends AbstractWebsocketClient<RemotingCommand, RemotingCommand, RemotingCommand> {
 
     private final NameserverClientConfig clientConfig;
-
 
     public NameserverClient(NameserverClientConfig clientConfig) {
         super(
                 clientConfig.getRegistryCenterUrl(),
-                new NameServerWSClientProcessor(clientConfig)
+                new NameClientProcessorAdaptor(clientConfig)
         );
         this.clientConfig = clientConfig;
 
@@ -37,34 +39,51 @@ public class NameserverClient extends AbstractWebsocketClient<RemotingCommand, R
     }
 
     @Override
-    protected void init() {
-        bootstrap = new Bootstrap()
-                .group(eventLoopGroup)
-                .channel(NioSocketChannel.class)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-                .handler(new ChannelInitializer<NioSocketChannel>() {
-                    @Override//链接建立后被调用，进行初始化
-                    protected void initChannel(NioSocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new IdleStateHandler(0,
-                                0, clientConfig.getServiceOfflineTtl()));
+    public void addPipeline(ChannelPipeline p) {
+        p.addLast(new IdleStateHandler(0,
+                0, clientConfig.getServiceOfflineTtl()));
 
-                        ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(NameserverSystemConstants.MAX_FRAME_LENGTH,
-                                0, 4, 0, 4));
-                        ch.pipeline().addLast(new LengthFieldPrepender(4));
+        p.addLast(new LengthFieldBasedFrameDecoder(NameserverSystemConstants.MAX_FRAME_LENGTH,
+                0, 4, 0, 4));
+        p.addLast(new LengthFieldPrepender(4));
 
-                        ch.pipeline().addLast(new RemotingCommandEncoder());
-                        ch.pipeline().addLast(new RemotingCommandDecoder());
+        p.addLast(new RemotingCommandDecoder());
+        p.addLast(new RemotingCommandEncoder());
+        p.addLast(handler);
+    }
 
-                        ch.pipeline().addLast(handler);
-                    }
-                });
+    @Override
+    protected void doSendMessage(RemotingCommand message, boolean b) {
+        ServiceInstance serviceInstance = clientConfig.getServiceInstance();
+
+        if (b && StrUtil.isNotBlank(message.getTransactionId())) {
+            message.setTransactionId(
+                    DistributeIdMaker.DEFAULT.nextId(serviceInstance.getServiceId())
+            );
+        }
+
+        message.setGroup(serviceInstance.getGroup());
+        message.setServiceId(serviceInstance.getServiceId());
+        message.setClientId(serviceInstance.getClientId());
+
+        Optional.of(getChannel()).ifPresent(channel -> channel.writeAndFlush(message));
+    }
+
+    @Override
+    public void sendPing() {
+        sendMessage(RemotingCommand.PING_COMMAND);
+    }
+
+    @Override
+    public void sendPong() {
+        sendMessage(RemotingCommand.PONG_COMMAND);
     }
 
     /**
      * 转换为写入channel的数据
-     *
      */
-    protected void convertToChannelWriteData(Channel channel, RemotingCommand request) {
-        channel.writeAndFlush(request);
+    @Override
+    protected RemotingCommand convertToChannelWriteData(RemotingCommand request) {
+        return request;
     }
 }

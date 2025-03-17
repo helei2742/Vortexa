@@ -20,29 +20,12 @@ import java.util.function.Consumer;
  */
 @Slf4j
 @ChannelHandler.Sharable
-public abstract class AbstractWebSocketClientHandler<Req, Resp> extends BaseWebSocketClientHandler<Req, Resp> {
+public abstract class AbstractWebSocketClientHandler<Req, Resp, T> extends BaseWebSocketClientHandler<Req, Resp, T> {
 
     /**
      * 存放请求响应的回调
      */
     protected final ConcurrentMap<Object, HandlerEntity<Resp>> requestIdMap = new ConcurrentHashMap<>();
-
-
-    @Override
-    protected void whenReceiveMessage(String text) {
-        Resp message = convertMessageToRespType(text);
-
-        Object responseId = getResponseId(message);
-
-        if (responseId != null) {
-            //有id，是发送请求的响应
-            //提交response
-            handleResponseMessage(responseId, message);
-        } else {
-            //没有id，按其它格式处理
-            handleOtherMessage(message);
-        }
-    }
 
 
     /**
@@ -71,46 +54,12 @@ public abstract class AbstractWebSocketClientHandler<Req, Resp> extends BaseWebS
     }
 
     /**
-     * 处理请求响应的消息
-     *
-     * @param id       id
-     * @param response 响应消息体
-     */
-    protected void handleResponseMessage(Object id, Resp response) {
-        HandlerEntity<Resp> handlerEntity = requestIdMap.get(id);
-
-        if (System.currentTimeMillis() > handlerEntity.getExpireTime()) {
-            log.warn("请求[{}]得到响应超时", id);
-        } else {
-            websocketClient.callbackInvoker.execute(() -> handlerEntity.getCallback().accept(response));
-        }
-    }
-
-    /**
-     * 处理其他类型消息
-     *
-     * @param message 消息
-     */
-    protected abstract void handleOtherMessage(Resp message);
-
-
-    /**
-     * 将websocket收到的文本消息转换为响应类型 Resp
-     *
-     * @param message websocket收到的原始消息
-     * @return typedMessage
-     */
-    public abstract Resp convertMessageToRespType(String message);
-
-
-    /**
      * 获取请求id
      *
      * @param request request
      * @return id
      */
-    public abstract Object getRequestId(Req request);
-
+    public abstract Object getRequestId(Req request) ;
     /**
      * 获取响应id
      *

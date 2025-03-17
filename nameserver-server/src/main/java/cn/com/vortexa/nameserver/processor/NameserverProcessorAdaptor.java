@@ -4,10 +4,11 @@ import cn.com.vortexa.nameserver.constant.*;
 import cn.com.vortexa.nameserver.dto.RegisteredService;
 import cn.com.vortexa.nameserver.dto.RemotingCommand;
 import cn.com.vortexa.nameserver.dto.ServiceInstanceVO;
-import cn.com.vortexa.nameserver.handler.NameserverInitHandler;
-import cn.com.vortexa.nameserver.handler.ReceiveMessageHandler;
 import cn.com.vortexa.nameserver.server.NameserverService;
+import cn.com.vortexa.nameserver.service.IRegistryService;
+import cn.com.vortexa.websocket.netty.base.AbstractWebSocketClientHandler;
 import cn.com.vortexa.websocket.netty.base.NettyClientEventHandler;
+import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import cn.com.vortexa.websocket.netty.util.ProtostuffUtils;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -23,9 +24,9 @@ import java.util.concurrent.ExecutionException;
  */
 @Slf4j
 @ChannelHandler.Sharable
-public class NameserverProcessorAdaptor extends AbstractNettyProcessorAdaptor {
+public class NameserverProcessorAdaptor extends AbstractWebSocketClientHandler<RemotingCommand, RemotingCommand, RemotingCommand> {
 
-    private final NameserverService nameServerService;
+    private final NameserverService nameserverService;
 
     private final ServiceDiscoverProcessor serviceDiscoverProcessor;
 
@@ -33,38 +34,54 @@ public class NameserverProcessorAdaptor extends AbstractNettyProcessorAdaptor {
 
     public NameserverProcessorAdaptor(
             NameserverService nameServerService,
-            NettyClientEventHandler eventHandler
+            IRegistryService registryService
     ) {
         super();
-        super.useRemotingCommandPool = false;
-        super.init(
-                new NameserverInitHandler(),
-                new ReceiveMessageHandler(),
-                eventHandler
-        );
-
-        this.nameServerService = nameServerService;
+        this.nameserverService = nameServerService;
         this.serviceDiscoverProcessor = new ServiceDiscoverProcessor();
-        this.serviceRegistryProcessor = new ServiceRegistryProcessor();
+        this.serviceRegistryProcessor = new ServiceRegistryProcessor(registryService);
+    }
+
+    @Override
+    public Object getRequestId(RemotingCommand request) {
+        return request.getTransactionId();
+    }
+
+    @Override
+    public Object getResponseId(RemotingCommand response) {
+        return response.getTransactionId();
+    }
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand remotingCommand) throws Exception {
+        Integer opt = remotingCommand.getFlag();
+
+        String clientName = ctx.channel().attr(NettyConstants.CLIENT_NAME).get();
+        if (opt.equals(RemotingCommandFlagConstants.PING)) {
+            websocketClient.sendRequest(RemotingCommand.PONG_COMMAND);
+            log.debug("receive client[{}] ping", clientName);
+        } else if (opt.equals(RemotingCommandFlagConstants.PONG)) {
+            log.debug("receive client[{}] pong", clientName);
+        } else {
+            log.info("receive client[{}] command [{}]", clientName, remotingCommand);
+            handlerMessage(ctx, remotingCommand);
+        }
     }
 
 
-    @Override
-    protected void handlerMessage(ChannelHandlerContext context, RemotingCommand remotingCommand) {
-        log.info("[{}] get message [{}] from [{}]",
-                nameServerService.getName(), remotingCommand, context.channel().remoteAddress());
-
+    protected void handlerMessage(ChannelHandlerContext ctx, RemotingCommand remotingCommand) {
         String tsId = remotingCommand.getTransactionId();
 
         String group = remotingCommand.getGroup();
         String serviceId = remotingCommand.getServiceId();
-        String clientId = remotingCommand.getServiceId();
+        String clientId = remotingCommand.getClientId();
 
         RemotingCommand response = null;
         CompletableFuture<RegistryState> result;
+
         switch (remotingCommand.getFlag()) {
             case RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE:  //收到客户端服务注册的请求
-                result = serviceRegistryProcessor.clientServiceRegistry(remotingCommand);
+                result = serviceRegistryProcessor.clientServiceRegistry(ctx.channel(), remotingCommand);
 
                 response = new RemotingCommand();
                 response.setFlag(RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE_RESPONSE);
@@ -99,31 +116,7 @@ public class NameserverProcessorAdaptor extends AbstractNettyProcessorAdaptor {
         }
 
         if (response != null) {
-            context.channel().writeAndFlush(response);
+            ctx.channel().writeAndFlush(response);
         }
-    }
-
-
-    @Override
-    protected void handlePing(ChannelHandlerContext context, RemotingCommand remotingCommand) {
-        log.debug("get ping message [{}] from [{}]", remotingCommand, context.channel().remoteAddress());
-        super.handlePing(context, remotingCommand);
-    }
-
-
-    @Override
-    protected void handleReaderIdle(ChannelHandlerContext ctx) {
-        super.handleReaderIdle(ctx);
-        sendPingMsg(ctx);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("channel exception", cause);
-    }
-
-    @Override
-    public void printLog(String logStr) {
-        log.info(logStr);
     }
 }
