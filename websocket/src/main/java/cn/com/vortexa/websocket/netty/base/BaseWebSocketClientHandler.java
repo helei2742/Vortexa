@@ -28,7 +28,7 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
 
     /**
      * 收到消息处理
-     *
+     *ˆ
      * @param text 消息字符串
      */
     protected abstract void whenReceiveMessage(String text);
@@ -38,6 +38,7 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
         this.handshaker = handshaker;
     }
 
+
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
         handshakeFuture = ctx.newPromise();
@@ -46,9 +47,9 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
         Channel channel = ctx.channel();
-        log.info("WebSocket Client [{}] connected!", websocketClient.getName());
-        channel.attr(NettyConstants.CLIENT_NAME).set(websocketClient.getName());
-        handshaker.handshake(channel);
+        if (handshaker != null) {
+            handshaker.handshake(channel);
+        }
     }
 
     @Override
@@ -71,7 +72,7 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
     public void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         Channel ch = ctx.channel();
         // 如果握手未完成，处理 FullHttpResponse
-        if (!handshaker.isHandshakeComplete()) {
+        if (handshaker != null && !handshaker.isHandshakeComplete()) {
             if (msg instanceof FullHttpResponse response) {
                 try {
 
@@ -113,7 +114,7 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (!handshakeFuture.isDone()) {
+        if (handshakeFuture != null && !handshakeFuture.isDone()) {
             handshakeFuture.setFailure(cause);
         }
         ctx.close();
@@ -168,7 +169,7 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
      * @param pongWebSocketFrame pongWebSocketFrame
      */
     protected void handlerPong(Channel ch, PongWebSocketFrame pongWebSocketFrame) {
-        log.debug("WebSocket Client [{}] received pong", ch.attr(NettyConstants.CLIENT_NAME).get());
+        log.info("WebSocket Client [{}] received pong", ch.attr(NettyConstants.CLIENT_NAME).get());
 
     }
 
@@ -180,7 +181,7 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
      * @param pingWebSocketFrame pingWebSocketFrame
      */
     protected void handlerPing(Channel ch, PingWebSocketFrame pingWebSocketFrame) {
-        log.debug("WebSocket Client [{}] received ping", ch.attr(NettyConstants.CLIENT_NAME).get());
+        log.info("WebSocket Client [{}] received ping", ch.attr(NettyConstants.CLIENT_NAME).get());
         websocketClient.sendPong();
     }
 

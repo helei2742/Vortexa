@@ -13,10 +13,7 @@ import org.quartz.impl.matchers.GroupMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -211,8 +208,10 @@ public class QuartzBotJobService implements BotJobService {
         if (BotJobType.ONCE_TASK.equals(jobParam.getJobType())
                 || BotJobType.ACCOUNT_SPLIT_JOB.equals(jobParam.getJobType())
         ) {
-            Object start = jobParam.getParams().get(START_AT);
-            if (start == null) {
+            Map<String, Object> params = jobParam.getParams();
+
+            Object start;
+            if (params == null || (start = params.get(START_AT)) == null) {
                 triggerBuilder.startNow();
             } else {
                 triggerBuilder.startAt(new Date((Long) start));

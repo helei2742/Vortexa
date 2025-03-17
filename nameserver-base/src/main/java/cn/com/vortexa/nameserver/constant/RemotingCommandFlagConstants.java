@@ -24,23 +24,34 @@ public class RemotingCommandFlagConstants {
      */
     public static final int PONG = -100;
 
+
+    /**
+     *  客户端初始化
+     */
+    public static final int CLIENT_INIT = 101;
+
+    /**
+     *  客户端初始化的响应
+     */
+    public static final int CLIENT_INIT_RESPONSE = -101;
+
     /**
      *  客户端服务注册的消息
      */
-    public static final int CLIENT_REGISTRY_SERVICE = 101;
+    public static final int CLIENT_REGISTRY_SERVICE = 200;
 
     /**
      *  客户端服务注册的响应
      */
-    public static final int CLIENT_REGISTRY_SERVICE_RESPONSE = 101;
+    public static final int CLIENT_REGISTRY_SERVICE_RESPONSE = -200;
 
     /**
      * 客户端服务发现的消息
      */
-    public static final int CLIENT_DISCOVER_SERVICE = 102;
+    public static final int CLIENT_DISCOVER_SERVICE = 201;
 
     /**
      * 客户端服务发现的响应
      */
-    public static final int CLIENT_DISCOVER_SERVICE_RESPONSE = -102;
+    public static final int CLIENT_DISCOVER_SERVICE_RESPONSE = -201;
 }

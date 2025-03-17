@@ -117,11 +117,11 @@ public abstract class AbstractWebsocketClient<P, T> {
     @Getter
     private String name;
 
-    private Bootstrap bootstrap;
+    protected Bootstrap bootstrap;
 
-    private final EventLoopGroup eventLoopGroup;
+    protected final EventLoopGroup eventLoopGroup;
 
-    private URI uri;
+    protected URI uri;
 
     private String host;
 
@@ -129,6 +129,7 @@ public abstract class AbstractWebsocketClient<P, T> {
 
     private boolean useSSL;
 
+    @Getter
     private Channel channel;
 
     public AbstractWebsocketClient(
@@ -144,10 +145,7 @@ public abstract class AbstractWebsocketClient<P, T> {
         this.eventLoopGroup = new NioEventLoopGroup();
     }
 
-    private void init() throws SSLException, URISyntaxException {
-
-        resolveParamFromUrl();
-
+    protected void init() throws SSLException, URISyntaxException {
         WebSocketClientHandshaker handshaker = WebSocketClientHandshakerFactory.newHandshaker(
                 uri, WebSocketVersion.V13, null, true, headers, MAX_FRAME_SIZE
         );
@@ -282,6 +280,8 @@ public abstract class AbstractWebsocketClient<P, T> {
                 //Step 3 初始化
                 log.info("开始初始化WS客户端");
                 try {
+                    resolveParamFromUrl();
+
                     init();
                 } catch (SSLException | URISyntaxException e) {
                     throw new RuntimeException("初始化WS客户端发生错误", e);
@@ -307,7 +307,9 @@ public abstract class AbstractWebsocketClient<P, T> {
                         try {
                             channel = bootstrap.connect(host, port).sync().channel();
 
-                            handler.handshakeFuture().sync();
+                            if (handler.handshakeFuture() != null) {
+                                handler.handshakeFuture().sync();
+                            }
 
                             channel.attr(NettyConstants.CLIENT_NAME).set(name);
 
@@ -434,7 +436,7 @@ public abstract class AbstractWebsocketClient<P, T> {
             }
 
             try {
-                channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(message)));
+                convertToChannelWriteData(channel, message);
             } catch (Exception e) {
                 throw new RuntimeException("send message [" + message + "] error");
             }
@@ -465,7 +467,7 @@ public abstract class AbstractWebsocketClient<P, T> {
 
             if (flag) {
                 log.info("send request [{}]", request);
-                channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(request)));
+                convertToChannelWriteData(channel, request);
                 log.debug("send request [{}] success", request);
             } else {
                 log.error("request id registered");
@@ -522,6 +524,16 @@ public abstract class AbstractWebsocketClient<P, T> {
                 clientStatus = newStatus;
             }
         }
+    }
+
+    /**
+     * 转换为写入channel的数据
+     *
+     * @param channel channel
+     * @param request request
+     */
+    protected void convertToChannelWriteData(Channel channel, P request) {
+        channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(request)));
     }
 
     /**

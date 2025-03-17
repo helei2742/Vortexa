@@ -9,6 +9,7 @@ import cn.com.vortexa.nameserver.processor.NameserverProcessorAdaptor;
 import cn.com.vortexa.nameserver.util.RemotingCommandDecoder;
 import cn.com.vortexa.nameserver.util.RemotingCommandEncoder;
 import cn.com.vortexa.websocket.netty.base.NettyClientEventHandler;
+import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -126,9 +127,13 @@ public class NameserverService {
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new IdleStateHandler(nameserverServerConfig.getServiceOfflineTtl(), 0, 0));
+                        ch.pipeline().addLast(new IdleStateHandler(
+                                0, 0, nameserverServerConfig.getServiceOfflineTtl()));
 
-                        ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(NameserverSystemConstants.MAX_FRAME_LENGTH, 0, 4, 0, 4));
+                        ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(
+                                NameserverSystemConstants.MAX_FRAME_LENGTH, 0,
+                                4, 0, 4));
+
                         ch.pipeline().addLast(new LengthFieldPrepender(4));
 
                         ch.pipeline().addLast(new RemotingCommandDecoder());
@@ -166,13 +171,15 @@ public class NameserverService {
         }
     }
 
+
+
     @NotNull
     private static NettyClientEventHandler generateDefaultEventHandler() {
         return new NettyClientEventHandler() {
             @Override
             public void activeHandler(ChannelHandlerContext ctx) {
                 log.info("[{}]-[{}] connected to nameserver",
-                        ctx.channel().attr(NameserverSystemConstants.CLIENT_ID_KEY), ctx.channel().remoteAddress());
+                        ctx.channel().attr(NettyConstants.CLIENT_NAME).get(), ctx.channel().remoteAddress());
             }
 
             @Override

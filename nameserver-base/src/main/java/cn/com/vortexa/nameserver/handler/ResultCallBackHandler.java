@@ -3,6 +3,7 @@ package cn.com.vortexa.nameserver.handler;
 import cn.com.vortexa.nameserver.constant.NameserverSystemConstants;
 import cn.com.vortexa.nameserver.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.nameserver.dto.RemotingCommand;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -16,20 +17,21 @@ import java.util.function.Consumer;
 @Slf4j
 public abstract class ResultCallBackHandler {
 
-    private static final long expireSeconds = NameserverSystemConstants.RESPONSE_TIME_LIMIT;
     private ConcurrentMap<String, Consumer<RemotingCommand>> successCallbackMap;
     private ConcurrentMap<String, Consumer<RemotingCommand>> failCallbackMap;
     private ConcurrentMap<String, Long> expireMap;
-    private Timer timer;
+
+    @Setter
+    private long expireSeconds = NameserverSystemConstants.RESPONSE_TIME_LIMIT;
 
     public void init() {
         this.successCallbackMap = new ConcurrentHashMap<>();
         this.failCallbackMap = new ConcurrentHashMap<>();
         this.expireMap = new ConcurrentHashMap<>();
 
-        this.timer = new Timer("expireClientHandlerClear");
+        Timer timer = new Timer("expireClientHandlerClear");
 
-        this.timer.schedule(new TimerTask() {
+        timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 for (Map.Entry<String, Long> entry : expireMap.entrySet()) {
@@ -51,6 +53,26 @@ public abstract class ResultCallBackHandler {
     public void updateExpireTime(String tsId, long addTime) {
         expireMap.put(tsId, System.currentTimeMillis() + addTime);
     }
+
+
+    /**
+     * 添加消息的回调
+     *
+     * @param transactionId 消息的事务id
+     * @param success       成功回调
+     * @param fail          失败回调
+     */
+    public void addResponseListener(
+            String transactionId,
+            Consumer<RemotingCommand> success,
+            Consumer<RemotingCommand> fail
+    ) {
+        if (success != null) this.successCallbackMap.put(transactionId, success);
+        if (fail != null) this.failCallbackMap.put(transactionId, fail);
+        if (success != null || fail != null)
+            expireMap.put(transactionId, System.currentTimeMillis() + expireSeconds);
+    }
+
 
     /**
      * 执行回调

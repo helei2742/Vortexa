@@ -1,6 +1,6 @@
 cn:
   com:
-    helei:
+    vortexa:
       nameserver:
         nio-thread-count: 1
         service-offline-ttl: 60

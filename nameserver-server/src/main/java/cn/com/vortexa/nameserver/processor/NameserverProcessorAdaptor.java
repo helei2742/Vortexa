@@ -107,9 +107,6 @@ public class NameserverProcessorAdaptor extends AbstractNettyProcessorAdaptor {
     @Override
     protected void handlePing(ChannelHandlerContext context, RemotingCommand remotingCommand) {
         log.debug("get ping message [{}] from [{}]", remotingCommand, context.channel().remoteAddress());
-
-
-
         super.handlePing(context, remotingCommand);
     }
 
@@ -120,6 +117,10 @@ public class NameserverProcessorAdaptor extends AbstractNettyProcessorAdaptor {
         sendPingMsg(ctx);
     }
 
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("channel exception", cause);
+    }
 
     @Override
     public void printLog(String logStr) {

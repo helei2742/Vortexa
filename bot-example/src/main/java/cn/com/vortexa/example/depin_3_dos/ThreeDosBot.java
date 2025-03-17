@@ -7,17 +7,23 @@ import cn.com.vortexa.bot_father.bot.AutoLaunchBot;
 import cn.com.vortexa.bot_father.config.AutoBotConfig;
 import cn.com.vortexa.bot_father.service.BotApi;
 import cn.com.vortexa.common.constants.BotJobType;
+import cn.com.vortexa.common.constants.HttpMethod;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStartException;
+import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
+@Slf4j
 @BotApplication(
-        name = "three_dos_bot",
-        configParams = {"invite_code", ThreeDosApi.HARVESTED_DATA_KEY, ThreeDosApi.HARVESTED_URL_KEY},
-        accountParams = {"password", "token"}
+        name = "three_dos_bot"
 )
 public class ThreeDosBot extends AutoLaunchBot<ThreeDosBot> {
 
@@ -78,7 +84,45 @@ public class ThreeDosBot extends AutoLaunchBot<ThreeDosBot> {
         threeDosApi.keepLive(accountContext);
     }
 
+
+    @BotMethod(jobType = BotJobType.ONCE_TASK)
+    public void registerWhiteList(AccountContext accountContext) throws ExecutionException, InterruptedException {
+        String ethAddress = accountContext.getParam("eth_address");
+        if (StrUtil.isBlank(ethAddress)) return;
+
+        JSONObject body = new JSONObject();
+        body.put("email", accountContext.getAccountBaseInfo().getEmail());
+        body.put("project_identifier", "dev-inflectiv-ai");
+        body.put("wallet_address", ethAddress);
+        Map<String, String> headers = accountContext.getBrowserEnv().generateHeaders();
+        headers.put("origin", "https://whitelist.inflectiv.ai");
+        headers.put("referer", "https://whitelist.inflectiv.ai/");
+
+
+       syncRequest(
+                accountContext.getProxy(),
+                "https://ssrks0qeqf.execute-api.eu-west-2.amazonaws.com/production/whitelist/create",
+                HttpMethod.POST,
+                headers,
+                null,
+                body
+        ).whenComplete((response, throwable) -> {
+            if (throwable != null) {
+                logger.error("register white list error", throwable);
+            }
+            log.info("register white list success, " + response);
+       });
+    }
+
+
     public static void main(String[] args) throws BotStartException, BotInitException {
-        BotLauncher.launch(ThreeDosBot.class, args);
+        List<String> list = new ArrayList<>(List.of(args));
+
+        list.add("--bot.botKey=3Mods-Google");
+        list.add("--bot.customConfig.invite_code=WSJQRJD5CB");
+        list.add("--bot.accountConfig.configFilePath=3dos/3dos_google.xlsx");
+        list.add("--add-opens java.base/java.lang=ALL-UNNAMED");
+
+        BotLauncher.launch(ThreeDosBot.class, list.toArray(new String[0]));
     }
 }

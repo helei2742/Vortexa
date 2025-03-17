@@ -1,7 +1,6 @@
 package cn.com.vortexa.nameserver.processor;
 
 
-import cn.com.vortexa.nameserver.constant.NameserverSystemConstants;
 import cn.com.vortexa.nameserver.constant.RemotingCommandFlagConstants;
 import cn.com.vortexa.nameserver.dto.RemotingCommand;
 import cn.com.vortexa.nameserver.handler.ClientInitMsgHandler;
@@ -10,11 +9,13 @@ import cn.com.vortexa.nameserver.handler.ResultCallBackHandler;
 import cn.com.vortexa.nameserver.pool.RemotingCommandPool;
 import cn.com.vortexa.nameserver.util.NettyChannelSendSupporter;
 import cn.com.vortexa.websocket.netty.base.NettyClientEventHandler;
+import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleStateEvent;
+import lombok.extern.slf4j.Slf4j;
 
-
+@Slf4j
 public abstract class AbstractNettyProcessorAdaptor extends SimpleChannelInboundHandler<RemotingCommand> implements NettyBaseHandler {
 
     protected boolean useRemotingCommandPool = true;
@@ -54,8 +55,19 @@ public abstract class AbstractNettyProcessorAdaptor extends SimpleChannelInbound
     }
 
     @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+        log.info("channelReadComplete triggered!");
+    }
+
+    @Override
     protected void channelRead0(ChannelHandlerContext context, RemotingCommand remotingCommand) throws Exception {
         Integer opt = remotingCommand.getFlag();
+
+        if (opt == null) {
+            log.warn("get unknown RemotingCommand[{}]", remotingCommand);
+            return;
+        }
+
         if (opt.equals(RemotingCommandFlagConstants.PING)) {
             handlePing(context, remotingCommand);
         } else if (opt.equals(RemotingCommandFlagConstants.PONG)) {
@@ -72,7 +84,7 @@ public abstract class AbstractNettyProcessorAdaptor extends SimpleChannelInbound
 
     protected void handlePong(ChannelHandlerContext context, RemotingCommand remotingCommand) {
         printLog(String.format("get pong msg from [%s][%s] ",
-                context.channel().attr(NameserverSystemConstants.CLIENT_ID_KEY).get(),
+                context.channel().attr(NettyConstants.CLIENT_NAME).get(),
                 context.channel().remoteAddress()));
     }
 
@@ -149,8 +161,8 @@ public abstract class AbstractNettyProcessorAdaptor extends SimpleChannelInbound
         remotingCommand.setFlag(RemotingCommandFlagConstants.PING);
         sendMsg(context, remotingCommand);
 
-        printLog(String.format("send ping msg to [%s], hear beat count [%d]",
-                context.channel().remoteAddress(), heartbeatCount++));
+        printLog(String.format("send ping msg to [%s], heartbeat count [%d]",
+                clientPrintStr(context), heartbeatCount++));
     }
 
     public void sendPongMsg(ChannelHandlerContext context) {
@@ -165,8 +177,12 @@ public abstract class AbstractNettyProcessorAdaptor extends SimpleChannelInbound
         remotingCommand.setFlag(RemotingCommandFlagConstants.PONG);
         sendMsg(context, remotingCommand);
 
-        printLog(String.format("send pong msg to [%s], hear beat count [%d]",
-                context.channel().remoteAddress(), heartbeatCount++));
+        printLog(String.format("send pong msg to [%s], heartbeat count [%d]",
+                clientPrintStr(context), heartbeatCount++));
+    }
+
+    private static String clientPrintStr(ChannelHandlerContext context) {
+        return context.channel().attr(NettyConstants.CLIENT_NAME).get();
     }
 
     @Override

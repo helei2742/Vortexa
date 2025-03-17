@@ -2,9 +2,7 @@ package cn.com.vortexa.nameserver.config;
 
 
 import cn.com.vortexa.nameserver.dto.ServiceInstance;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -13,20 +11,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @author helei
+ * @since 2025-03-15
+ */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class NameserverServerConfig {
+public class NameserverClientConfig {
 
-    private static final String RESOURCE_PATH = "nameserver-server-config.yaml";
+    private static final String RESOURCE_PATH = "nameserver-client-config.yaml";
 
     private static final List<String> PREFIX_PATH = List.of("cn", "com", "vortexa", "nameserver");
 
-    public static final NameserverServerConfig DEFAULT;
+    public static final NameserverClientConfig DEFAULT;
 
     static {
         Yaml yaml = new Yaml();
-        try (InputStream inputStream = NameserverServerConfig.class.getClassLoader().getResourceAsStream(RESOURCE_PATH)) {
+        try (InputStream inputStream = NameserverClientConfig.class.getClassLoader().getResourceAsStream(RESOURCE_PATH)) {
             Map<String, Object> yamlData = yaml.load(inputStream);
             for (String key : PREFIX_PATH) {
                 yamlData = (Map<String, Object>) yamlData.get(key);
@@ -37,11 +37,16 @@ public class NameserverServerConfig {
                 yamlData = target;
             }
 
-            DEFAULT = yaml.loadAs(yaml.dump(yamlData), NameserverServerConfig.class);
+            DEFAULT = yaml.loadAs(yaml.dump(yamlData), NameserverClientConfig.class);
         } catch (IOException e) {
             throw new RuntimeException(String.format("nameserver config[%s] load error", RESOURCE_PATH), e);
         }
     }
+
+    /**
+     * 注册中心地址
+     */
+    private String registryCenterUrl;
 
     /**
      * netty nio 线程数
