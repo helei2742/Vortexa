@@ -1,16 +1,13 @@
 package cn.com.vortexa.websocket.netty.base;
 
-
 import cn.com.vortexa.common.entity.ProxyInfo;
 import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
-import cn.com.vortexa.websocket.netty.constants.WebsocketClientStatus;
+import cn.com.vortexa.websocket.netty.handler.AbstractWebSocketClientHandler;
 import cn.hutool.core.util.StrUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.ssl.SslContext;
@@ -21,135 +18,57 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.net.ssl.SSLException;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 
 /**
  * Websocket客户端
- *
- * @param <Req>  请求体的类型
- * @param <Resp> 返回值的类型
  */
 @Slf4j
-public abstract class AbstractWebsocketClient<Req, Resp, T> {
-
+@Setter
+@Getter
+public abstract class AbstractWebsocketClient<T> extends AutoConnectWSService {
     private static final int MAX_FRAME_SIZE = 10 * 1024 * 1024;  // 10 MB or set to your desired size
 
-    /**
-     * websocket的url字符串
-     */
-    protected String url;
-
-    /**
-     * netty pipeline 最后一个执行的handler
-     */
-    protected final AbstractWebSocketClientHandler<Req, Resp, T> handler;
-
-    /**
-     * 执行回调的线程池
-     */
-    @Getter
-    protected final ExecutorService callbackInvoker;
-
-    /**
-     * 代理
-     */
-    @Setter
-    protected ProxyInfo proxy = null;
-
-    @Setter
-    protected HttpHeaders headers;
-
-    /**
-     * 空闲时间
-     */
-    @Setter
-    protected int allIdleTimeSecond = 10;
-
-
-    /**
-     * 重连次数减少的间隔
-     */
-    @Setter
-    private int reconnectCountDownSecond = 180;
-
-    @Setter
-    private int reconnectLimit = 3;
-
-    /**
-     * 重链接次数
-     */
-    private final AtomicInteger reconnectTimes = new AtomicInteger(0);
-
-    /**
-     * 重连锁
-     */
-    private final ReentrantLock reconnectLock = new ReentrantLock();
-
-    /**
-     * 启动中阻塞的condition
-     */
-    private final Condition startingWaitCondition = reconnectLock.newCondition();
-
-    /**
-     * 客户端当前状态
-     */
-    @Getter
-    private volatile WebsocketClientStatus clientStatus = WebsocketClientStatus.NEW;
-
-    /**
-     * clientStatus更新的回调
-     */
-    @Setter
-    private Consumer<WebsocketClientStatus> clientStatusChangeHandler = socketCloseStatus -> {
-    };
-
-    @Getter
-    @Setter
-    private String name;
-
-    protected Bootstrap bootstrap;
-
-    protected final EventLoopGroup eventLoopGroup;
-
-    protected URI uri;
-
-    private String host;
-
-    private int port;
-
-    private boolean useSSL;
-
-    @Getter
-    private Channel channel;
+    private final AbstractWebSocketClientHandler<T> handler;   //netty pipeline 最后一个执行的handler
+    private final ExecutorService callbackInvoker;  //执行回调的线程池
+    private final String name;
+    private boolean handshake = true;
+    private int allIdleTimeSecond = 10; //空闲时间
 
     public AbstractWebsocketClient(
             String url,
-            AbstractWebSocketClientHandler<Req, Resp, T> handler
+            String name,
+            AbstractWebSocketClientHandler<T> handler
     ) {
-        this.url = url;
+        super(url);
+        this.name = name;
         this.handler = handler;
-        this.handler.websocketClient = this;
-
-        this.callbackInvoker = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(getName()));
-
-        this.eventLoopGroup = new NioEventLoopGroup();
+        this.callbackInvoker = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(name));
     }
 
+    @Override
+    protected void afterBoostrapConnected() throws InterruptedException {
+        if (handshake && handler.handshakeFuture() != null) {
+            handler.handshakeFuture().sync();
+        }
+    }
+
+    @Override
     protected void init() throws SSLException, URISyntaxException {
-        handler.init(WebSocketClientHandshakerFactory.newHandshaker(
-                uri, WebSocketVersion.V13, null, true, headers, MAX_FRAME_SIZE
-        ));
+        URI uri = new URI(getUrl());
+
+        WebSocketClientHandshaker webSocketClientHandshaker = handshake ? WebSocketClientHandshakerFactory.newHandshaker(
+                uri, WebSocketVersion.V13, null, true, getHeaders(), MAX_FRAME_SIZE
+        ) : null;
+
+        handler.init(this, webSocketClientHandshaker, callbackInvoker);
 
         final SslContext sslCtx;
-        if (useSSL) {
+        if (isUseSSL()) {
             sslCtx = SslContextBuilder
                     .forClient()
                     .trustManager(InsecureTrustManagerFactory.INSTANCE)
@@ -158,9 +77,8 @@ public abstract class AbstractWebsocketClient<Req, Resp, T> {
             sslCtx = null;
         }
 
-        bootstrap = new Bootstrap();
-
-        bootstrap.group(eventLoopGroup)
+        setBootstrap(new Bootstrap());
+        getBootstrap().group(getEventLoopGroup())
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_KEEPALIVE, true)
@@ -169,17 +87,20 @@ public abstract class AbstractWebsocketClient<Req, Resp, T> {
                     @Override
                     protected void initChannel(NioSocketChannel ch) {
                         ChannelPipeline p = ch.pipeline();
+                        ProxyInfo proxy = getProxy();
+
                         if (proxy != null) {
                             // 添加 HttpProxyHandler 作为代理
                             if (StrUtil.isNotBlank(proxy.getUsername())) {
-                                p.addFirst(new HttpProxyHandler(proxy.generateAddress(), proxy.getUsername(), proxy.getPassword()));
+                                p.addFirst(new HttpProxyHandler(proxy.generateAddress(), proxy.getUsername(),
+                                        proxy.getPassword()));
                             } else {
                                 p.addFirst(new HttpProxyHandler(proxy.generateAddress()));
                             }
                         }
 
                         if (sslCtx != null) {
-                            p.addLast(sslCtx.newHandler(ch.alloc(), uri.getHost(), port));
+                            p.addLast(sslCtx.newHandler(ch.alloc(), uri.getHost(), uri.getPort()));
                         }
 
                         addPipeline(p);
@@ -194,227 +115,13 @@ public abstract class AbstractWebsocketClient<Req, Resp, T> {
      */
     public abstract void addPipeline(ChannelPipeline p);
 
-
     /**
-     * 链接服务端
-     */
-    public CompletableFuture<Boolean> connect() {
-        return switch (clientStatus) {
-            case NEW, STOP -> reconnect();
-            case STARTING -> waitForStarting();
-            case RUNNING -> {
-                log.warn("WS客户端[{}}正在运行, clientStatus[{}]", url, clientStatus);
-                yield CompletableFuture.supplyAsync(() -> true);
-            }
-            case SHUTDOWN -> throw new RuntimeException("");
-        };
-    }
-
-
-    /**
-     * 重链接
+     * 从消息中获取id
      *
-     * @return CompletableFuture<Void>
+     * @param message message
+     * @return Object
      */
-    public CompletableFuture<Boolean> reconnect() {
-        return switch (clientStatus) {
-            case NEW, STOP -> doReconnect();
-            case STARTING -> waitForStarting().thenApplyAsync(success -> {
-                if (success) return true;
-                try {
-                    return doReconnect().get();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            case RUNNING -> {
-                log.warn("WS客户端[{}}正在启动或运行, 不能reconnect. clientStatus[{}]", url, clientStatus);
-                yield CompletableFuture.supplyAsync(() -> true);
-            }
-            case SHUTDOWN -> CompletableFuture.supplyAsync(() -> {
-                log.error("client[{}] already shutdown", name);
-                return false;
-            });
-        };
-    }
-
-    /**
-     * 执行重连接，带重试逻辑
-     *
-     * @return CompletableFuture<Void>
-     */
-    private CompletableFuture<Boolean> doReconnect() {
-        updateClientStatus(WebsocketClientStatus.STARTING);
-
-        return CompletableFuture.supplyAsync(() -> {
-            //Step 1 重连次数超过限制，关闭
-            if (reconnectTimes.get() >= reconnectLimit) {
-                log.error("reconnect times out of limit [{}], close websocket client", reconnectLimit);
-                close();
-                return false;
-            }
-
-            AtomicBoolean isSuccess = new AtomicBoolean(false);
-
-            //Step 2 重连逻辑
-            //Step 2.1 加锁保证只要一个线程进行重连
-            reconnectLock.lock();
-            try {
-
-                //Step 2.2 已经再running状态，直接返回true。变为shutdown、stop状态，直接返回false
-                if (clientStatus.equals(WebsocketClientStatus.RUNNING)) {
-                    log.info("client started by other thread");
-                    return true;
-                } else if (clientStatus.equals(WebsocketClientStatus.SHUTDOWN) || clientStatus.equals(WebsocketClientStatus.STOP)) {
-                    log.error("clint stop/shutdown when client starting");
-                    return false;
-                }
-
-                //Step 3 初始化
-                log.info("开始初始化WS客户端");
-                try {
-                    resolveParamFromUrl();
-
-                    init();
-                } catch (SSLException | URISyntaxException e) {
-                    throw new RuntimeException("初始化WS客户端发生错误", e);
-                }
-                log.info("初始化WS客户端完成，开始链接服务器 [{}]", url);
-
-
-                //Step 4 链接服务器
-                if (reconnectTimes.incrementAndGet() <= reconnectLimit) {
-
-                    //Step 4.1 每进行重连都会先将次数加1并设置定时任务将重连次数减1
-                    eventLoopGroup.schedule(() -> {
-                        reconnectTimes.decrementAndGet();
-                    }, reconnectCountDownSecond, TimeUnit.SECONDS);
-
-                    log.info("start connect client [{}], url[{}], current times [{}]", name, uri, reconnectTimes.get());
-
-                    //Step 4.2 latch用于同步等等链接完成
-                    CountDownLatch latch = new CountDownLatch(1);
-
-                    //Step 4.3 延迟再进行连接
-                    eventLoopGroup.schedule(() -> {
-                        try {
-                            channel = bootstrap.connect(host, port).sync().channel();
-
-                            if (handler.handshakeFuture() != null) {
-                                handler.handshakeFuture().sync();
-                            }
-
-                            channel.attr(NettyConstants.CLIENT_NAME).set(name);
-
-                            //Step 4.4 连接成功设置标识
-                            isSuccess.set(true);
-                        } catch (Exception e) {
-                            log.error("connect client [{}], url[{}] error, times [{}]", name, url, reconnectTimes.get(), e);
-                            isSuccess.set(false);
-                        } finally {
-                            latch.countDown();
-                        }
-                    }, NettyConstants.RECONNECT_DELAY_SECONDS, TimeUnit.SECONDS);
-
-                    //Step 4.5 等待链接完成
-                    try {
-                        latch.await();
-                    } catch (InterruptedException e) {
-                        log.error("connect client [{}], url[{}] interrupted, times [{}]", name, url, reconnectTimes.get(), e);
-                    }
-
-
-                    //Step 6 未成功启动，关闭
-                    if (!isSuccess.get()) {
-                        log.info("connect client [{}], url[{}] fail, current times [{}]", name, url, reconnectTimes.get());
-
-                        close();
-                    } else {
-                        log.info("connect client [{}], url[{}] success, current times [{}]", name, url, reconnectTimes.get());
-
-                        updateClientStatus(WebsocketClientStatus.RUNNING);
-                        reconnectTimes.set(0);
-                    }
-                }
-            } catch (Exception e) {
-                //exception 遇到未处理异常，直接关闭
-                close();
-                throw new RuntimeException(String.format("connect client [%s] appear unknown error", name), e);
-            } finally {
-                //Step 5 释放等待启动的线程
-                startingWaitCondition.signalAll();
-                reconnectLock.unlock();
-            }
-
-            return isSuccess.get();
-        }, callbackInvoker);
-    }
-
-
-    /**
-     * 停止WebSocketClient
-     */
-    public void close() {
-        if (clientStatus.equals(WebsocketClientStatus.STOP)
-                || clientStatus.equals(WebsocketClientStatus.SHUTDOWN)) return;
-
-        updateClientStatus(WebsocketClientStatus.STOP);
-
-        log.info("closing websocket client [{}], [{}]", name, channel == null ? "null" : channel.hashCode());
-        if (channel != null) {
-            channel.close();
-            channel = null;
-        }
-
-        log.warn("web socket client [{}] closed", name);
-    }
-
-    /**
-     * 彻底关闭客户端
-     */
-    public void shutdown() {
-        updateClientStatus(WebsocketClientStatus.SHUTDOWN);
-
-        if (channel != null) {
-            channel.close();
-            channel = null;
-        }
-
-        if (eventLoopGroup != null) {
-            eventLoopGroup.shutdownGracefully();
-        }
-
-        log.warn("web socket client [{}] already shutdown !", name);
-    }
-
-    /**
-     * 等待启动完成
-     *
-     * @return CompletableFuture<Void>
-     */
-    private CompletableFuture<Boolean> waitForStarting() {
-        return CompletableFuture.supplyAsync(() -> {
-            log.warn("client [{}] is starting, waiting for complete", name);
-            reconnectLock.lock();
-            try {
-                while (clientStatus.equals(WebsocketClientStatus.STARTING)) {
-                    startingWaitCondition.await();
-                }
-
-                if (clientStatus.equals(WebsocketClientStatus.STOP) || clientStatus.equals(WebsocketClientStatus.SHUTDOWN)) {
-                    log.error("启动WS客户端[{}]失败, ClientStatus [{}}", name, clientStatus);
-                    return false;
-                }
-                return true;
-            } catch (InterruptedException e) {
-                log.error("waiting for start client [{}] error", name);
-                throw new RuntimeException(e);
-            } finally {
-                reconnectLock.unlock();
-            }
-        }, callbackInvoker);
-    }
-
+    public abstract Object getIdFromMessage(T message);
 
     /**
      * 发送消息，没有回调
@@ -422,7 +129,7 @@ public abstract class AbstractWebsocketClient<Req, Resp, T> {
      * @param message message
      * @return CompletableFuture<Void>
      */
-    public CompletableFuture<Void> sendMessage(Req message) {
+    public CompletableFuture<Void> sendMessage(T message) {
         return CompletableFuture.runAsync(() -> {
             if (message == null) {
                 throw new IllegalArgumentException("message is null");
@@ -437,7 +144,7 @@ public abstract class AbstractWebsocketClient<Req, Resp, T> {
      *
      * @param request 请求体
      */
-    public CompletableFuture<Resp> sendRequest(Req request) {
+    public CompletableFuture<T> sendRequest(T request) {
         return CompletableFuture.supplyAsync(() -> {
             if (request == null) {
                 log.error("request is null");
@@ -445,7 +152,7 @@ public abstract class AbstractWebsocketClient<Req, Resp, T> {
             }
 
             CountDownLatch latch = new CountDownLatch(1);
-            AtomicReference<Resp> jb = new AtomicReference<>(null);
+            AtomicReference<T> jb = new AtomicReference<>(null);
 
             boolean flag = handler.registryRequest(request, response -> {
                 latch.countDown();
@@ -460,7 +167,9 @@ public abstract class AbstractWebsocketClient<Req, Resp, T> {
             }
 
             try {
-                if (!latch.await(NettyConstants.REQUEST_WAITE_SECONDS, TimeUnit.SECONDS)) return null;
+                if (!latch.await(NettyConstants.REQUEST_WAITE_SECONDS, TimeUnit.SECONDS)) {
+                    return null;
+                }
 
                 return jb.get();
             } catch (InterruptedException e) {
@@ -471,90 +180,18 @@ public abstract class AbstractWebsocketClient<Req, Resp, T> {
     }
 
     /**
-     * 发送ping
-     */
-    public abstract void sendPing();
-
-    /**
-     * 发送pong
-     */
-    public abstract void sendPong();
-
-    /**
-     * 更新status
-     *
-     * @param newStatus newStatus
-     */
-    public void updateClientStatus(WebsocketClientStatus newStatus) {
-        synchronized ("CLIENT_STATUS_LOCK") {
-            if (clientStatus.equals(newStatus)) return;
-
-            if (clientStatus.equals(WebsocketClientStatus.SHUTDOWN)) {
-                throw new IllegalArgumentException("client status is shutdown，new status can not be " + newStatus);
-            }
-
-            try {
-                if (newStatus != clientStatus && clientStatusChangeHandler != null) {
-                    clientStatusChangeHandler.accept(newStatus);
-                }
-            } finally {
-                log.info("client status [{}] -> [{}]", clientStatus, newStatus);
-                clientStatus = newStatus;
-            }
-        }
-    }
-
-    /**
-     * 转换为写入channel的数据
-     *
-     * @param request request
-     */
-    protected abstract T convertToChannelWriteData(Req request);
-
-
-    /**
      * 发送消息
      *
      * @param message   message
      * @param isRequest isRequest
      */
-    protected void doSendMessage(Req message, boolean isRequest) {
+    protected void doSendMessage(T message, boolean isRequest) {
         try {
             log.debug("send request [{}]", message);
-            channel.writeAndFlush(convertToChannelWriteData(message));
+            getChannel().writeAndFlush(message);
             log.debug("send request [{}] success", message);
         } catch (Exception e) {
             throw new RuntimeException("send message [" + message + "] error");
         }
-    }
-
-
-    /**
-     * 解析参数
-     *
-     * @throws URISyntaxException url解析错误
-     */
-    private void resolveParamFromUrl() throws URISyntaxException {
-        uri = new URI(url);
-        String scheme = uri.getScheme() == null ? "ws" : uri.getScheme();
-        host = uri.getHost() == null ? "127.0.0.1" : uri.getHost();
-        if (uri.getPort() == -1) {
-            if ("ws".equalsIgnoreCase(scheme)) {
-                port = 80;
-            } else if ("wss".equalsIgnoreCase(scheme)) {
-                port = 443;
-            } else {
-                port = -1;
-            }
-        } else {
-            port = uri.getPort();
-        }
-
-        if (!"ws".equalsIgnoreCase(scheme) && !"wss".equalsIgnoreCase(scheme)) {
-            log.error("Only WS(S) is supported.");
-            throw new IllegalArgumentException("url error, Only WS(S) is supported.");
-        }
-
-        useSSL = "wss".equalsIgnoreCase(scheme);
     }
 }

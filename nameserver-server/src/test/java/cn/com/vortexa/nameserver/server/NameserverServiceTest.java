@@ -3,6 +3,9 @@ package cn.com.vortexa.nameserver.server;
 import cn.com.vortexa.nameserver.config.NameserverServerConfig;
 import cn.com.vortexa.nameserver.dto.ServiceInstance;
 import cn.com.vortexa.nameserver.exception.NameserverException;
+import cn.com.vortexa.nameserver.service.impl.FileRegistryService;
+import cn.com.vortexa.nameserver.service.impl.MemoryConnectionService;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +33,8 @@ class NameserverServiceTest {
 
 
         nameserverService = new NameserverService(NameserverServerConfig.DEFAULT);
+
+        nameserverService.init(new FileRegistryService(), new MemoryConnectionService());
     }
 
 

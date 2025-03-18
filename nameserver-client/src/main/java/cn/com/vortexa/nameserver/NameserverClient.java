@@ -24,18 +24,19 @@ import java.util.Optional;
  * @since 2025-03-13
  */
 @Slf4j
-public class NameserverClient extends AbstractWebsocketClient<RemotingCommand, RemotingCommand, RemotingCommand> {
+public class NameserverClient extends AbstractWebsocketClient<RemotingCommand> {
 
     private final NameserverClientConfig clientConfig;
 
     public NameserverClient(NameserverClientConfig clientConfig) {
-        super(
-                clientConfig.getRegistryCenterUrl(),
-                new NameClientProcessorAdaptor(clientConfig)
-        );
-        this.clientConfig = clientConfig;
+        this(clientConfig, new NameClientProcessorAdaptor(clientConfig));
+    }
 
-        setName(clientConfig.getServiceInstance().toString());
+    public NameserverClient(NameserverClientConfig clientConfig, NameClientProcessorAdaptor nameClientProcessorAdaptor) {
+        super(clientConfig.getRegistryCenterUrl(), clientConfig.getServiceInstance().toString(), nameClientProcessorAdaptor);
+        super.setHandshake(false);
+        this.clientConfig = clientConfig;
+        ((NameClientProcessorAdaptor) getHandler()).setNameserverClient(this);
     }
 
     @Override
@@ -49,7 +50,12 @@ public class NameserverClient extends AbstractWebsocketClient<RemotingCommand, R
 
         p.addLast(new RemotingCommandDecoder());
         p.addLast(new RemotingCommandEncoder());
-        p.addLast(handler);
+        p.addLast(getHandler());
+    }
+
+    @Override
+    public Object getIdFromMessage(RemotingCommand message) {
+        return message.getTransactionId();
     }
 
     @Override
@@ -71,19 +77,11 @@ public class NameserverClient extends AbstractWebsocketClient<RemotingCommand, R
 
     @Override
     public void sendPing() {
-        sendMessage(RemotingCommand.PING_COMMAND);
+        sendRequest(RemotingCommand.PING_COMMAND);
     }
 
     @Override
     public void sendPong() {
-        sendMessage(RemotingCommand.PONG_COMMAND);
-    }
-
-    /**
-     * 转换为写入channel的数据
-     */
-    @Override
-    protected RemotingCommand convertToChannelWriteData(RemotingCommand request) {
-        return request;
+        sendRequest(RemotingCommand.PONG_COMMAND);
     }
 }

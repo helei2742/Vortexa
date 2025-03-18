@@ -1,6 +1,5 @@
 package cn.com.vortexa.bot_father.websocket;
 
-
 import cn.com.vortexa.common.constants.ConnectStatus;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.websocket.netty.base.AbstractWebsocketClient;
@@ -19,10 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
-
 @Slf4j
 @Getter
-public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient<Req, Resp, Object> {
+public abstract class BaseBotWSClient<T> extends AbstractWebsocketClient<T> {
 
     private static final int MAX_FRAME_SIZE = 10 * 1024 * 1024;  // 10 MB or set to your desired size
 
@@ -34,11 +32,10 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
     public BaseBotWSClient(
             AccountContext accountContext,
             String connectUrl,
-            BaseBotWSClientHandler<Req, Resp,Object> handler
+            BaseBotWSClientHandler<T> handler
     ) {
-        super(connectUrl, handler);
+        super(connectUrl, accountContext.getName(), handler);
 
-        super.setName(accountContext.getName());
         super.setProxy(accountContext.getProxy());
         super.setClientStatusChangeHandler(this::whenClientStatusChange);
 
@@ -47,18 +44,14 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
         updateClientStatus(WebsocketClientStatus.NEW);
     }
 
+    public abstract T getHeartbeatMessage();
 
-    public abstract Req getHeartbeatMessage();
+    public abstract void whenAccountReceiveResponse(Object id, T response);
 
-    public abstract void whenAccountReceiveResponse(Object id, Resp response) ;
+    public abstract void whenAccountReceiveMessage(T message);
 
-    public abstract void whenAccountReceiveMessage(Resp message);
-
-    public abstract Object getRequestId(Req request);
-
-    public abstract Object getResponseId(Resp response);
-
-    public void whenAccountClientStatusChange(WebsocketClientStatus clientStatus) {}
+    public void whenAccountClientStatusChange(WebsocketClientStatus clientStatus) {
+    }
 
     @Override
     public void addPipeline(ChannelPipeline p) {
@@ -66,23 +59,23 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
 
         p.addLast(new HttpClientCodec());
         p.addLast(new HttpObjectAggregator(81920));
-        p.addLast(new IdleStateHandler(0, 0, allIdleTimeSecond, TimeUnit.SECONDS));
+        p.addLast(new IdleStateHandler(0, 0, getAllIdleTimeSecond(), TimeUnit.SECONDS));
         p.addLast(new ChunkedWriteHandler());
 
         p.addLast(new WebSocketFrameAggregator(MAX_FRAME_SIZE));  // 设置聚合器的最大帧大小
 
-        p.addLast(handler);
+        p.addLast(getHandler());
     }
 
     @Override
     public void sendPing() {
-        log.debug("client [{}] send ping to [{}]", getName(), url);
+        log.debug("client [{}] send ping to [{}]", getName(), getUrl());
         getChannel().writeAndFlush(new PingWebSocketFrame());
     }
 
     @Override
     public void sendPong() {
-        log.debug("client [{}] send pong {}", getName(), url);
+        log.debug("client [{}] send pong {}", getName(), getUrl());
         getChannel().writeAndFlush(new PongWebSocketFrame());
     }
 

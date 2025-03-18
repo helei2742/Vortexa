@@ -1,15 +1,14 @@
 package cn.com.vortexa.nameserver.server;
 
-
 import cn.com.vortexa.nameserver.config.NameserverServerConfig;
 import cn.com.vortexa.nameserver.constant.NameServerState;
 import cn.com.vortexa.nameserver.constant.NameserverSystemConstants;
 import cn.com.vortexa.nameserver.exception.NameserverException;
 import cn.com.vortexa.nameserver.processor.NameserverProcessorAdaptor;
+import cn.com.vortexa.nameserver.service.IConnectionService;
+import cn.com.vortexa.nameserver.service.IRegistryService;
 import cn.com.vortexa.nameserver.util.RemotingCommandDecoder;
 import cn.com.vortexa.nameserver.util.RemotingCommandEncoder;
-import cn.com.vortexa.websocket.netty.base.NettyClientEventHandler;
-import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -20,100 +19,40 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 import static cn.com.vortexa.nameserver.constant.NameServerState.*;
 
 @Slf4j
+@Getter
 public class NameserverService {
+    private final NameserverServerConfig nameserverServerConfig;    //nameServerConfig
+    private final long startTime;   //启动时间
+    private volatile NameServerState state; // name server state
+    private ServerBootstrap serverBootstrap;    //serverBootstrap
+    private ChannelFuture nameserverChannelFuture;  //nameserverChannelFuture
 
-    /**
-     * nameServerConfig
-     */
-    @Getter
-    private final NameserverServerConfig nameserverServerConfig;
-
-    /**
-     * 启动时间
-     */
-    @Getter
-    private final long startTime;
-
-    /**
-     * serverBootstrap
-     */
-    private ServerBootstrap serverBootstrap;
-
-    /**
-     * nameserverChannelFuture
-     */
-    @Getter
-    private ChannelFuture nameserverChannelFuture;
-
-    /**
-     * name server state
-     */
-    private volatile NameServerState state;
-
-    /**
-     * 事件处理器
-     */
-    private NettyClientEventHandler eventHandler;
-
+    private IRegistryService registryService;
+    private IConnectionService connectionService;
 
     public NameserverService(NameserverServerConfig nameserverServerConfig) throws NameserverException {
         this.nameserverServerConfig = nameserverServerConfig;
-
         updateNameServerState(JUST_START);
         this.startTime = System.currentTimeMillis();
 
-        if (eventHandler == null) {
-            eventHandler = generateDefaultEventHandler();
-        }
     }
-
-    /**
-     * 启动
-     *
-     * @throws NameserverException NameserverStartException
-     */
-    public void start() throws NameserverException {
-        log.info("start nameserver [{}], configuration:\n {}",
-                nameserverServerConfig.getServiceInstance(), nameserverServerConfig);
-
-        try {
-            init(nameserverServerConfig);
-
-            nameserverChannelFuture = serverBootstrap.bind(
-                    nameserverServerConfig.getServiceInstance().getHost(),
-                    nameserverServerConfig.getServiceInstance().getPort()
-            );
-
-            nameserverChannelFuture.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                    updateNameServerState(RUNNING);
-                }
-            });
-
-        } catch (Exception e) {
-            updateNameServerState(SHUT_DOWN);
-            throw new NameserverException("start error", e);
-        }
-    }
-
-    public String getName() {
-        return nameserverServerConfig.getServiceInstance().getGroup() + ":" + nameserverServerConfig.getServiceInstance().getServiceId();
-    }
-
 
     /**
      * 初始化
      *
-     * @param nameserverServerConfig nameServerConfig
+     * @param registryService registryService
      */
-    private void init(NameserverServerConfig nameserverServerConfig) {
-        NameserverProcessorAdaptor adaptor = new NameserverProcessorAdaptor(this);
+    public void init(
+            IRegistryService registryService,
+            IConnectionService connectionService
+    ) throws NameserverException {
+        this.registryService = registryService;
+        this.connectionService = connectionService;
+        NameserverProcessorAdaptor adaptor = new NameserverProcessorAdaptor(this, registryService);
 
         serverBootstrap = new ServerBootstrap()
                 .group(new NioEventLoopGroup(nameserverServerConfig.getNioThreadCount()), new NioEventLoopGroup())
@@ -141,6 +80,50 @@ public class NameserverService {
                         ch.pipeline().addLast(adaptor);
                     }
                 });
+
+        updateNameServerState(INIT_FINISH);
+    }
+
+    /**
+     * 启动
+     *
+     * @throws NameserverException NameserverStartException
+     */
+    public void start() throws NameserverException {
+        log.info("start nameserver [{}], configuration:\n {}",
+                nameserverServerConfig.getServiceInstance(), nameserverServerConfig);
+
+        try {
+            nameserverChannelFuture = serverBootstrap.bind(
+                    nameserverServerConfig.getServiceInstance().getHost(),
+                    nameserverServerConfig.getServiceInstance().getPort()
+            );
+
+            nameserverChannelFuture.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                    updateNameServerState(RUNNING);
+                }
+            });
+
+        } catch (Exception e) {
+            updateNameServerState(SHUT_DOWN);
+            throw new NameserverException("start error", e);
+        }
+    }
+
+    public String getName() {
+        return nameserverServerConfig.getServiceInstance().getGroup() + ":"
+                + nameserverServerConfig.getServiceInstance().getServiceId();
+    }
+
+    /**
+     * 关闭连接某客户端的channel连接
+     *
+     * @param channel channel
+     */
+    public void closeChannel(Channel channel) {
+
     }
 
     /**
@@ -155,36 +138,21 @@ public class NameserverService {
                 case JUST_START: {
                     yield state == null || state == JUST_START;
                 }
+                case INIT_FINISH:
+                    yield state == JUST_START || state == INIT_FINISH;
                 case RUNNING:
-                    yield state == JUST_START;
+                    yield state == INIT_FINISH;
                 case SHUT_DOWN:
                     yield state != SHUT_DOWN;
             };
 
             if (isUpdate) {
-                log.info("nameserver[{}] status updated [{}]->[{}]", nameserverServerConfig.getServiceInstance(), state, newState);
+                log.info("nameserver[{}] status updated [{}]->[{}]", nameserverServerConfig.getServiceInstance(), state,
+                        newState);
                 state = newState;
             } else {
                 throw new NameserverException("state cannot from [%s] to [%s]".formatted(state, newState));
             }
         }
-    }
-
-
-
-    @NotNull
-    private static NettyClientEventHandler generateDefaultEventHandler() {
-        return new NettyClientEventHandler() {
-            @Override
-            public void activeHandler(ChannelHandlerContext ctx) {
-                log.info("[{}]-[{}] connected to nameserver",
-                        ctx.channel().attr(NettyConstants.CLIENT_NAME).get(), ctx.channel().remoteAddress());
-            }
-
-            @Override
-            public void exceptionHandler(ChannelHandlerContext ctx, Throwable cause) {
-                log.error("nameserver error", cause);
-            }
-        };
     }
 }

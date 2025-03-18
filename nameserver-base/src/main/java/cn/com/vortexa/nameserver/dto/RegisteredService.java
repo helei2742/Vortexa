@@ -19,7 +19,7 @@ public class RegisteredService {
 
     private ServiceInstance address;
 
-    private Map<String, String> props;
+    private Map<String, Object> props;
 
     @Override
     public boolean equals(Object o) {

@@ -1,4 +1,4 @@
-package cn.com.vortexa.websocket.netty.base;
+package cn.com.vortexa.websocket.netty.util;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

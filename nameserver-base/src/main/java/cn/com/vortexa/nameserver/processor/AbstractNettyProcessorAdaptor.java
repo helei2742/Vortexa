@@ -8,7 +8,7 @@
 //import cn.com.vortexa.nameserver.handler.ResultCallBackHandler;
 //import cn.com.vortexa.nameserver.pool.RemotingCommandPool;
 //import cn.com.vortexa.nameserver.util.NettyChannelSendSupporter;
-//import cn.com.vortexa.websocket.netty.base.NettyClientEventHandler;
+//import cn.com.vortexa.websocket.netty.handler.NettyClientEventHandler;
 //import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 //import io.netty.channel.ChannelHandlerContext;
 //import io.netty.channel.SimpleChannelInboundHandler;
