@@ -27,7 +27,6 @@ public class NameserverProcessorAdaptor extends BaseWebSocketInboundHandler<Remo
 
     @Getter
     private final NameserverService nameserverService;
-    private final ExecutorService executorService;
     private final PingCommandProcessor pingCommandProcessor;
     private final PongCommandProcessor pongCommandProcessor;
     private final ServiceRegistryProcessor serviceRegistryProcessor;
@@ -39,11 +38,12 @@ public class NameserverProcessorAdaptor extends BaseWebSocketInboundHandler<Remo
     ) {
         super();
         this.nameserverService = nameServerService;
-        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory("nameserver-processor"));
         this.pingCommandProcessor = new PingCommandProcessor();
         this.pongCommandProcessor = new PongCommandProcessor();
         this.serviceRegistryProcessor = new ServiceRegistryProcessor(registryService);
         this.serviceDiscoverProcessor = new ServiceDiscoverProcessor(registryService);
+
+        init(Executors.newThreadPerTaskExecutor(new NamedThreadFactory("nameserver-processor")));
     }
 
 
@@ -66,7 +66,7 @@ public class NameserverProcessorAdaptor extends BaseWebSocketInboundHandler<Remo
                     case RemotingCommandFlagConstants.CLIENT_DISCOVER_SERVICE ->
                             serviceDiscoverProcessor.handlerDiscoverService(channel, remotingCommand);
                     default -> throw new IllegalStateException("Unexpected value: " + opt);
-                }, executorService)
+                }, getCallbackInvoker())
                 .whenCompleteAsync((response, ex) -> {
                     if (ex != null) {
                         log.error("client[{}] command process failed", clientName, ex);

@@ -60,9 +60,11 @@ public class NameserverClient extends AbstractWebsocketClient<RemotingCommand> {
 
     @Override
     protected void doSendMessage(RemotingCommand message, boolean b) {
+        log.debug("send message to nameserver: {}", message);
+
         ServiceInstance serviceInstance = clientConfig.getServiceInstance();
 
-        if (b && StrUtil.isNotBlank(message.getTransactionId())) {
+        if (b && StrUtil.isBlank(message.getTransactionId())) {
             message.setTransactionId(
                     DistributeIdMaker.DEFAULT.nextId(serviceInstance.getServiceId())
             );

@@ -4,6 +4,7 @@ import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import cn.com.vortexa.websocket.netty.util.HandlerEntity;
 import io.netty.channel.*;
 import io.netty.handler.timeout.IdleStateEvent;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CompletableFuture;
@@ -18,6 +19,7 @@ import java.util.function.Consumer;
  * 处理连接握手
  */
 @Slf4j
+@Getter
 @ChannelHandler.Sharable
 public abstract class BaseWebSocketInboundHandler<T> extends SimpleChannelInboundHandler<T> {
 
@@ -112,7 +114,7 @@ public abstract class BaseWebSocketInboundHandler<T> extends SimpleChannelInboun
         Object responseId = getMessageId(response);
         log.debug("responseId[{}] is, {}", responseId, response);
 
-        if (responseId == null) {
+        if (responseId == null || !requestIdMap.containsKey(responseId)) {
             return CompletableFuture.completedFuture(false);
         }
 
