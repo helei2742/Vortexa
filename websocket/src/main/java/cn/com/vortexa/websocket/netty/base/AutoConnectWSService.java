@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 import javax.net.ssl.SSLException;
 
 /**
- * @author h30069248
+ * @author helei
  * @since 2025/3/18 10:52
  */
 @Slf4j
@@ -165,7 +165,7 @@ public abstract class AutoConnectWSService implements IWSService {
                         } finally {
                             latch.countDown();
                         }
-                    }, NettyConstants.RECONNECT_DELAY_SECONDS, TimeUnit.SECONDS);
+                    }, reconnectTimes.get() == 0 ? 0 : NettyConstants.RECONNECT_DELAY_SECONDS, TimeUnit.SECONDS);
 
                     //Step 4.5 等待链接完成
                     try {

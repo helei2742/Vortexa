@@ -4,6 +4,7 @@ import cn.com.vortexa.nameserver.constant.LanguageCode;
 import cn.com.vortexa.nameserver.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.nameserver.constant.RemotingCommandFlagConstants;
 import cn.com.vortexa.nameserver.protocol.Serializer;
+import cn.com.vortexa.nameserver.util.DistributeIdMaker;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,8 +20,6 @@ public class RemotingCommand {
 
     public static final RemotingCommand TIME_OUT_COMMAND;
     public static final RemotingCommand PARAMS_ERROR;
-    public static final RemotingCommand PING_COMMAND;
-    public static final RemotingCommand PONG_COMMAND;
 
     public static final String TRANSACTION_ID_KEY = "transaction_id";
     public static final String GROUP_KEY = "group";
@@ -35,14 +34,6 @@ public class RemotingCommand {
         PARAMS_ERROR = new RemotingCommand();
         PARAMS_ERROR.setFlag(RemotingCommandFlagConstants.PARAMS_ERROR);
         PARAMS_ERROR.setCode(RemotingCommandCodeConstants.FAIL);
-
-        PING_COMMAND = new RemotingCommand();
-        PING_COMMAND.setFlag(RemotingCommandFlagConstants.PING);
-        PING_COMMAND.setCode(RemotingCommandCodeConstants.SUCCESS);
-
-        PONG_COMMAND = new RemotingCommand();
-        PONG_COMMAND.setFlag(RemotingCommandFlagConstants.PONG);
-        PONG_COMMAND.setCode(RemotingCommandCodeConstants.SUCCESS);
     }
 
     private Integer flag;
@@ -143,6 +134,23 @@ public class RemotingCommand {
         if (extFields == null) extFields = new HashMap<>();
         else this.extFields.clear();
         this.body = null;
+    }
+
+    public static RemotingCommand generatePingCommand(String key) {
+        String txId = DistributeIdMaker.DEFAULT.nextId(key);
+        RemotingCommand ping = new RemotingCommand();
+        ping.setFlag(RemotingCommandFlagConstants.PING);
+        ping.setTransactionId(txId);
+        ping.setCode(RemotingCommandCodeConstants.SUCCESS);
+        return ping;
+    }
+    public static RemotingCommand generatePongCommand(String key) {
+        String txId = DistributeIdMaker.DEFAULT.nextId(key);
+        RemotingCommand pong = new RemotingCommand();
+        pong.setFlag(RemotingCommandFlagConstants.PONG);
+        pong.setTransactionId(txId);
+        pong.setCode(RemotingCommandCodeConstants.SUCCESS);
+        return pong;
     }
 
     @Override

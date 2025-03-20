@@ -4,6 +4,7 @@ import cn.com.vortexa.nameserver.constant.RegistryState;
 import cn.com.vortexa.nameserver.dto.RegisteredService;
 import cn.com.vortexa.nameserver.dto.ServiceInstance;
 import cn.com.vortexa.nameserver.service.IRegistryService;
+import cn.com.vortexa.nameserver.util.NameserverUtil;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 
@@ -12,7 +13,7 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
-        import java.nio.file.Files;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -28,8 +29,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class FileRegistryService implements IRegistryService {
 
-    private final static String STORE_FILE_RESOURCE_PATH = System.getProperty("user.dir") +
-            File.separator + "nameserver" + File.separator + "nameserver-registry.dat";
+    private static final String FILE_NAME = "nameserver-registry.dat";
 
     private final ConcurrentHashMap<String, RegisteredService> registryServiceMap = new ConcurrentHashMap<>();
 
@@ -37,14 +37,14 @@ public class FileRegistryService implements IRegistryService {
     public RegistryState registryService(ServiceInstance serviceInstance, Map<String, Object> props) {
         String group = serviceInstance.getGroup();
         String serviceId = serviceInstance.getServiceId();
-        String clientId = serviceInstance.getClientId();
+        String clientId = serviceInstance.getInstanceId();
 
         if (StrUtil.isBlank(group) && StrUtil.isBlank(serviceId) && StrUtil.isBlank(clientId)) {
             return RegistryState.PARAM_ERROR;
         }
 
         try {
-            String key = generateServiceInstanceKey(group, serviceId, clientId);
+            String key = NameserverUtil.generateServiceInstanceKey(group, serviceId, clientId);
 
             // 存内存
             registryServiceMap.put(key, new RegisteredService(serviceInstance, props));
@@ -66,7 +66,7 @@ public class FileRegistryService implements IRegistryService {
 
     @Override
     public Boolean saveRegistryInfo() throws IOException {
-        Path path = Paths.get(STORE_FILE_RESOURCE_PATH);
+        Path path = Paths.get(NameserverUtil.getStoreFileResourcePath(FILE_NAME));
         if (!Files.exists(path.getParent())) {
             Files.createDirectories(path.getParent());
         }
@@ -84,7 +84,7 @@ public class FileRegistryService implements IRegistryService {
             String serviceId,
             String clientId
     ) {
-        String keyPattern = generateServiceInstanceKey(
+        String keyPattern = NameserverUtil.generateServiceInstanceKey(
                 StrUtil.isBlank(groupId) ? "*" : groupId,
                 StrUtil.isBlank(serviceId) ? "*" : serviceId,
                 StrUtil.isBlank(clientId) ? "*" : clientId
@@ -97,7 +97,8 @@ public class FileRegistryService implements IRegistryService {
         }).map(registryServiceMap::get).toList();
     }
 
-    private String generateServiceInstanceKey(String group, String serviceId, String clientId) {
-        return group + "#%&%#" + serviceId + "#%&%#" + clientId;
+    @Override
+    public boolean existServiceInstance(String key) {
+        return registryServiceMap.containsKey(key);
     }
 }

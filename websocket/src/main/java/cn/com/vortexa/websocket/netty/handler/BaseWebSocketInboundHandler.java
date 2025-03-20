@@ -38,6 +38,11 @@ public abstract class BaseWebSocketInboundHandler<T> extends SimpleChannelInboun
     }
 
     @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        super.channelActive(ctx);
+    }
+
+    @Override
     protected final void channelRead0(ChannelHandlerContext ctx, T message) throws Exception {
         Channel channel = ctx.channel();
         log.debug("{} -> {}  message: {}", channel.remoteAddress(), channel.localAddress(), message);
@@ -112,7 +117,7 @@ public abstract class BaseWebSocketInboundHandler<T> extends SimpleChannelInboun
      */
     public CompletableFuture<Boolean> tryInvokeResponseCallback(T response) {
         Object responseId = getMessageId(response);
-        log.debug("responseId[{}] is, {}", responseId, response);
+        log.debug("responseId[{}], {}", responseId, response);
 
         if (responseId == null || !requestIdMap.containsKey(responseId)) {
             return CompletableFuture.completedFuture(false);

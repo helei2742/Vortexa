@@ -74,7 +74,7 @@ public abstract class BaseBotWSClient<T> extends AbstractWebsocketClient<T> {
     }
 
     @Override
-    public void sendPong() {
+    public void sendPong(Object ping) {
         log.debug("client [{}] send pong {}", getName(), getUrl());
         getChannel().writeAndFlush(new PongWebSocketFrame());
     }

@@ -7,6 +7,6 @@ import java.lang.reflect.InvocationTargetException;
 
 public interface AccountWSClientBuilder {
 
-    BaseBotWSClient<?, ?> build(AccountContext accountContext) throws InvocationTargetException, IllegalAccessException;
+    BaseBotWSClient<?> build(AccountContext accountContext) throws InvocationTargetException, IllegalAccessException;
 
 }

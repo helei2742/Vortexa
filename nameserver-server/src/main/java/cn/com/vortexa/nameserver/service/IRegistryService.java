@@ -42,4 +42,12 @@ public interface IRegistryService {
             String serviceId,
             String clientId
     );
+
+    /**
+     * 是否存在已注册的实例
+     *
+     * @param key key
+     * @return  boolean
+     */
+    boolean existServiceInstance(String key);
 }

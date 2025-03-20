@@ -20,10 +20,12 @@ public class ConnectEntry {
     private Channel channel;
     private boolean usable;
     private long lastActiveTimestamp;
+    private String type;
 
     public void close() {
         if (channel != null && channel.isActive()) {
             channel.close();
         }
+        usable = false;
     }
 }

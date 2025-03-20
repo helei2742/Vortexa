@@ -145,6 +145,8 @@ public abstract class AbstractWebsocketClient<T> extends AutoConnectWSService {
      * @param request 请求体
      */
     public CompletableFuture<T> sendRequest(T request) {
+        log.debug("send request [{}]", request);
+
         return CompletableFuture.supplyAsync(() -> {
             if (request == null) {
                 log.error("request is null");
@@ -187,7 +189,6 @@ public abstract class AbstractWebsocketClient<T> extends AutoConnectWSService {
      */
     protected void doSendMessage(T message, boolean isRequest) {
         try {
-            log.debug("send request [{}]", message);
             getChannel().writeAndFlush(message);
             log.debug("send request [{}] success", message);
         } catch (Exception e) {

@@ -48,7 +48,7 @@ public class WebSocketClientLauncher {
     /**
      * 已启动的ws客户端
      */
-    private final Map<String, cn.com.vortexa.bot_father.websocket.BaseBotWSClient<?, ?>> launchedWSClientMap = new ConcurrentHashMap<>();
+    private final Map<String, BaseBotWSClient<?>> launchedWSClientMap = new ConcurrentHashMap<>();
 
     public WebSocketClientLauncher(
             AnnoDriveAutoBot<?> bot
@@ -125,7 +125,7 @@ public class WebSocketClientLauncher {
         }
 
         //  Step 2 启动
-        cn.com.vortexa.bot_father.websocket.BaseBotWSClient<?, ?> wsClient = null;
+        BaseBotWSClient<?> wsClient = null;
 
         // Step 3 创建ws client
         try {
@@ -188,12 +188,11 @@ public class WebSocketClientLauncher {
     /**
      * 添加ws状态改变的handler
      *
-     * @param <Req>             Req
-     * @param <Resp>            Resp
+     * @param <T>             t
      * @param wsClient          wsClient
      * @param autoBotJobWSParam autoBotJobWSParam
      */
-    private <Req, Resp> void init(cn.com.vortexa.bot_father.websocket.BaseBotWSClient<Req, Resp> wsClient, AutoBotJobWSParam autoBotJobWSParam, Semaphore wsConnectSemaphore) {
+    private <T> void init(cn.com.vortexa.bot_father.websocket.BaseBotWSClient<T> wsClient, AutoBotJobWSParam autoBotJobWSParam, Semaphore wsConnectSemaphore) {
         // 设置参数
         wsClient.setAllIdleTimeSecond(autoBotJobWSParam.getHeartBeatIntervalSecond());
         wsClient.setReconnectCountDownSecond(autoBotJobWSParam.getReconnectCountDownSecond());

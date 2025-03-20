@@ -8,12 +8,13 @@ import cn.com.vortexa.nameserver.dto.RemotingCommand;
 import cn.com.vortexa.nameserver.util.DistributeIdMaker;
 import cn.com.vortexa.websocket.netty.handler.AbstractWebSocketClientHandler;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author helei
@@ -22,11 +23,11 @@ import java.util.HashMap;
 @Slf4j
 public class NameClientProcessorAdaptor extends AbstractWebSocketClientHandler<RemotingCommand> {
 
-    @Getter
-    private final NameserverClientConfig clientConfig;
-
     @Setter
     private NameserverClient nameserverClient;
+
+    @Getter
+    private final NameserverClientConfig clientConfig;
 
     public NameClientProcessorAdaptor(NameserverClientConfig clientConfig) {
         this.clientConfig = clientConfig;
@@ -34,14 +35,43 @@ public class NameClientProcessorAdaptor extends AbstractWebSocketClientHandler<R
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-        ctx.channel().attr(NettyConstants.CLIENT_NAME).set(nameserverClient.getName());
         super.channelActive(ctx);
-        sendRegistryCommand();
+        ctx.channel().attr(NettyConstants.CLIENT_NAME).set(nameserverClient.getName());
+        nameserverClient.sendRegistryCommand();
     }
 
     @Override
-    protected void handlerMessage(ChannelHandlerContext ctx, RemotingCommand message) {
-        log.debug("receive [{}] ", message);
+    protected void handlerMessage(ChannelHandlerContext ctx, RemotingCommand remotingCommand) {
+        Integer opt = remotingCommand.getFlag();
+        String txId = remotingCommand.getTransactionId();
+
+        Channel channel = ctx.channel();
+        String key = channel.attr(NettyConstants.CLIENT_NAME).get();
+        log.debug("receive client[{}] command [{}]", key, remotingCommand);
+
+        CompletableFuture.supplyAsync(() -> switch (opt) {
+                    case RemotingCommandFlagConstants.PING -> this.handlerPing(remotingCommand);
+                    case RemotingCommandFlagConstants.PONG -> this.handlerPong(remotingCommand);
+                    default -> {
+                        try {
+                            yield nameserverClient.tryResolveCustomRequest(remotingCommand);
+                        } catch (Exception e) {
+                            throw new RuntimeException("resolve custom request[%s] error ".formatted(
+                                    remotingCommand
+                            ));
+                        }
+                    }
+                }, nameserverClient.getCallbackInvoker())
+                .whenCompleteAsync((response, throwable) -> {
+                    if (throwable != null) {
+                        log.error("remote command[{}} resolve error", remotingCommand,throwable);
+                        return;
+                    }
+                    if (response != null) {
+                        response.setTransactionId(txId);
+                        nameserverClient.sendRequest(response);
+                    }
+                });
     }
 
     @Override
@@ -49,27 +79,45 @@ public class NameClientProcessorAdaptor extends AbstractWebSocketClientHandler<R
         return message.getTransactionId();
     }
 
-    /**
-     * 发送服务注册命令
-     */
-    private void sendRegistryCommand() {
-        RemotingCommand remotingCommand = new RemotingCommand();
-        remotingCommand.setFlag(RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE);
-        remotingCommand.setTransactionId(
-                DistributeIdMaker.DEFAULT.nextId(clientConfig.getServiceInstance().getServiceId())
+    @Override
+    protected void handleAllIdle(ChannelHandlerContext ctx) {
+        super.handleAllIdle(ctx);
+        RemotingCommand ping = RemotingCommand.generatePingCommand(nameserverClient.getName());
+        ping.setTransactionId(
+                DistributeIdMaker.DEFAULT.nextId(nameserverClient.getName())
         );
-
-        remotingCommand.setBodyFromObject(new HashMap<>());
-
-        nameserverClient.sendRequest(remotingCommand).whenComplete((response, throwable) -> {
+        log.info("send ping to remote");
+        nameserverClient.sendRequest(ping).whenComplete((response, throwable) -> {
             if (throwable != null) {
-                log.error("{} -> [{}] channel active error",
-                        clientConfig.getServiceInstance(), clientConfig.getRegistryCenterUrl(), throwable);
+                log.error("send ping to remote server[{}] error", clientConfig.getRegistryCenterUrl());
+                return;
             }
-
-            if (response.getFlag() == RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE_RESPONSE) {
-                log.info("{} client registry success", clientConfig.getServiceInstance());
-            }
+            log.debug("receive remote server pong [{}]", response);
         });
     }
+
+    /**
+     * 处理Ping
+     *
+     * @param ping ping
+     * @return RemotingCommand
+     */
+    private RemotingCommand handlerPing(RemotingCommand ping) {
+        log.debug("receive pint[{}] from server", ping);
+        RemotingCommand pong = RemotingCommand.generatePongCommand(nameserverClient.getName());
+        pong.setTransactionId(ping.getTransactionId());
+        return pong;
+    }
+
+    /**
+     * 处理Pong
+     *
+     * @param pong pong
+     * @return RemotingCommand
+     */
+    private RemotingCommand handlerPong(RemotingCommand pong) {
+        log.debug("receive pong[{}] from server", pong);
+        return null;
+    }
+
 }

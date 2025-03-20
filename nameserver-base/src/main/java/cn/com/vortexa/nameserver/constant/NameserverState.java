@@ -1,7 +1,7 @@
 package cn.com.vortexa.nameserver.constant;
 
 
-public enum NameServerState {
+public enum NameserverState {
     JUST_START,
     INIT_FINISH,
     RUNNING,

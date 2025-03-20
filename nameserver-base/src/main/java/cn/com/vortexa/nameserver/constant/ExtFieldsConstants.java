@@ -3,6 +3,11 @@ package cn.com.vortexa.nameserver.constant;
 public class ExtFieldsConstants {
 
     /**
+     * nameserver 服务状态
+     */
+    public static final String NAMESERVER_STATUS = "nameserver_status";
+
+    /**
      * 服务注册的注册状态
      */
     public static final String NAMESERVER_REGISTRY_STATUS = "nameserver_registry_status";

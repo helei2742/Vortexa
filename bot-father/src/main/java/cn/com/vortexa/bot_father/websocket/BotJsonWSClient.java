@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Setter
@@ -18,10 +17,9 @@ public abstract class BotJsonWSClient extends BaseBotWSClient<JSONObject> {
 
     public BotJsonWSClient(
             AccountContext accountContext,
-            String connectUrl,
-            ExecutorService executorService
+            String connectUrl
     ) {
-        super(accountContext, connectUrl, new SimpleBotWSClientHandler(executorService));
+        super(accountContext, connectUrl, new SimpleBotWSClientHandler());
         ((SimpleBotWSClientHandler) getHandler()).setWsClient(this);
     }
 
@@ -30,10 +28,6 @@ public abstract class BotJsonWSClient extends BaseBotWSClient<JSONObject> {
     private static class SimpleBotWSClientHandler extends BaseBotWSClientHandler<JSONObject> {
 
         private BotJsonWSClient wsClient;
-
-        protected SimpleBotWSClientHandler(ExecutorService callbackInvoker) {
-            super(callbackInvoker);
-        }
 
         @Override
         public JSONObject convertMessageToRespType(String message) {

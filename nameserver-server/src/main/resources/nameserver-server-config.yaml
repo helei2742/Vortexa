@@ -3,10 +3,10 @@ cn:
     vortexa:
       nameserver:
         nio-thread-count: 1
-        service-offline-ttl: 60
+        service-offline-ttl: 120
         service-instance:
           host: localhost
           port: 18848
           group: test1
           serviceId: nameserver
-          clientId: nameserver-1
+          instanceId: nameserver-1

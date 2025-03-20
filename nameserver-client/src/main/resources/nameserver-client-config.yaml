@@ -10,4 +10,4 @@ cn:
           port: 20001
           group: test1
           serviceId: client
-          clientId: client-1
+          instanceId: client-1

@@ -1,6 +1,5 @@
 package cn.com.vortexa.nameserver.processor;
 
-
 import cn.com.vortexa.nameserver.constant.ExtFieldsConstants;
 import cn.com.vortexa.nameserver.constant.RegistryState;
 import cn.com.vortexa.nameserver.constant.RemotingCommandCodeConstants;
@@ -30,7 +29,7 @@ public class ServiceRegistryProcessor {
     /**
      * 注册客户端服务
      *
-     * @param channel         channel
+     * @param channel channel
      * @param remotingCommand remotingCommand
      * @return CompletableFuture<RegistryState>
      */
@@ -38,6 +37,7 @@ public class ServiceRegistryProcessor {
             Channel channel,
             RemotingCommand remotingCommand
     ) {
+        // Step 1 解析获取参数
         String group = remotingCommand.getGroup();
         String serviceId = remotingCommand.getServiceId();
         String clientId = remotingCommand.getClientId();
@@ -47,7 +47,7 @@ public class ServiceRegistryProcessor {
         ServiceInstance serviceInstance = ServiceInstance.builder()
                 .group(group)
                 .serviceId(serviceId)
-                .clientId(clientId)
+                .instanceId(clientId)
                 .host(serviceAddress[0])
                 .port(Integer.parseInt(serviceAddress[1]))
                 .build();
@@ -61,7 +61,7 @@ public class ServiceRegistryProcessor {
             }
         }
 
-
+        // Step 2 注册服务实例
         RemotingCommand response = new RemotingCommand();
         response.setFlag(RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE_RESPONSE);
         response.setTransactionId(remotingCommand.getTransactionId());
@@ -76,13 +76,14 @@ public class ServiceRegistryProcessor {
                 response.setCode(RemotingCommandCodeConstants.FAIL);
             }
 
-            log.debug("registry state [{}]", registryState);
+            log.info("client[{}] registry state [{}]", serviceInstance, registryState);
         } catch (Exception e) {
             log.error("[{}]-[{}] registry error", group, serviceId, e);
             registryState = RegistryState.UNKNOWN_ERROR;
             response.setCode(RemotingCommandCodeConstants.FAIL);
         }
 
+        // Step 3 添加注册状态
         response.addExtField(ExtFieldsConstants.NAMESERVER_REGISTRY_STATUS, registryState.name());
         return response;
     }

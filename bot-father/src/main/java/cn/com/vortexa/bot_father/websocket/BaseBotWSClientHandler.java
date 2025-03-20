@@ -175,7 +175,6 @@ public abstract class BaseBotWSClientHandler<T> extends AbstractWebSocketClientH
      */
     protected void handlerPing(Channel ch, PingWebSocketFrame pingWebSocketFrame) {
         log.info("WebSocket Client [{}] received ping", ch.attr(NettyConstants.CLIENT_NAME).get());
-        autoConnectWSService.sendPong();
     }
 
     private BaseBotWSClient<T> getBotWSClient() {

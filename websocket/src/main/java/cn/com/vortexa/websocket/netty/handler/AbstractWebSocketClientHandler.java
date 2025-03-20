@@ -84,7 +84,8 @@ public abstract class AbstractWebSocketClientHandler<T> extends BaseWebSocketInb
      */
     @Override
     protected void handleAllIdle(ChannelHandlerContext ctx) {
-        autoConnectWSService.sendPing();
+        log.debug("channel[{}][{}] not active long time",
+                ctx.channel().id(), ctx.channel().attr(NettyConstants.CLIENT_NAME).get());
     }
 
     /**

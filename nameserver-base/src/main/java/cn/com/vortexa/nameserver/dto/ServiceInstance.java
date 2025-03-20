@@ -13,7 +13,7 @@ public class ServiceInstance {
 
     private String serviceId;
 
-    private String clientId;
+    private String instanceId;
 
     private String host;
 
@@ -21,6 +21,6 @@ public class ServiceInstance {
 
     @Override
     public String toString() {
-        return "[%s][%s][%s]-[%s:%s]".formatted(group, serviceId, clientId, host, port);
+        return "[%s][%s][%s]-[%s:%s]".formatted(group, serviceId, instanceId, host, port);
     }
 }
