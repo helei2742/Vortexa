@@ -7,8 +7,6 @@ import cn.com.vortexa.websocket.netty.constants.WebsocketClientStatus;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -44,12 +42,33 @@ public abstract class BaseBotWSClient<T> extends AbstractWebsocketClient<T> {
         updateClientStatus(WebsocketClientStatus.NEW);
     }
 
+    /**
+     * 获取心跳消息
+     *
+     * @return T
+     */
     public abstract T getHeartbeatMessage();
 
+    /**
+     * 账户收到响应时的处理
+     *
+     * @param id       id
+     * @param response response
+     */
     public abstract void whenAccountReceiveResponse(Object id, T response);
 
+    /**
+     * 账户收到消息处理
+     *
+     * @param message message
+     */
     public abstract void whenAccountReceiveMessage(T message);
 
+    /**
+     * ws链接状态改变处理
+     *
+     * @param clientStatus clientStatus
+     */
     public void whenAccountClientStatusChange(WebsocketClientStatus clientStatus) {
     }
 
@@ -65,18 +84,6 @@ public abstract class BaseBotWSClient<T> extends AbstractWebsocketClient<T> {
         p.addLast(new WebSocketFrameAggregator(MAX_FRAME_SIZE));  // 设置聚合器的最大帧大小
 
         p.addLast(getHandler());
-    }
-
-    @Override
-    public void sendPing() {
-        log.debug("client [{}] send ping to [{}]", getName(), getUrl());
-        getChannel().writeAndFlush(new PingWebSocketFrame());
-    }
-
-    @Override
-    public void sendPong(Object ping) {
-        log.debug("client [{}] send pong {}", getName(), getUrl());
-        getChannel().writeAndFlush(new PongWebSocketFrame());
     }
 
     /**

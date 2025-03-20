@@ -58,7 +58,7 @@ public abstract class AbstractWebsocketClient<T> extends AutoConnectWSService {
     }
 
     @Override
-    protected void init() throws SSLException, URISyntaxException {
+    protected final void init() throws SSLException, URISyntaxException {
         URI uri = new URI(getUrl());
 
         WebSocketClientHandshaker webSocketClientHandshaker = handshake ? WebSocketClientHandshakerFactory.newHandshaker(
@@ -114,14 +114,6 @@ public abstract class AbstractWebsocketClient<T> extends AutoConnectWSService {
      * @param p p
      */
     public abstract void addPipeline(ChannelPipeline p);
-
-    /**
-     * 从消息中获取id
-     *
-     * @param message message
-     * @return Object
-     */
-    public abstract Object getIdFromMessage(T message);
 
     /**
      * 发送消息，没有回调

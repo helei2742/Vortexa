@@ -72,10 +72,6 @@ public class NameserverClient extends AbstractWebsocketClient<RemotingCommand> {
         p.addLast(getHandler());
     }
 
-    @Override
-    public Object getIdFromMessage(RemotingCommand message) {
-        return message.getTransactionId();
-    }
 
     @Override
     protected void doSendMessage(RemotingCommand message, boolean b) {

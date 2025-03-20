@@ -94,6 +94,11 @@ public abstract class BaseBotWSClientHandler<T> extends AbstractWebSocketClientH
         }
     }
 
+    /**
+     * 收到消息时调用
+     *
+     * @param text text
+     */
     protected void whenReceiveMessage(String text) {
         T message = convertMessageToRespType(text);
 
