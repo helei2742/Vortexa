@@ -3,8 +3,9 @@ package cn.com.vortexa.bot_platform.controller;
 import cn.com.vortexa.common.vo.BotBindVO;
 import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.common.dto.Result;
-import cn.com.vortexa.rpc.IBotInfoRPC;
-import org.apache.dubbo.config.annotation.DubboReference;
+import cn.com.vortexa.db_layer.service.IBotInfoService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.SQLException;
@@ -21,12 +22,12 @@ import java.sql.SQLException;
 @RequestMapping("/bot")
 public class BotInfoController {
 
-    @DubboReference
-    private IBotInfoRPC botInfoRPC;
+    @Autowired
+    private IBotInfoService botInfoService;
 
     @PostMapping("/pageQuery")
     public Result pageQuery(@RequestBody PageQuery query) throws SQLException {
-        return Result.ok(botInfoRPC.conditionPageQuery(
+        return Result.ok(botInfoService.conditionPageQuery(
                 query.getPage(),
                 query.getLimit(),
                 query.getFilterMap()
@@ -35,7 +36,7 @@ public class BotInfoController {
 
     @PostMapping("/create")
     public Result create(@RequestBody BotBindVO botBindVO) {
-        return botInfoRPC.bindBotAccountBaseInfo(botBindVO.getBotId(), botBindVO.getBotKey(),
+        return botInfoService.bindBotAccountBaseInfo(botBindVO.getBotId(), botBindVO.getBotKey(),
                 botBindVO.getBindAccountBaseInfoList());
     }
 }

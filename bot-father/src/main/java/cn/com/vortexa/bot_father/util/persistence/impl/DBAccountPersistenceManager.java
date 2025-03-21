@@ -23,7 +23,6 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
     private final ExecutorService executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory("database-"));
 
     private final BotApi botApi;
-    ;
 
     public DBAccountPersistenceManager(BotApi botApi) {
         this.botApi = botApi;
@@ -37,7 +36,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
     @Override
     public void persistenceAccountContexts(List<AccountContext> accountContexts) {
         try {
-            botApi.getBotAccountRPC().insertOrUpdateBatch(accountContexts);
+            botApi.getBotAccountService().insertOrUpdateBatch(accountContexts);
         } catch (SQLException e) {
             throw new RuntimeException("persistence bot account context error", e);
         }
@@ -53,7 +52,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
         List<AccountContext> accountContexts = null;
         try {
             accountContexts = botApi
-                    .getBotAccountRPC()
+                    .getBotAccountService()
                     .conditionQuery(query);
         } catch (SQLException e) {
             throw new RuntimeException("query bot[%s][%s] account list error".formatted(botId, botKey), e);
@@ -85,7 +84,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
         Object target = invocation.getTarget();
         if (target instanceof AccountContext) {
             try {
-                botApi.getBotAccountRPC().insertOrUpdate((AccountContext) target);
+                botApi.getBotAccountService().insertOrUpdate((AccountContext) target);
             } catch (SQLException e) {
                 log.error("更新Bot Account Context[{}] error", target, e);
             }
@@ -100,30 +99,29 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
      */
     @Override
     public void fillAccountInfo(AccountContext accountContext) {
-
         // Step 2.1 绑定基础账号信息
         if (accountContext.getAccountBaseInfoId() != null) {
-            accountContext.setAccountBaseInfo(botApi.getAccountBaseInfoRPC().queryById(accountContext.getAccountBaseInfoId()));
+            accountContext.setAccountBaseInfo(botApi.getAccountBaseInfoRPC().queryByIdRPC(accountContext.getAccountBaseInfoId()));
         }
         // Step 2,2 绑定推特
         if (accountContext.getTwitterId() != null) {
-            accountContext.setTwitter(botApi.getTwitterAccountRPC().queryById(accountContext.getTwitterId()));
+            accountContext.setTwitter(botApi.getTwitterAccountRPC().queryByIdRPC(accountContext.getTwitterId()));
         }
         // Step 2,3 绑定 discord
         if (accountContext.getDiscordId() != null) {
-            accountContext.setDiscord(botApi.getDiscordAccountRPC().queryById(accountContext.getDiscordId()));
+            accountContext.setDiscord(botApi.getDiscordAccountRPC().queryByIdRPC(accountContext.getDiscordId()));
         }
         // Step 2.4 绑定代理
         if (accountContext.getProxyId() != null) {
-            accountContext.setProxy(botApi.getProxyInfoRPC().queryById(accountContext.getProxyId()));
+            accountContext.setProxy(botApi.getProxyInfoRPC().queryByIdRPC(accountContext.getProxyId()));
         }
         // Step 2.5 绑定浏览器环境
         if (accountContext.getBrowserEnvId() != null) {
-            accountContext.setBrowserEnv(botApi.getBrowserEnvRPC().queryById(accountContext.getBrowserEnvId()));
+            accountContext.setBrowserEnv(botApi.getBrowserEnvRPC().queryByIdRPC(accountContext.getBrowserEnvId()));
         }
         // Step 2.6 绑定tg
         if (accountContext.getTelegramId() != null) {
-            accountContext.setTelegram(botApi.getTelegramAccountRPC().queryById(accountContext.getBrowserEnvId()));
+            accountContext.setTelegram(botApi.getTelegramAccountRPC().queryByIdRPC(accountContext.getBrowserEnvId()));
         }
         // Step 2.7 绑定钱包
         if (accountContext.getWalletId() != null) {
@@ -131,7 +129,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
         }
         // Step 2.8 绑定奖励信息
         if (accountContext.getRewardId() != null) {
-            RewordInfo rewordInfo = botApi.getRewordInfoRPC().queryById(accountContext.getRewardId());
+            RewordInfo rewordInfo = botApi.getRewordInfoService().queryById(accountContext.getRewardId());
             accountContext.setRewordInfo(rewordInfo);
         }
     }

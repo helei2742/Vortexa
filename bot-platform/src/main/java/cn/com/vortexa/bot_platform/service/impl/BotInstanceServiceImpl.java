@@ -6,11 +6,14 @@ import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.common.entity.BotInfo;
 import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.db_layer.mapper.BotInstanceMapper;
-import cn.com.vortexa.rpc.IBotInstanceRPC;
+import cn.com.vortexa.db_layer.service.IBotInstanceService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+
+import cn.com.vortexa.rpc.IBotInstanceRPC;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboService;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -27,8 +30,9 @@ import java.util.stream.Collectors;
  * @since 2025-02-18
  */
 @Slf4j
-@DubboService
-public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMapper, BotInstance> implements IBotInstanceRPC {
+@Service
+public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMapper, BotInstance>
+        implements IBotInstanceRPC, IBotInstanceService {
 
     @Autowired
     private BotInfoMapper botInfoMapper;
@@ -40,6 +44,7 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
             botInstance.setIsValid(1);
         });
     }
+
     @Override
     public PageResult<BotInstance> conditionPageQuery(int page, int limit, Map<String, Object> filterMap) throws SQLException {
 
@@ -61,5 +66,15 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
     @Override
     public Boolean existsBotInstance(BotInstance query) {
         return getBaseMapper().exists(new QueryWrapper<>(query));
+    }
+
+    @Override
+    public Boolean existsBotInstanceRPC(BotInstance query) {
+        return existsBotInstance(query);
+    }
+
+    @Override
+    public Integer insertOrUpdateRPC(BotInstance instance) throws SQLException {
+        return insertOrUpdate(instance);
     }
 }

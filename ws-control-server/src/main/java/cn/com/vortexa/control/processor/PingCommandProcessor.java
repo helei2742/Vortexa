@@ -1,0 +1,31 @@
+package cn.com.vortexa.control.processor;
+
+import cn.com.vortexa.control.dto.RemotingCommand;
+import cn.com.vortexa.control.BotControlServer;
+import io.netty.channel.Channel;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * @author helei
+ * @since 2025/3/18 9:46
+ */
+@Slf4j
+public class PingCommandProcessor {
+
+    private final BotControlServer botControlServer;
+
+    public PingCommandProcessor(BotControlServer botControlServer) {
+        this.botControlServer = botControlServer;
+    }
+
+    public RemotingCommand handlerPing(String clientName, Channel channel, RemotingCommand remotingCommand) {
+        log.debug("receive client[{}] ping", clientName);
+        // 刷新连接状态
+        botControlServer.getConnectionService().freshServiceInstanceConnection(clientName, channel);
+
+        // 返回pong
+        RemotingCommand pong = RemotingCommand.generatePongCommand(clientName);
+        pong.setTransactionId(remotingCommand.getTransactionId());
+        return pong;
+    }
+}

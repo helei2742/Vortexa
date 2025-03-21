@@ -113,11 +113,11 @@ public abstract class AbstractAutoBot {
 
         // Step 2.2 保存bot info
         try {
-            if (botApi.getBotInfoRPC().insertOrUpdate(botInfo) == 1) {
+            if (botApi.getBotInfoRPC().insertOrUpdateRPC(botInfo) == 1) {
                 Map<String, Object> query = new HashMap<>();
                 query.put("name", botInfo.getName());
                 // 保存成还需查询botId
-                Integer id = botApi.getBotInfoRPC().conditionQuery(query).getFirst().getId();
+                Integer id = botApi.getBotInfoRPC().conditionQueryRPC(query).getFirst().getId();
                 botInfo.setId(id);
                 AutoBotConfig.BOT_ID = id;
                 logger.info("save bot info success, id:" + botInfo.getId());
@@ -135,7 +135,7 @@ public abstract class AbstractAutoBot {
             // Step 2.4 初始化存储的Table
             logger.info("start init database table");
             // 检查对应分表是否存在
-            if (!botApi.getBotAccountRPC().checkAndCreateShardedTable(botInfo.getId(), getAutoBotConfig().getBotKey(), true)) {
+            if (!botApi.getBotAccountService().checkAndCreateShardedTable(botInfo.getId(), getAutoBotConfig().getBotKey(), true)) {
                 throw new RuntimeException("bot account table create error");
             }
             logger.info("database table init finish");

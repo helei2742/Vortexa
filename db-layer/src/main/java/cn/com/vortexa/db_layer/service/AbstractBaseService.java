@@ -1,7 +1,6 @@
 package cn.com.vortexa.db_layer.service;
 
 import cn.com.vortexa.common.dto.PageResult;
-import cn.com.vortexa.common.service.IBaseService;
 import cn.com.vortexa.common.util.ConditionBuildUtil;
 import cn.com.vortexa.db_layer.mapper.IBaseMapper;
 import cn.com.vortexa.db_layer.util.ConditionQueryUtil;

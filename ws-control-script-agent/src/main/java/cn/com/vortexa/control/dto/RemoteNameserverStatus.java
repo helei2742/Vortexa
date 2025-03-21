@@ -1,0 +1,19 @@
+package cn.com.vortexa.control.dto;
+
+
+import cn.com.vortexa.control.constant.NameserverState;
+import lombok.Data;
+
+/**
+ * @author helei
+ * @since 2025-03-20
+ */
+@Data
+public class RemoteNameserverStatus {
+
+    private NameserverState nameserverState = NameserverState.SHUT_DOWN;
+
+    private long lastUpdateTimestamp = System.currentTimeMillis();
+
+    private ServiceInstance nameserverInstance;
+}

@@ -1,23 +1,29 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
+import cn.com.vortexa.db_layer.service.IAccountBaseInfoService;
+import cn.com.vortexa.rpc.IAccountBaseInfoRPC;
 import cn.com.vortexa.common.config.SystemConfig;
+import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.excel.ExcelReadUtil;
 import cn.com.vortexa.db_layer.mapper.AccountBaseInfoMapper;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.common.entity.AccountBaseInfo;
-import cn.com.vortexa.rpc.IAccountBaseInfoRPC;
+import cn.com.vortexa.rpc.anno.RPCMethod;
+import cn.com.vortexa.rpc.anno.RPCService;
 import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboService;
+
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
-        import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -29,11 +35,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 2025-02-05
  */
 @Slf4j
-@DubboService
-public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseInfoMapper, AccountBaseInfo> implements IAccountBaseInfoRPC {
+@Service
+@RPCService
+public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseInfoMapper, AccountBaseInfo>
+        implements IAccountBaseInfoRPC, IAccountBaseInfoService {
 
     public static final String DEFAULT_ACCOUNT_TYPE = "default";
-
 
     public AccountBaseInfoServiceImpl() {
         super(accountBaseInfo -> {
@@ -41,6 +48,19 @@ public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseI
             accountBaseInfo.setUpdateDatetime(LocalDateTime.now());
             accountBaseInfo.setIsValid(1);
         });
+    }
+
+    @Override
+    @RPCMethod
+    public AccountBaseInfo queryByIdRPC(Serializable id) {
+        return super.queryById(id);
+    }
+
+    @Override
+    @RPCMethod
+    public PageResult<AccountBaseInfo> conditionPageQueryRPC(int page, int limit, Map<String, Object> filterMap)
+            throws SQLException {
+        return super.conditionPageQuery(page, limit, filterMap);
     }
 
     @Override
@@ -57,7 +77,6 @@ public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseI
             return Result.fail("导入账户数据失败," + e.getMessage());
         }
     }
-
 
     @Override
     public Result queryTypedInfo() {

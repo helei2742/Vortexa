@@ -2,6 +2,7 @@ package cn.com.vortexa.bot_father.service.impl;
 
 import cn.com.vortexa.bot_father.config.AutoBotConfig;
 import cn.com.vortexa.bot_father.mapper.BotAccountContextMapper;
+import cn.com.vortexa.bot_father.service.IBotAccountContextService;
 import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
@@ -14,10 +15,11 @@ import cn.com.vortexa.db_layer.plugn.table_shard.strategy.ITableShardStrategy;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.rpc.IBotInstanceRPC;
 import cn.com.vortexa.rpc.IBrowserEnvRPC;
-import cn.com.vortexa.rpc.bot.IBotAccountRPC;
+import cn.com.vortexa.rpc.anno.RPCMethod;
+import cn.com.vortexa.rpc.anno.RPCReference;
+import cn.com.vortexa.rpc.constants.BotScriptAgentRCCode;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +39,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccountContextMapper, AccountContext> implements IBotAccountRPC {
+public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccountContextMapper, AccountContext> implements IBotAccountContextService {
 
     public static final String BOT_ACCOUNT_CONTEXT_TABLE_PREFIX = "t_bot_account_context";
 
@@ -47,10 +49,10 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
     @Autowired
     private ITableShardStrategy tableShardStrategy;
 
-    @DubboReference
+    @RPCReference
     private IBotInstanceRPC botInstanceRPC;
 
-    @DubboReference
+    @RPCReference
     private IBrowserEnvRPC browserEnvRPC;
 
     public BotAccountContextServiceImpl() {
@@ -63,6 +65,7 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
 
 
     @Override
+    @RPCMethod(code = BotScriptAgentRCCode.SAVE_BOT_AC)
     public Result saveBotAccountContext(Integer botId, String botKey, List<Map<String, Object>> rawLines) {
         if (botId == null || StrUtil.isBlank(botKey)) {
             return Result.fail("botId或botKey不能为空");
@@ -92,7 +95,7 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
                 .botId(botId).botKey(botKey)
                 .build();
 
-        if (botInstanceRPC.existsBotInstance(query)) {
+        if (botInstanceRPC.existsBotInstanceRPC(query)) {
 
             if (!existUpdate) {
                 throw new SQLException("[%s]-[%s]对应表已存在".formatted(botId, botKey));
@@ -105,7 +108,7 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
         query.setAccountTableName(tableName);
 
         try {
-            botInstanceRPC.insertOrUpdate(query);
+            botInstanceRPC.insertOrUpdateRPC(query);
             getBaseMapper().createIfTableNotExist(botId, botKey);
             return true;
         } catch (Exception e) {
@@ -161,7 +164,7 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
         // Step 1 RPC 请求获取浏览器环境
         List<BrowserEnv> allBrowser = null;
         try {
-            PageResult<BrowserEnv> pageResult = browserEnvRPC.conditionPageQuery(1, accountContexts.size(), null);
+            PageResult<BrowserEnv> pageResult = browserEnvRPC.conditionPageQueryRPC(1, accountContexts.size(), null);
             if (pageResult != null) {
                 allBrowser = pageResult.getList();
             }

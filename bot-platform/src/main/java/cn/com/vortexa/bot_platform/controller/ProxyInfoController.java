@@ -4,8 +4,9 @@ import cn.com.vortexa.common.vo.BotImportVO;
 import cn.com.vortexa.common.vo.DeleteVO;
 import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.common.dto.Result;
-import cn.com.vortexa.rpc.IProxyInfoRPC;
-import org.apache.dubbo.config.annotation.DubboReference;
+import cn.com.vortexa.db_layer.service.IProxyInfoService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,17 +26,17 @@ import java.sql.SQLException;
 @RequestMapping("/proxyInfo")
 public class ProxyInfoController {
 
-    @DubboReference
-    private IProxyInfoRPC proxyInfoRPC;
+    @Autowired
+    private IProxyInfoService proxyInfoService;
 
     @PostMapping("/batchAdd")
     public Result batchAdd(@RequestBody BotImportVO importVO) {
-        return proxyInfoRPC.saveProxyInfos(importVO.getRawLines());
+        return proxyInfoService.saveProxyInfos(importVO.getRawLines());
     }
 
     @PostMapping("/pageQuery")
     public Result pageQuery(@RequestBody PageQuery query) throws SQLException {
-        return Result.ok(proxyInfoRPC.conditionPageQuery(
+        return Result.ok(proxyInfoService.conditionPageQuery(
                 query.getPage(),
                 query.getLimit(),
                 query.getFilterMap()
@@ -44,7 +45,7 @@ public class ProxyInfoController {
 
     @PostMapping("/delete")
     public Result delete(@RequestBody DeleteVO deleteVO) {
-        Boolean delete = proxyInfoRPC.delete(deleteVO.getIds());
+        Boolean delete = proxyInfoService.delete(deleteVO.getIds());
         if (delete) {
             return Result.ok();
         } else {

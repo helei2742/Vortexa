@@ -4,8 +4,9 @@ import cn.com.vortexa.common.vo.BotImportVO;
 import cn.com.vortexa.common.vo.DeleteVO;
 import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.common.dto.Result;
-import cn.com.vortexa.rpc.IAccountBaseInfoRPC;
-import org.apache.dubbo.config.annotation.DubboReference;
+import cn.com.vortexa.db_layer.service.IAccountBaseInfoService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.SQLException;
@@ -22,17 +23,17 @@ import java.sql.SQLException;
 @RequestMapping("/accountBaseInfo")
 public class AccountBaseInfoController {
 
-    @DubboReference
-    private IAccountBaseInfoRPC accountBaseInfoRPC;
+    @Autowired
+    private IAccountBaseInfoService accountBaseInfoService;
 
     @PostMapping("/batchAdd")
     public Result batchAdd(@RequestBody BotImportVO importVO) {
-        return accountBaseInfoRPC.saveAccountBaseInfos(importVO.getRawLines());
+        return accountBaseInfoService.saveAccountBaseInfos(importVO.getRawLines());
     }
 
     @PostMapping("/pageQuery")
     public Result pageQuery(@RequestBody PageQuery query) throws SQLException {
-        return Result.ok(accountBaseInfoRPC.conditionPageQuery(
+        return Result.ok(accountBaseInfoService.conditionPageQuery(
                 query.getPage(),
                 query.getLimit(),
                 query.getFilterMap()
@@ -41,12 +42,12 @@ public class AccountBaseInfoController {
 
     @GetMapping("/typedInfo")
     public Result queryTypedInfo() {
-        return accountBaseInfoRPC.queryTypedInfo();
+        return accountBaseInfoService.queryTypedInfo();
     }
 
     @PostMapping("/delete")
     public Result delete(@RequestBody DeleteVO deleteVO) {
-        Boolean delete = accountBaseInfoRPC.delete(deleteVO.getIds());
+        Boolean delete = accountBaseInfoService.delete(deleteVO.getIds());
         if (delete) {
             return Result.ok();
         } else {

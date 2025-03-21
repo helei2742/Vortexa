@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,6 +49,11 @@ public class YamlConfigLoadUtil {
                     if (prefixList != null) {
                         for (String prefix : prefixList) {
                             yamlData = (Map<String, Object>) yamlData.get(prefix);
+                            Map<String, Object> target = new HashMap<>();
+                            for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
+                                target.put(toCamelCase(entry.getKey()), entry.getValue());
+                            }
+                            yamlData = target;
                         }
                     }
 
@@ -83,6 +89,11 @@ public class YamlConfigLoadUtil {
                     if (prefixList != null) {
                         for (String prefix : prefixList) {
                             yamlData = (Map<String, Object>) yamlData.get(prefix);
+                            Map<String, Object> target = new HashMap<>();
+                            for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
+                                target.put(toCamelCase(entry.getKey()), entry.getValue());
+                            }
+                            yamlData = target;
                         }
                     }
                     return yamlData.get("list");
@@ -108,6 +119,11 @@ public class YamlConfigLoadUtil {
                     if (prefixList != null) {
                         for (String prefix : prefixList) {
                             yamlData = (Map<String, Object>) yamlData.get(prefix);
+                            Map<String, Object> target = new HashMap<>();
+                            for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
+                                target.put(toCamelCase(entry.getKey()), entry.getValue());
+                            }
+                            yamlData = target;
                         }
                     }
 
@@ -120,6 +136,15 @@ public class YamlConfigLoadUtil {
         });
 
         return (T) compute;
+    }
+
+    private static String toCamelCase(String name) {
+        String[] parts = name.split("-");
+        StringBuilder camelCase = new StringBuilder(parts[0]);
+        for (int i = 1; i < parts.length; i++) {
+            camelCase.append(parts[i].substring(0, 1).toUpperCase()).append(parts[i].substring(1));
+        }
+        return camelCase.toString();
     }
 
     public static void main(String[] args) {

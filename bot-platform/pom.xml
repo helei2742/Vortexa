@@ -36,7 +36,7 @@
 
         <dependency>
             <groupId>cn.com.vortexa</groupId>
-            <artifactId>nameserver-server</artifactId>
+            <artifactId>ws-control-server</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 

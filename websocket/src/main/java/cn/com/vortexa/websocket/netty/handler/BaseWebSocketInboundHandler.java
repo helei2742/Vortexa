@@ -130,7 +130,7 @@ public abstract class BaseWebSocketInboundHandler<T> extends SimpleChannelInboun
                     remove.getCallback().accept(response);
                 }
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                log.error("response callback invoke error", e);
             }
             return true;
         }, callbackInvoker);

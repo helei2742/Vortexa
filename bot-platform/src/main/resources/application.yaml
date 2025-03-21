@@ -32,4 +32,16 @@ logging:
         dubbo: WARN
         zookeeper: WARN
 server:
-  port: 10010
+  port: 10110
+
+
+vortexa:
+  control-server:
+      nio-thread-count: 1 # netty nio 线程数
+      service-offline-ttl: 120  # 服务下线时间
+      service-instance:
+        host: localhost # 命名服务host
+        port: 18848 # 命名服务port
+        group: test1
+        serviceId: nameserver
+        instanceId: nameserver-1

@@ -18,13 +18,13 @@
         <module>db-layer</module>
         <module>bot-example</module>
         <module>captcha</module>
-        <module>rpc</module>
+        <module>rpc-api</module>
         <module>job</module>
         <module>browser-controller</module>
         <module>web3</module>
-        <module>nameserver-base</module>
-        <module>nameserver-server</module>
-        <module>nameserver-client</module>
+        <module>ws-control-base</module>
+        <module>ws-control-server</module>
+        <module>ws-control-script-agent</module>
     </modules>
 
     <properties>

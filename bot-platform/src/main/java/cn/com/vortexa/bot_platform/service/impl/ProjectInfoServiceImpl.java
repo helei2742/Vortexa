@@ -3,8 +3,8 @@ package cn.com.vortexa.bot_platform.service.impl;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.common.entity.ProjectInfo;
 import cn.com.vortexa.db_layer.mapper.ProjectInfoMapper;
-import cn.com.vortexa.rpc.IProjectInfoRPC;
-import org.apache.dubbo.config.annotation.DubboService;
+import cn.com.vortexa.db_layer.service.IProjectInfoService;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
@@ -16,8 +16,9 @@ import java.time.LocalDateTime;
  * @author com.helei
  * @since 2025-02-07
  */
-@DubboService
-public class ProjectInfoServiceImpl extends AbstractBaseService<ProjectInfoMapper, ProjectInfo> implements IProjectInfoRPC {
+@Service
+public class ProjectInfoServiceImpl extends AbstractBaseService<ProjectInfoMapper, ProjectInfo> implements
+        IProjectInfoService {
 
     public ProjectInfoServiceImpl() {
         super(projectInfo -> {
@@ -26,5 +27,4 @@ public class ProjectInfoServiceImpl extends AbstractBaseService<ProjectInfoMappe
             projectInfo.setIsValid(1);
         });
     }
-
 }

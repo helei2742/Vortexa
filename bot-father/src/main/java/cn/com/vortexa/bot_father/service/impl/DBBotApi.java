@@ -1,12 +1,18 @@
 package cn.com.vortexa.bot_father.service.impl;
 
 import cn.com.vortexa.bot_father.service.BotApi;
+import cn.com.vortexa.rpc.IAccountBaseInfoRPC;
+import cn.com.vortexa.rpc.IBotInfoRPC;
 import cn.com.vortexa.job.service.BotJobService;
-import cn.com.vortexa.rpc.*;
+import cn.com.vortexa.rpc.IBrowserEnvRPC;
+import cn.com.vortexa.rpc.IDiscordAccountRPC;
+import cn.com.vortexa.rpc.IProxyInfoRPC;
+import cn.com.vortexa.rpc.ITelegramAccountRPC;
+import cn.com.vortexa.rpc.ITwitterAccountRPC;
+import cn.com.vortexa.rpc.anno.RPCReference;
 import cn.com.vortexa.rpc.bot.IBotAccountRPC;
 import cn.com.vortexa.rpc.bot.IRewordInfoRPC;
 import lombok.Getter;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,32 +25,30 @@ public class DBBotApi implements BotApi {
     private BotJobService botJobService;
 
     @Autowired
-    private IBotAccountRPC botAccountRPC;
+    private IBotAccountRPC botAccountService;
 
     @Autowired
-    private IRewordInfoRPC rewordInfoRPC;
+    private IRewordInfoRPC rewordInfoService;
 
-//    @DubboReference
-    private IProjectInfoRPC projectInfoRPC;
 
-    @DubboReference
+    @RPCReference
     private IBotInfoRPC botInfoRPC;
 
-    @DubboReference
+    @RPCReference
     private IAccountBaseInfoRPC accountBaseInfoRPC;
 
-    @DubboReference
+    @RPCReference
     private ITwitterAccountRPC twitterAccountRPC;
 
-    @DubboReference
+    @RPCReference
     private ITelegramAccountRPC telegramAccountRPC;
 
-    @DubboReference
+    @RPCReference
     private IProxyInfoRPC proxyInfoRPC;
 
-    @DubboReference
+    @RPCReference
     private IBrowserEnvRPC browserEnvRPC;
 
-    @DubboReference
+    @RPCReference
     private IDiscordAccountRPC discordAccountRPC;
 }

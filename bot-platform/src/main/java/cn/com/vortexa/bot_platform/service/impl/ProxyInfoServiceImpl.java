@@ -1,18 +1,21 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
+import cn.com.vortexa.db_layer.service.IProxyInfoService;
+import cn.com.vortexa.rpc.IProxyInfoRPC;
 import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.constants.ProxyProtocol;
 import cn.com.vortexa.common.constants.ProxyType;
+import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.excel.ExcelReadUtil;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.ProxyInfo;
 import cn.com.vortexa.db_layer.mapper.ProxyInfoMapper;
-import cn.com.vortexa.rpc.IProxyInfoRPC;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,15 +23,15 @@ import java.util.Map;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author com.helei
  * @since 2025-02-05
  */
 @Slf4j
-@DubboService
-public class ProxyInfoServiceImpl extends AbstractBaseService<ProxyInfoMapper, ProxyInfo> implements IProxyInfoRPC {
+@Service
+public class ProxyInfoServiceImpl extends AbstractBaseService<ProxyInfoMapper, ProxyInfo> implements IProxyInfoRPC, IProxyInfoService {
 
 
     public ProxyInfoServiceImpl() {
@@ -101,5 +104,16 @@ public class ProxyInfoServiceImpl extends AbstractBaseService<ProxyInfoMapper, P
         }).toList();
 
         return insertOrUpdateBatch(list);
+    }
+
+    @Override
+    public ProxyInfo queryByIdRPC(Serializable id) {
+        return super.queryById(id);
+    }
+
+    @Override
+    public PageResult<ProxyInfo> conditionPageQueryRPC(int page, int limit, Map<String, Object> filterMap)
+            throws SQLException {
+        return super.conditionPageQuery(page, limit, filterMap);
     }
 }

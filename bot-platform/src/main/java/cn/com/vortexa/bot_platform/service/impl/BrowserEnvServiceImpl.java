@@ -1,6 +1,9 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
+import cn.com.vortexa.db_layer.service.IBrowserEnvService;
+import cn.com.vortexa.rpc.IBrowserEnvRPC;
 import cn.com.vortexa.common.config.SystemConfig;
+import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.excel.ExcelReadUtil;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
@@ -8,10 +11,11 @@ import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.BrowserEnv;
 import cn.com.vortexa.common.util.pool.IdMarkPool;
 import cn.com.vortexa.db_layer.mapper.BrowserEnvMapper;
-import cn.com.vortexa.rpc.IBrowserEnvRPC;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboService;
 
+import org.springframework.stereotype.Service;
+
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,15 +26,16 @@ import static cn.com.vortexa.common.entity.BrowserEnv.USER_AGENT_KEY;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author com.helei
  * @since 2025-02-05
  */
 @Slf4j
-@DubboService
-public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper, BrowserEnv> implements IBrowserEnvRPC {
+@Service
+public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper, BrowserEnv>
+        implements IBrowserEnvRPC, IBrowserEnvService {
 
     private IdMarkPool<BrowserEnv> pool;
 
@@ -41,6 +46,7 @@ public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper,
             browserEnv.setIsValid(1);
         });
     }
+
 
 
     @Override
@@ -56,7 +62,6 @@ public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper,
             return Result.fail("导入浏览器环境失败," + e.getMessage());
         }
     }
-
 
     @Override
     public synchronized List<BrowserEnv> getUselessBrowserEnv(int count) {
@@ -84,7 +89,9 @@ public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper,
 
         List<BrowserEnv> list = rawLines.stream().map(map -> {
             Object userAgent = map.remove(USER_AGENT_KEY);
-            if (userAgent == null) return null;
+            if (userAgent == null) {
+                return null;
+            }
 
             BrowserEnv browserEnv = new BrowserEnv();
             browserEnv.setUserAgent((String) userAgent);
@@ -93,5 +100,16 @@ public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper,
         }).filter(Objects::nonNull).toList();
 
         return insertOrUpdateBatch(list);
+    }
+
+    @Override
+    public BrowserEnv queryByIdRPC(Serializable id) {
+        return super.queryById(id);
+    }
+
+    @Override
+    public PageResult<BrowserEnv> conditionPageQueryRPC(int page, int limit, Map<String, Object> filterMap)
+            throws SQLException {
+        return super.conditionPageQuery(page, limit, filterMap);
     }
 }

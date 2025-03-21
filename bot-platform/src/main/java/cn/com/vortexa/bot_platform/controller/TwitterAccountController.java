@@ -4,8 +4,9 @@ import cn.com.vortexa.common.vo.BotImportVO;
 import cn.com.vortexa.common.vo.DeleteVO;
 import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.common.dto.Result;
-import cn.com.vortexa.rpc.ITwitterAccountRPC;
-import org.apache.dubbo.config.annotation.DubboReference;
+import cn.com.vortexa.db_layer.service.ITwitterAccountService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,18 +26,18 @@ import java.sql.SQLException;
 @RequestMapping("/twitter")
 public class TwitterAccountController {
 
-    @DubboReference
-    private ITwitterAccountRPC twitterAccountRPC;
+    @Autowired
+    private ITwitterAccountService twitterAccountService;
 
     @PostMapping("/batchAdd")
     public Result batchAdd(@RequestBody BotImportVO importVO) {
-        return twitterAccountRPC.saveTwitters(importVO.getRawLines());
+        return twitterAccountService.saveTwitters(importVO.getRawLines());
     }
 
     @PostMapping("/pageQuery")
     public Result pageQuery(@RequestBody PageQuery query)  throws SQLException {
         return Result.ok(
-                twitterAccountRPC.conditionPageQuery(
+                twitterAccountService.conditionPageQuery(
                         query.getPage(),
                         query.getLimit(),
                         query.getFilterMap()
@@ -47,7 +48,7 @@ public class TwitterAccountController {
 
     @PostMapping("/delete")
     public Result delete(@RequestBody DeleteVO deleteVO) {
-        Boolean delete = twitterAccountRPC.delete(deleteVO.getIds());
+        Boolean delete = twitterAccountService.delete(deleteVO.getIds());
         if (delete) {
             return Result.ok();
         } else {

@@ -1,16 +1,20 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
+import cn.com.vortexa.db_layer.service.ITwitterAccountService;
+import cn.com.vortexa.rpc.ITwitterAccountRPC;
 import cn.com.vortexa.common.config.SystemConfig;
+import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.excel.ExcelReadUtil;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.TwitterAccount;
 import cn.com.vortexa.db_layer.mapper.TwitterAccountMapper;
-import cn.com.vortexa.rpc.ITwitterAccountRPC;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboService;
 
+import org.springframework.stereotype.Service;
+
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,9 +29,9 @@ import java.util.Map;
  * @since 2025-02-05
  */
 @Slf4j
-@DubboService
-public class TwitterAccountServiceImpl extends AbstractBaseService<TwitterAccountMapper, TwitterAccount> implements ITwitterAccountRPC {
-
+@Service
+public class TwitterAccountServiceImpl extends AbstractBaseService<TwitterAccountMapper, TwitterAccount>
+        implements ITwitterAccountRPC, ITwitterAccountService {
 
     public TwitterAccountServiceImpl() {
         super(twitterAccount -> {
@@ -35,6 +39,17 @@ public class TwitterAccountServiceImpl extends AbstractBaseService<TwitterAccoun
             twitterAccount.setUpdateDatetime(LocalDateTime.now());
             twitterAccount.setIsValid(1);
         });
+    }
+
+    @Override
+    public TwitterAccount queryByIdRPC(Serializable id) {
+        return super.queryById(id);
+    }
+
+    @Override
+    public PageResult<TwitterAccount> conditionPageQueryRPC(int page, int limit, Map<String, Object> filterMap)
+            throws SQLException {
+        return super.conditionPageQuery(page, limit, filterMap);
     }
 
     @Override

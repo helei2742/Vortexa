@@ -13,7 +13,6 @@ import cn.com.vortexa.db_layer.plugn.table_shard.strategy.ITableShardStrategy;
 import cn.com.vortexa.job.JobAutoConfig;
 import cn.hutool.core.util.StrUtil;
 import com.zaxxer.hikari.HikariDataSource;
-import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
@@ -33,7 +32,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-@EnableDubbo
 @Configuration
 @ImportAutoConfiguration({DBLayerAutoConfig.class, DubboConfig.class, JobAutoConfig.class})
 @ComponentScan({"cn.com.vortexa.bot_father.service.impl", "cn.com.vortexa.bot_father.config"})

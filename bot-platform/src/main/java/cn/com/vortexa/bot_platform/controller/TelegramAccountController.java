@@ -4,8 +4,9 @@ import cn.com.vortexa.common.vo.BotImportVO;
 import cn.com.vortexa.common.vo.DeleteVO;
 import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.common.dto.Result;
-import cn.com.vortexa.rpc.ITelegramAccountRPC;
-import org.apache.dubbo.config.annotation.DubboReference;
+import cn.com.vortexa.db_layer.service.ITelegramAccountService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,17 +26,17 @@ import java.sql.SQLException;
 @RequestMapping("/telegram")
 public class TelegramAccountController {
 
-    @DubboReference
-    private ITelegramAccountRPC telegramAccountRPC;
+    @Autowired
+    private ITelegramAccountService telegramAccountService;
 
     @PostMapping("/batchAdd")
     public Result batchAdd(@RequestBody BotImportVO importVO) {
-        return telegramAccountRPC.saveTelegrams(importVO.getRawLines());
+        return telegramAccountService.saveTelegrams(importVO.getRawLines());
     }
 
     @PostMapping("/pageQuery")
     public Result pageQuery(@RequestBody PageQuery query) throws SQLException {
-        return Result.ok(telegramAccountRPC.conditionPageQuery(
+        return Result.ok(telegramAccountService.conditionPageQuery(
                 query.getPage(),
                 query.getLimit(),
                 query.getFilterMap()
@@ -44,7 +45,7 @@ public class TelegramAccountController {
 
     @PostMapping("/delete")
     public Result delete(@RequestBody DeleteVO deleteVO) {
-        Boolean delete = telegramAccountRPC.delete(deleteVO.getIds());
+        Boolean delete = telegramAccountService.delete(deleteVO.getIds());
         if (delete) {
             return Result.ok();
         } else {

@@ -88,7 +88,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 // 查询是否存在botKey的bot
                 Map<String, Object> query = new HashMap<>();
                 query.put("name", botName);
-                List<BotInfo> dbBotInfoList = getBotApi().getBotInfoRPC().conditionQuery(query);
+                List<BotInfo> dbBotInfoList = getBotApi().getBotInfoRPC().conditionQueryRPC(query);
 
                 // 查询bot是否存在，不存在则创建
                 if (dbBotInfoList == null || dbBotInfoList.isEmpty()) {
@@ -438,6 +438,4 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
 
         return botInfo;
     }
-
-
 }

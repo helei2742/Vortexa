@@ -1,0 +1,14 @@
+cn:
+  com:
+    vortexa:
+      nameserver:
+        client:
+          registryCenterUrl: ws://localhost:18848
+          nio-thread-count: 1
+          service-offline-ttl: 60
+          service-instance:
+            host: localhost
+            port: 20001
+            group: test1
+            serviceId: client
+            instanceId: client-1

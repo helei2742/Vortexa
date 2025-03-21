@@ -60,6 +60,11 @@ public abstract class AutoConnectWSService implements IWSService {
 
     protected abstract void init() throws SSLException, URISyntaxException;
 
+    /**
+     * 连接
+     *
+     * @return CompletableFuture<Boolean>
+     */
     public final CompletableFuture<Boolean> connect() {
         return switch (clientStatus) {
             case NEW, STOP -> reconnect();
@@ -72,6 +77,11 @@ public abstract class AutoConnectWSService implements IWSService {
         };
     }
 
+    /**
+     * 重连接
+     *
+     * @return CompletableFuture<Boolean>
+     */
     public CompletableFuture<Boolean> reconnect() {
         return switch (clientStatus) {
             case NEW, STOP -> reconnectLogic();
@@ -96,6 +106,11 @@ public abstract class AutoConnectWSService implements IWSService {
         };
     }
 
+    /**
+     * 重连接逻辑
+     *
+     * @return CompletableFuture<Boolean>
+     */
     private CompletableFuture<Boolean> reconnectLogic() {
         updateClientStatus(WebsocketClientStatus.STARTING);
 
@@ -105,7 +120,7 @@ public abstract class AutoConnectWSService implements IWSService {
             //Step 1 重连次数超过限制，关闭
             if (reconnectTimes.get() >= reconnectLimit) {
                 log.error("reconnect times out of limit [{}], close websocket client", reconnectLimit);
-                close();
+                shutdown();
                 return false;
             }
 
@@ -119,22 +134,21 @@ public abstract class AutoConnectWSService implements IWSService {
                 if (clientStatus.equals(WebsocketClientStatus.RUNNING)) {
                     log.info("client started by other thread");
                     return true;
-                } else if (clientStatus.equals(WebsocketClientStatus.SHUTDOWN) || clientStatus.equals(
-                        WebsocketClientStatus.STOP)) {
+                } else if (clientStatus.equals(WebsocketClientStatus.SHUTDOWN)) {
                     log.error("clint {} when client starting", clientStatus);
                     return false;
                 }
 
                 //Step 3 初始化
-                log.info("开始初始化WS客户端");
+                log.info("start init Websocket client");
                 try {
                     resolveParamFromUrl();
 
                     init();
                 } catch (SSLException | URISyntaxException e) {
-                    throw new RuntimeException("初始化WS客户端发生错误", e);
+                    throw new RuntimeException("init websocket clioent error", e);
                 }
-                log.info("初始化WS客户端完成，开始链接服务器 [{}]", url);
+                log.info("init Websocket finish，start connect server [{}]", url);
 
                 //Step 4 链接服务器
                 if (reconnectTimes.incrementAndGet() <= reconnectLimit) {
@@ -144,7 +158,9 @@ public abstract class AutoConnectWSService implements IWSService {
                         reconnectTimes.decrementAndGet();
                     }, reconnectCountDownSecond, TimeUnit.SECONDS);
 
-                    log.info("start connect client [{}], url[{}], current times [{}]", name, url, reconnectTimes.get());
+                    long waitingConnectTime = reconnectTimes.get() == 1 ? 0 : NettyConstants.RECONNECT_DELAY_SECONDS;
+                    log.info("start connect client [{}], url[{}], current times [{}], start after [{}]s",
+                            name, url, reconnectTimes.get(), waitingConnectTime);
 
                     //Step 4.2 latch用于同步等等链接完成
                     CountDownLatch latch = new CountDownLatch(1);
@@ -154,33 +170,37 @@ public abstract class AutoConnectWSService implements IWSService {
                         try {
                             channel = bootstrap.connect(host, port).sync().channel();
 
-                            afterBoostrapConnected();
+                            afterBoostrapConnected(channel);
 
                             log.info("success connect to {}", url);
                             //Step 4.4 连接成功设置标识
                             isSuccess.set(true);
                         } catch (Exception e) {
-                            log.error("connect client [{}], url[{}] error, times [{}]", name, url, reconnectTimes.get(), e);
+                            log.error("connect client [{}], url[{}] error, times [{}]", name, url, reconnectTimes.get(),
+                                    e);
                             isSuccess.set(false);
                         } finally {
                             latch.countDown();
                         }
-                    }, reconnectTimes.get() == 0 ? 0 : NettyConstants.RECONNECT_DELAY_SECONDS, TimeUnit.SECONDS);
+                    }, waitingConnectTime, TimeUnit.SECONDS);
 
                     //Step 4.5 等待链接完成
                     try {
                         latch.await();
                     } catch (InterruptedException e) {
-                        log.error("connect client [{}], url[{}] interrupted, times [{}]", name, url, reconnectTimes.get(), e);
+                        log.error("connect client [{}], url[{}] interrupted, times [{}]", name, url,
+                                reconnectTimes.get(), e);
                     }
 
                     //Step 6 未成功启动，关闭
                     if (!isSuccess.get()) {
-                        log.info("connect client [{}], url[{}] fail, current times [{}]", name, url, reconnectTimes.get());
+                        log.info("connect client [{}], url[{}] fail, current times [{}]", name, url,
+                                reconnectTimes.get());
 
                         close();
                     } else {
-                        log.info("connect client [{}], url[{}] success, current times [{}]", name, url, reconnectTimes.get());
+                        log.info("connect client [{}], url[{}] success, current times [{}]", name, url,
+                                reconnectTimes.get());
 
                         updateClientStatus(WebsocketClientStatus.RUNNING);
                         reconnectTimes.set(0);
@@ -200,6 +220,9 @@ public abstract class AutoConnectWSService implements IWSService {
         }, getCallbackInvoker());
     }
 
+    /**
+     * 关闭
+     */
     public void close() {
         if (clientStatus.equals(WebsocketClientStatus.STOP)
                 || clientStatus.equals(WebsocketClientStatus.SHUTDOWN)) {
@@ -216,6 +239,9 @@ public abstract class AutoConnectWSService implements IWSService {
         log.warn("web socket client [{}] closed", getName());
     }
 
+    /**
+     * 终止
+     */
     public final void shutdown() {
         updateClientStatus(WebsocketClientStatus.SHUTDOWN);
 
@@ -247,7 +273,7 @@ public abstract class AutoConnectWSService implements IWSService {
                     clientStatusChangeHandler.accept(newStatus);
                 }
             } finally {
-                log.info("client status [{}] -> [{}]", clientStatus, newStatus);
+                log.debug("client status [{}] -> [{}]", clientStatus, newStatus);
                 clientStatus = newStatus;
             }
         }
@@ -265,7 +291,7 @@ public abstract class AutoConnectWSService implements IWSService {
      *
      * @throws InterruptedException InterruptedException
      */
-    protected abstract void afterBoostrapConnected() throws InterruptedException;
+    protected abstract void afterBoostrapConnected(Channel channel) throws InterruptedException;
 
     /**
      * 等待启动完成
