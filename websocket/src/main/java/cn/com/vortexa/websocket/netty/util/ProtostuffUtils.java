@@ -35,7 +35,6 @@ public class ProtostuffUtils {
         byte[] data;
         try {
             data = ProtobufIOUtil.toByteArray(obj, schema, buffer);
-//            data = ProtostuffIOUtil.toByteArray(obj, schema, buffer);
         } finally {
             buffer.clear();
         }

@@ -1,4 +1,4 @@
-package cn.com.vortexa.rpc.bot;
+package cn.com.vortexa.rpc.api.bot;
 
 import cn.com.vortexa.common.dto.Result;
 

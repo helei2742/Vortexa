@@ -1,7 +1,7 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.db_layer.service.IBrowserEnvService;
-import cn.com.vortexa.rpc.IBrowserEnvRPC;
+import cn.com.vortexa.rpc.api.platform.IBrowserEnvRPC;
 import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.FileUtil;

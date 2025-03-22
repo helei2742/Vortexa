@@ -1,21 +1,25 @@
 package cn.com.vortexa.bot_father.config;
 
-import cn.com.vortexa.control.NameserverClient;
-import cn.com.vortexa.control.config.NameserverClientConfig;
+import cn.com.vortexa.control.ScriptAgent;
+import cn.com.vortexa.control.config.ScriptAgentConfig;
+import cn.com.vortexa.control.dto.ArgsWrapper;
 import cn.com.vortexa.control.dto.RequestHandleResult;
 import cn.com.vortexa.control.exception.CustomCommandException;
+import cn.com.vortexa.control.exception.CustomCommandInvokeException;
 import cn.com.vortexa.control.protocol.Serializer;
-import cn.com.vortexa.rpc.dto.RPCMethodInfo;
+import cn.com.vortexa.rpc.dto.RPCServiceInfo;
+import cn.com.vortexa.rpc.util.RPCMethodUtil;
+import cn.hutool.core.util.BooleanUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.FileNotFoundException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.Map;
+import java.util.List;
 
 /**
  * @author helei
@@ -23,58 +27,69 @@ import java.util.Map;
  */
 @Slf4j
 @Configuration
+@ConditionalOnClass(ScriptAgent.class)
 public class BotScriptAgentConfig {
 
     private static final String APPLICATION_FILE_NAME = "application.yaml";
 
-    private static final String NAMESERVER_CONFIG_PREFIX = "vortexa.nameserver.client";
+    private static final String NAMESERVER_CONFIG_PREFIX = "vortexa.scriptAgent";
 
-    @Autowired
-    private RPCProviderScanner providerScanner;
+    @Autowired(required = false)
+    private List<RPCServiceInfo<?>> rpcServiceInfos;
 
     @Bean
-    public NameserverClientConfig nameserverClientConfig() throws FileNotFoundException {
-        return NameserverClientConfig.loadConfig(APPLICATION_FILE_NAME, NAMESERVER_CONFIG_PREFIX);
+    public ScriptAgentConfig scriptAgentClientConfig() throws FileNotFoundException {
+        return ScriptAgentConfig.loadConfig(APPLICATION_FILE_NAME, NAMESERVER_CONFIG_PREFIX);
     }
 
     @Bean
-    public NameserverClient nameserverClient() throws FileNotFoundException, CustomCommandException {
-        NameserverClientConfig nameserverClientConfig = nameserverClientConfig();
-        NameserverClient nameserverClient = new NameserverClient(nameserverClientConfig);
+    public ScriptAgent scriptAgent() throws FileNotFoundException, CustomCommandException {
+        ScriptAgentConfig scriptAgentConfig = scriptAgentClientConfig();
+        ScriptAgent scriptAgent = new ScriptAgent(scriptAgentConfig);
 
-        for (Map.Entry<Integer, RPCMethodInfo> entry : providerScanner.getProviderInfoMap().entrySet()) {
-            int code = entry.getKey();
-            RPCMethodInfo rpcMethodInfo = entry.getValue();
+        addCustomCommandHandler(scriptAgent);
 
-            nameserverClient.addCustomCommandHandler(code, request -> {
-                RequestHandleResult result = new RequestHandleResult();
-                Method method = rpcMethodInfo.getMethod();
-                Object bean = rpcMethodInfo.getBean();
-                Parameter[] parameters = method.getParameters();
+        scriptAgent.connect().whenComplete((success, throwable) -> {
+            if (throwable != null) {
+                log.error("script agent connect to ControlServer[{}] error",
+                        scriptAgentConfig.getRegistryCenterUrl(),throwable);
+            }
+            if (BooleanUtil.isTrue(success)) {
+                log.info("script agent connect to ControlServer[{}] success",
+                        scriptAgentConfig.getRegistryCenterUrl(),throwable);
+            }
+        });
+        return scriptAgent;
+    }
 
-                Map<?, ?> params = null;
+    private void addCustomCommandHandler(ScriptAgent scriptAgent) throws CustomCommandException {
+        if (rpcServiceInfos == null) return;
 
-                log.debug("invoke rpc method[{}]", method.getName());
-                try {
-                    byte[] body = request.getBody();
-                    params = Serializer.Algorithm.Protostuff.deserialize(body, Map.class);
+        for (RPCServiceInfo<?> rpcServiceInfo : rpcServiceInfos) {
+            Class<?> interfaces = rpcServiceInfo.getInterfaces();
+            Object ref = rpcServiceInfo.getRef();
 
-                    Object[] args = new Object[parameters.length];
-                    for (int i = 0; i < parameters.length; i++) {
-                        String parameterName = parameters[i].getName();
-                        args[i] = params.get(parameterName);
+            for (Method method : interfaces.getDeclaredMethods()) {
+                method.setAccessible(true);
+                String key = RPCMethodUtil.buildRpcMethodKey(interfaces.getName(), method);
+
+                scriptAgent.addCustomCommandHandler(key, request -> {
+                    RequestHandleResult result = new RequestHandleResult();
+
+                    log.debug("invoke rpc method[{}]", method.getName());
+                    try {
+                        byte[] body = request.getBody();
+                        ArgsWrapper params = Serializer.Algorithm.Protostuff.deserialize(body, ArgsWrapper.class);
+
+                        result.setData(method.invoke(ref, params.getArgs()));
+                        result.setSuccess(true);
+                        return result;
+                    } catch (Exception e) {
+                        log.error("invoke rpc method [{}] error", method.getName());
+                        throw new CustomCommandInvokeException(e);
                     }
-
-                    result.setData(method.invoke(bean, args));
-                    result.setSuccess(true);
-                } catch (Exception e) {
-                    result.setSuccess(false);
-                    log.error("invoke rpc method [{}] error, params[{}]", method.getName(), params);
-                }
-                return result;
-            });
+                });
+            }
         }
-
-        return nameserverClient;
     }
 }

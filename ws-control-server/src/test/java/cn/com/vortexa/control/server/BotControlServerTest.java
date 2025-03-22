@@ -52,9 +52,10 @@ class BotControlServerTest {
                 .port(8080)
                 .build();
 
+
         controlServerConfig.setServiceInstance(address);
         botControlServer = new BotControlServer(ControlServerConfig.defaultConfig());
-        botControlServer.init(new FileRegistryService(), new MemoryConnectionService());
+        botControlServer.init(new FileRegistryService(botControlServer.getExecutorService()), new MemoryConnectionService());
     }
 
     @Test

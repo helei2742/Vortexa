@@ -1,4 +1,4 @@
-package cn.com.vortexa.rpc;
+package cn.com.vortexa.rpc.api.platform;
 
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.entity.TwitterAccount;

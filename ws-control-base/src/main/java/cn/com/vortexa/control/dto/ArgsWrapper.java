@@ -1,7 +1,12 @@
 package cn.com.vortexa.control.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.Arrays;
 
+@Setter
+@Getter
 public class ArgsWrapper {
     private Object[] args;
 
@@ -9,14 +14,6 @@ public class ArgsWrapper {
     }
 
     public ArgsWrapper(Object[] args) {
-        this.args = args;
-    }
-
-    public Object[] getArgs() {
-        return args;
-    }
-
-    public void setArgs(Object[] args) {
         this.args = args;
     }
 

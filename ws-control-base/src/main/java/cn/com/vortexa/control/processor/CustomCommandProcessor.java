@@ -3,6 +3,7 @@ package cn.com.vortexa.control.processor;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.dto.RequestHandleResult;
+import cn.com.vortexa.control.dto.ResultWrapper;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;
 import cn.com.vortexa.control.protocol.Serializer;
@@ -28,7 +29,7 @@ public class CustomCommandProcessor {
     /**
      * 添加自定义命令处理器
      *
-     * @param commandKey commandKey
+     * @param commandKey           commandKey
      * @param customRequestHandler customRequestHandler
      * @throws CustomCommandException CustomCommandException
      */
@@ -41,24 +42,24 @@ public class CustomCommandProcessor {
         if (customCMDHandlerMap.putIfAbsent(commandKey, customRequestHandler) != null) {
             throw new CustomCommandException("command [%s] exist".formatted(commandKey));
         } else {
-            log.info("custom command [{}] added", commandKey);
+            log.debug("custom command [{}] added", commandKey);
         }
     }
 
     /**
      * 运行自定义命令处理器
      *
-     * @param channel   channel
+     * @param channel channel
      * @param request request
      * @return RemotingCommand
      */
     public RemotingCommand tryInvokeCustomCommandHandler(Channel channel, RemotingCommand request) throws CustomCommandException {
         String commandKey = request.getExtFieldsValue(CUSTOM_COMMAND_HANDLER_KEY);
         String clientName = channel.attr(NettyConstants.CLIENT_NAME).get();
-        CustomRequestHandler handler= null;
+        CustomRequestHandler handler = null;
 
         if (StrUtil.isBlank(commandKey) || (handler = customCMDHandlerMap.get(commandKey)) == null) {
-            throw new CustomCommandException("custom request[%s] didn't exist".formatted(request.getFlag()));
+            throw new CustomCommandException("custom request[%s] didn't exist".formatted(CUSTOM_COMMAND_HANDLER_KEY));
         }
         log.debug("client[{}] start invoke [{}]", clientName, handler);
 
@@ -73,9 +74,9 @@ public class CustomCommandProcessor {
             response.setCode(RemotingCommandCodeConstants.FAIL);
         } else {
             response.setCode(RemotingCommandCodeConstants.SUCCESS);
-            response.setBody(
-                    Serializer.Algorithm.Protostuff.serialize(result.getData())
-            );
+            response.setBody(Serializer.Algorithm.JSON.serialize(
+                    new ResultWrapper(result.getData())
+            ));
         }
         return response;
     }

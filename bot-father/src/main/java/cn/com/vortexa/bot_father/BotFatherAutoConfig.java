@@ -1,7 +1,6 @@
 package cn.com.vortexa.bot_father;
 
 import cn.com.vortexa.bot_father.config.AutoBotConfig;
-import cn.com.vortexa.bot_father.config.DubboConfig;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.typehandler.JsonTypeHandler;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
@@ -33,7 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Configuration
-@ImportAutoConfiguration({DBLayerAutoConfig.class, DubboConfig.class, JobAutoConfig.class})
+@ImportAutoConfiguration({DBLayerAutoConfig.class, JobAutoConfig.class})
 @ComponentScan({"cn.com.vortexa.bot_father.service.impl", "cn.com.vortexa.bot_father.config"})
 @MapperScan(basePackages = "cn.com.vortexa.bot_father.mapper")
 public class BotFatherAutoConfig {

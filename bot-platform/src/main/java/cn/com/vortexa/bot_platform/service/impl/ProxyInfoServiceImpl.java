@@ -1,7 +1,7 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.db_layer.service.IProxyInfoService;
-import cn.com.vortexa.rpc.IProxyInfoRPC;
+import cn.com.vortexa.rpc.api.platform.IProxyInfoRPC;
 import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.constants.ProxyProtocol;
 import cn.com.vortexa.common.constants.ProxyType;

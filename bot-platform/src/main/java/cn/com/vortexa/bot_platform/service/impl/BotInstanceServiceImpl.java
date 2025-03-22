@@ -9,7 +9,7 @@ import cn.com.vortexa.db_layer.mapper.BotInstanceMapper;
 import cn.com.vortexa.db_layer.service.IBotInstanceService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
-import cn.com.vortexa.rpc.IBotInstanceRPC;
+import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;

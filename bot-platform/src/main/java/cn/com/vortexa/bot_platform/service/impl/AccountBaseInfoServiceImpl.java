@@ -1,7 +1,7 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.db_layer.service.IAccountBaseInfoService;
-import cn.com.vortexa.rpc.IAccountBaseInfoRPC;
+import cn.com.vortexa.rpc.api.platform.IAccountBaseInfoRPC;
 import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
@@ -10,8 +10,6 @@ import cn.com.vortexa.common.util.excel.ExcelReadUtil;
 import cn.com.vortexa.db_layer.mapper.AccountBaseInfoMapper;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.common.entity.AccountBaseInfo;
-import cn.com.vortexa.rpc.anno.RPCMethod;
-import cn.com.vortexa.rpc.anno.RPCService;
 import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Slf4j
 @Service
-@RPCService
 public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseInfoMapper, AccountBaseInfo>
         implements IAccountBaseInfoRPC, IAccountBaseInfoService {
 
@@ -51,13 +48,11 @@ public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseI
     }
 
     @Override
-    @RPCMethod
     public AccountBaseInfo queryByIdRPC(Serializable id) {
         return super.queryById(id);
     }
 
     @Override
-    @RPCMethod
     public PageResult<AccountBaseInfo> conditionPageQueryRPC(int page, int limit, Map<String, Object> filterMap)
             throws SQLException {
         return super.conditionPageQuery(page, limit, filterMap);

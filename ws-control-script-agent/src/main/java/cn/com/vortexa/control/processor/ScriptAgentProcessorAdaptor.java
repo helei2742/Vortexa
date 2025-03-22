@@ -1,7 +1,7 @@
 package cn.com.vortexa.control.processor;
 
-import cn.com.vortexa.control.NameserverClient;
-import cn.com.vortexa.control.config.NameserverClientConfig;
+import cn.com.vortexa.control.ScriptAgent;
+import cn.com.vortexa.control.config.ScriptAgentConfig;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.util.DistributeIdMaker;
@@ -20,15 +20,15 @@ import java.util.concurrent.CompletableFuture;
  * @since 2025-03-13
  */
 @Slf4j
-public class NameClientProcessorAdaptor extends AbstractWebSocketClientHandler<RemotingCommand> {
+public class ScriptAgentProcessorAdaptor extends AbstractWebSocketClientHandler<RemotingCommand> {
 
     @Setter
-    private NameserverClient nameserverClient;
+    private ScriptAgent scriptAgent;
 
     @Getter
-    private final NameserverClientConfig clientConfig;
+    private final ScriptAgentConfig clientConfig;
 
-    public NameClientProcessorAdaptor(NameserverClientConfig clientConfig) {
+    public ScriptAgentProcessorAdaptor(ScriptAgentConfig clientConfig) {
         this.clientConfig = clientConfig;
     }
 
@@ -49,7 +49,7 @@ public class NameClientProcessorAdaptor extends AbstractWebSocketClientHandler<R
                     default -> throw new RuntimeException("resolve custom request[%s] error ".formatted(
                             remotingCommand
                     ));
-                }, nameserverClient.getCallbackInvoker())
+                }, scriptAgent.getCallbackInvoker())
                 .whenCompleteAsync((response, throwable) -> {
                     if (throwable != null) {
                         log.error("remote command[{}} resolve error", remotingCommand, throwable);
@@ -57,7 +57,7 @@ public class NameClientProcessorAdaptor extends AbstractWebSocketClientHandler<R
                     }
                     if (response != null) {
                         response.setTransactionId(txId);
-                        nameserverClient.sendRequest(response);
+                        scriptAgent.sendRequest(response);
                     }
                 });
     }
@@ -70,12 +70,12 @@ public class NameClientProcessorAdaptor extends AbstractWebSocketClientHandler<R
     @Override
     protected void handleAllIdle(ChannelHandlerContext ctx) {
         super.handleAllIdle(ctx);
-        RemotingCommand ping = RemotingCommand.generatePingCommand(nameserverClient.getName());
+        RemotingCommand ping = RemotingCommand.generatePingCommand(scriptAgent.getName());
         ping.setTransactionId(
-                DistributeIdMaker.DEFAULT.nextId(nameserverClient.getName())
+                DistributeIdMaker.DEFAULT.nextId(scriptAgent.getName())
         );
         log.info("send ping to remote");
-        nameserverClient.sendRequest(ping).whenComplete((response, throwable) -> {
+        scriptAgent.sendRequest(ping).whenComplete((response, throwable) -> {
             if (throwable != null) {
                 log.error("send ping to remote server[{}] error", clientConfig.getRegistryCenterUrl());
                 return;
@@ -92,7 +92,7 @@ public class NameClientProcessorAdaptor extends AbstractWebSocketClientHandler<R
      */
     private RemotingCommand handlerPing(RemotingCommand ping) {
         log.debug("receive pint[{}] from server", ping);
-        RemotingCommand pong = RemotingCommand.generatePongCommand(nameserverClient.getName());
+        RemotingCommand pong = RemotingCommand.generatePongCommand(scriptAgent.getName());
         pong.setTransactionId(ping.getTransactionId());
         return pong;
     }
@@ -116,7 +116,7 @@ public class NameClientProcessorAdaptor extends AbstractWebSocketClientHandler<R
 
 
     private RemotingCommand handlerCustomCommand(RemotingCommand remotingCommand) {
-        return nameserverClient.tryResolveCustomRequest(remotingCommand);
+        return scriptAgent.tryResolveCustomRequest(remotingCommand);
     }
 
     private RemotingCommand handlerCustomCommandResponse(RemotingCommand remotingCommand) {

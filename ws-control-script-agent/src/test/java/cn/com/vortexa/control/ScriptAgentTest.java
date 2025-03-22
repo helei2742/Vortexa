@@ -1,6 +1,6 @@
 package cn.com.vortexa.control;
 
-import cn.com.vortexa.control.config.NameserverClientConfig;
+import cn.com.vortexa.control.config.ScriptAgentConfig;
 import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
@@ -21,9 +21,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-class NameserverClientTest {
+class ScriptAgentTest {
 
-    private static NameserverClient nameserverClient;
+    private static ScriptAgent scriptAgent;
 
     static int command_client = 3001;
     static int command_service = 3002;
@@ -32,7 +32,7 @@ class NameserverClientTest {
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
 
-        nameserverClient = new NameserverClient(NameserverClientConfig.defaultConfig());
+        scriptAgent = new ScriptAgent(ScriptAgentConfig.defaultConfig());
     }
 
     @Test
@@ -50,7 +50,7 @@ class NameserverClientTest {
 //                }
 //        );
 
-        nameserverClient.setAfterRegistryHandler(response -> {
+        scriptAgent.setAfterRegistryHandler(response -> {
             log.info("send 发送客户端自定义命令 {}", value);
 
             try {
@@ -58,7 +58,7 @@ class NameserverClientTest {
                 remotingCommand.setFlag(RemotingCommandFlagConstants.CUSTOM_COMMAND);
                 remotingCommand.setCode(RemotingCommandCodeConstants.SUCCESS);
                 remotingCommand.setTransactionId(
-                        DistributeIdMaker.DEFAULT.nextId(nameserverClient.getName())
+                        DistributeIdMaker.DEFAULT.nextId(scriptAgent.getName())
                 );
                 remotingCommand.addExtField(
                         ExtFieldsConstants.CUSTOM_COMMAND_HANDLER_KEY,
@@ -70,7 +70,7 @@ class NameserverClientTest {
                                 new ArgsWrapper(new Object[]{"参数1", "参数2"})
                         )
                 );
-                nameserverClient.sendRequest(remotingCommand).thenApply(customResponse -> {
+                scriptAgent.sendRequest(remotingCommand).thenApply(customResponse -> {
                     try {
                         if (customResponse.getCode() == RemotingCommandCodeConstants.SUCCESS) {
                             String deserialize = Serializer.Algorithm.Protostuff.deserialize(customResponse.getBody(),
@@ -92,7 +92,7 @@ class NameserverClientTest {
             }
         });
 
-        CompletableFuture<Boolean> connect = nameserverClient.connect();
+        CompletableFuture<Boolean> connect = scriptAgent.connect();
         connect.get();
 
         TimeUnit.SECONDS.sleep(10000000);

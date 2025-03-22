@@ -1,12 +1,11 @@
-dubbo:
-  protocol:
-    name: dubbo
-    port: 30800
-  application:
-    qos-enable: true
-    qos-port: 30010
-  registry:
-    #    id: zk-registry
-    #    address: zookeeper://127.0.0.1:2181
-    id: nacos-registry
-    address: nacos://localhost:8848
+vortexa:
+  script-agent:
+    registryCenterUrl: ws://localhost:18848
+    nio-thread-count: 1
+    service-offline-ttl: 60
+    service-instance:
+      host: localhost
+      port: 20001
+      group: test1
+      serviceId: client
+      instanceId: client-1

@@ -9,7 +9,7 @@ import lombok.Data;
  * @since 2025-03-20
  */
 @Data
-public class RemoteNameserverStatus {
+public class RemoteControlServerStatus {
 
     private NameserverState nameserverState = NameserverState.SHUT_DOWN;
 

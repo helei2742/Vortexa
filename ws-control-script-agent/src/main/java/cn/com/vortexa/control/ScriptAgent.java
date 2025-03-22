@@ -1,15 +1,15 @@
 package cn.com.vortexa.control;
 
 
-import cn.com.vortexa.control.config.NameserverClientConfig;
+import cn.com.vortexa.control.config.ScriptAgentConfig;
 import cn.com.vortexa.control.constant.*;
-import cn.com.vortexa.control.dto.RemoteNameserverStatus;
+import cn.com.vortexa.control.dto.RemoteControlServerStatus;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.dto.ServiceInstance;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;
 import cn.com.vortexa.control.processor.CustomCommandProcessor;
-import cn.com.vortexa.control.processor.NameClientProcessorAdaptor;
+import cn.com.vortexa.control.processor.ScriptAgentProcessorAdaptor;
 import cn.com.vortexa.control.protocol.Serializer;
 import cn.com.vortexa.control.util.DistributeIdMaker;
 import cn.com.vortexa.control.util.RemotingCommandDecoder;
@@ -33,19 +33,19 @@ import java.util.function.Consumer;
  * @since 2025-03-13
  */
 @Slf4j
-public class NameserverClient extends AbstractWebsocketClient<RemotingCommand> {
+public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
 
-    private final NameserverClientConfig clientConfig;  // 配置
+    private final ScriptAgentConfig clientConfig;  // 配置
     private final String clientName;    // 客户端name
-    private final RemoteNameserverStatus remoteStatus; // 远程服务命名中心状态
+    private final RemoteControlServerStatus remoteStatus; // 远程服务命名中心状态
     private final CustomCommandProcessor customCommandProcessor;
 
     @Setter
     private Consumer<RemotingCommand> afterRegistryHandler = null;  // 注册成功后回调
 
 
-    public NameserverClient(NameserverClientConfig clientConfig) {
-        this(clientConfig, new NameClientProcessorAdaptor(clientConfig));
+    public ScriptAgent(ScriptAgentConfig clientConfig) {
+        this(clientConfig, new ScriptAgentProcessorAdaptor(clientConfig));
     }
 
     @Override
@@ -55,15 +55,15 @@ public class NameserverClient extends AbstractWebsocketClient<RemotingCommand> {
         sendRegistryCommand();
     }
 
-    public NameserverClient(NameserverClientConfig clientConfig, NameClientProcessorAdaptor nameClientProcessorAdaptor) {
-        super(clientConfig.getRegistryCenterUrl(), clientConfig.getServiceInstance().toString(), nameClientProcessorAdaptor);
+    public ScriptAgent(ScriptAgentConfig clientConfig, ScriptAgentProcessorAdaptor scriptAgentProcessorAdaptor) {
+        super(clientConfig.getRegistryCenterUrl(), clientConfig.getServiceInstance().toString(), scriptAgentProcessorAdaptor);
         super.setHandshake(false);
         this.clientConfig = clientConfig;
         this.clientName = clientConfig.getServiceInstance().toString();
-        this.remoteStatus = new RemoteNameserverStatus();
+        this.remoteStatus = new RemoteControlServerStatus();
         this.customCommandProcessor = new CustomCommandProcessor();
 
-        ((NameClientProcessorAdaptor) getHandler()).setNameserverClient(this);
+        ((ScriptAgentProcessorAdaptor) getHandler()).setScriptAgent(this);
     }
 
     @Override
@@ -95,7 +95,12 @@ public class NameserverClient extends AbstractWebsocketClient<RemotingCommand> {
         message.setServiceId(serviceInstance.getServiceId());
         message.setClientId(serviceInstance.getInstanceId());
 
-        Optional.of(getChannel()).ifPresent(channel -> channel.writeAndFlush(message));
+        Channel channel;
+        if ((channel = getChannel()) != null) {
+            channel.writeAndFlush(message);
+        } else {
+            throw new RuntimeException("channel is null");
+        }
     }
 
     /**
@@ -171,5 +176,9 @@ public class NameserverClient extends AbstractWebsocketClient<RemotingCommand> {
             );
         }
         return response;
+    }
+
+    public String nextTxId() {
+        return DistributeIdMaker.DEFAULT.nextId(clientName);
     }
 }

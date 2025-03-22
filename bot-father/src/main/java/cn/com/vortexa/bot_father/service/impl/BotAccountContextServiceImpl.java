@@ -13,11 +13,9 @@ import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.excel.ExcelReadUtil;
 import cn.com.vortexa.db_layer.plugn.table_shard.strategy.ITableShardStrategy;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
-import cn.com.vortexa.rpc.IBotInstanceRPC;
-import cn.com.vortexa.rpc.IBrowserEnvRPC;
-import cn.com.vortexa.rpc.anno.RPCMethod;
+import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
+import cn.com.vortexa.rpc.api.platform.IBrowserEnvRPC;
 import cn.com.vortexa.rpc.anno.RPCReference;
-import cn.com.vortexa.rpc.constants.BotScriptAgentRCCode;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +63,6 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
 
 
     @Override
-    @RPCMethod(code = BotScriptAgentRCCode.SAVE_BOT_AC)
     public Result saveBotAccountContext(Integer botId, String botKey, List<Map<String, Object>> rawLines) {
         if (botId == null || StrUtil.isBlank(botKey)) {
             return Result.fail("botId或botKey不能为空");

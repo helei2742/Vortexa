@@ -15,29 +15,29 @@ import java.util.List;
  * @since 2025-03-15
  */
 @Data
-public class NameserverClientConfig {
+public class ScriptAgentConfig {
 
     private static final String RESOURCE_PATH = "nameserver-client-config.yaml";
 
     private static final String PREFIX_PATH = "cn.com.vortexa.nameserver.client";
 
-    private volatile static NameserverClientConfig INSTANCE;
+    private volatile static ScriptAgentConfig INSTANCE;
 
-    public static NameserverClientConfig defaultConfig() throws FileNotFoundException {
+    public static ScriptAgentConfig defaultConfig() throws FileNotFoundException {
         return loadConfig("nameserver-client-config.yaml", PREFIX_PATH);
     }
 
-    public static NameserverClientConfig loadConfig(String fileName, String prefix) throws FileNotFoundException {
+    public static ScriptAgentConfig loadConfig(String fileName, String prefix) throws FileNotFoundException {
         if (INSTANCE == null) {
-            synchronized (NameserverClientConfig.class) {
+            synchronized (ScriptAgentConfig.class) {
                 if (INSTANCE == null) {
-                    URL resource = NameserverClientConfig.class.getClassLoader().getResource(fileName);
+                    URL resource = ScriptAgentConfig.class.getClassLoader().getResource(fileName);
                     if (resource != null) {
                         String file = resource.getFile();
                         INSTANCE = YamlConfigLoadUtil.load(
                                 new File(file),
                                 List.of(prefix.split("\\.")),
-                                NameserverClientConfig.class
+                                ScriptAgentConfig.class
                         );
                     } else {
                         throw new FileNotFoundException("config file not found");

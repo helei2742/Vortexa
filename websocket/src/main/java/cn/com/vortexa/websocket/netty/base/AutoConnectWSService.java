@@ -273,7 +273,7 @@ public abstract class AutoConnectWSService implements IWSService {
                     clientStatusChangeHandler.accept(newStatus);
                 }
             } finally {
-                log.debug("client status [{}] -> [{}]", clientStatus, newStatus);
+                log.debug("client[{}] status [{}] -> [{}]", getName(), clientStatus, newStatus);
                 clientStatus = newStatus;
             }
         }

@@ -180,13 +180,13 @@ public class BotControlServer {
             }
 
             // Step 2 运行自定义命令
-            response = customCommandProcessor.tryInvokeCustomCommandHandler(channel, request);
+x            response = customCommandProcessor.tryInvokeCustomCommandHandler(channel, request);
 
             if (response.getTransactionId() == null) {
                 response.setTransactionId(request.getTransactionId());
             }
         } catch (Exception e) {
-            log.error("client custom command execute error", e);
+             log.error("client custom command execute error", e);
 
             response = new RemotingCommand();
             response.setTransactionId(request.getTransactionId());

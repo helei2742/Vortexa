@@ -2,18 +2,6 @@ mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-dubbo:
-  application:
-    logger: slf4j
-    serialize-check-status: WARN
-  registry:
-    #    id: zk-registry
-    #    address: zookeeper://127.0.0.1:2181
-    id: nacos-registry
-    address: nacos://localhost:8848
-  consumer:
-    timeout: 60000
-
 
 bot:
   botKey: ''
@@ -38,3 +26,15 @@ logging:
 
 server:
   port: 10012
+
+vortexa:
+  script-agent:
+    registryCenterUrl: ws://localhost:18848
+    nio-thread-count: 1
+    service-offline-ttl: 60
+    service-instance:
+      host: localhost
+      port: 20001
+      group: test1
+      serviceId: client
+      instanceId: client-1

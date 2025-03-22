@@ -1,7 +1,7 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.db_layer.service.ITelegramAccountService;
-import cn.com.vortexa.rpc.ITelegramAccountRPC;
+import cn.com.vortexa.rpc.api.platform.ITelegramAccountRPC;
 import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.FileUtil;
@@ -12,8 +12,6 @@ import cn.com.vortexa.common.entity.TelegramAccount;
 import cn.com.vortexa.db_layer.mapper.TelegramAccountMapper;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;

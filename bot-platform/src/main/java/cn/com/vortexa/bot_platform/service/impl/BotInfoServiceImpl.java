@@ -5,7 +5,7 @@ import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.BotInfo;
 import cn.com.vortexa.db_layer.mapper.BotInfoMapper;
 import cn.com.vortexa.db_layer.service.IBotInfoService;
-import cn.com.vortexa.rpc.IBotInfoRPC;
+import cn.com.vortexa.rpc.api.platform.IBotInfoRPC;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
