@@ -2,12 +2,18 @@ package cn.com.vortexa.control.dto;
 
 import lombok.*;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode
-public class ServiceInstance {
+public class ServiceInstance implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 189273891273821798L;
 
     private String group;
 

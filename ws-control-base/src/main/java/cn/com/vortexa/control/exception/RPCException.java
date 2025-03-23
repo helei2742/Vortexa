@@ -1,4 +1,4 @@
-package cn.com.vortexa.rpc;
+package cn.com.vortexa.control.exception;
 
 public class RPCException extends Exception {
 

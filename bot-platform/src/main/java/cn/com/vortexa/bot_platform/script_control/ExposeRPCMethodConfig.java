@@ -1,10 +1,9 @@
-package cn.com.vortexa.bot_platform.config;
+package cn.com.vortexa.bot_platform.script_control;
 
 
 import cn.com.vortexa.rpc.api.platform.*;
-import cn.com.vortexa.rpc.dto.RPCServiceInfo;
+import cn.com.vortexa.control.dto.RPCServiceInfo;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

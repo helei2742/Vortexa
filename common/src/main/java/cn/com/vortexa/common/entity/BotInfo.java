@@ -4,10 +4,7 @@ import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.annotation.*;
-        import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -25,6 +22,7 @@ import java.util.Map;
  */
 @Getter
 @Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("t_bot_info")

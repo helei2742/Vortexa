@@ -1,14 +1,14 @@
-package cn.com.vortexa.bot_father.config;
+package cn.com.vortexa.bot_father.scriptagent;
 
 import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.config.ScriptAgentConfig;
-import cn.com.vortexa.control.dto.ArgsWrapper;
+import cn.com.vortexa.control.dto.RPCArgsWrapper;
 import cn.com.vortexa.control.dto.RequestHandleResult;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.exception.CustomCommandInvokeException;
 import cn.com.vortexa.control.protocol.Serializer;
-import cn.com.vortexa.rpc.dto.RPCServiceInfo;
-import cn.com.vortexa.rpc.util.RPCMethodUtil;
+import cn.com.vortexa.control.dto.RPCServiceInfo;
+import cn.com.vortexa.control.util.RPCMethodUtil;
 import cn.hutool.core.util.BooleanUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -79,8 +79,7 @@ public class BotScriptAgentConfig {
                     log.debug("invoke rpc method[{}]", method.getName());
                     try {
                         byte[] body = request.getBody();
-                        ArgsWrapper params = Serializer.Algorithm.Protostuff.deserialize(body, ArgsWrapper.class);
-
+                        RPCArgsWrapper params = Serializer.Algorithm.JDK.deserialize(body, RPCArgsWrapper.class);
                         result.setData(method.invoke(ref, params.getArgs()));
                         result.setSuccess(true);
                         return result;

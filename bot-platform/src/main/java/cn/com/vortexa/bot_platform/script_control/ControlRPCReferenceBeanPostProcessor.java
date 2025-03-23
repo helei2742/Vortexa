@@ -1,6 +1,6 @@
-package cn.com.vortexa.bot_father.scriptagent;
+package cn.com.vortexa.bot_platform.script_control;
 
-import cn.com.vortexa.control.ScriptAgent;
+import cn.com.vortexa.control.BotControlServer;
 import cn.com.vortexa.control.anno.RPCReference;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
@@ -12,11 +12,11 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Field;
 
 @Component
-@ConditionalOnBean(ScriptAgent.class)
-public class ScriptAgentRPCReferenceBeanPostProcessor implements BeanPostProcessor {
+@ConditionalOnBean(BotControlServer.class)
+public class ControlRPCReferenceBeanPostProcessor implements BeanPostProcessor {
 
     @Autowired
-    private ScriptAgent scriptAgent;
+    private BotControlServer botControlServer;
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, @NotNull String beanName) throws BeansException {
@@ -25,9 +25,9 @@ public class ScriptAgentRPCReferenceBeanPostProcessor implements BeanPostProcess
         for (Field field : fields) {
             if (field.isAnnotationPresent(RPCReference.class)) {
                 // 生成代理对象
-                Object proxy = ScriptAgentRPCProxyFactory.createProxy(
+                Object proxy = ControlServerRPCProxyFactory.createProxy(
                         field.getType(),
-                        scriptAgent
+                        botControlServer
                 );
 
                 // 设置访问权限，允许修改 private 字段

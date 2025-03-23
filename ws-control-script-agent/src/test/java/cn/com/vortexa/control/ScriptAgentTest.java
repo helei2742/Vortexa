@@ -4,7 +4,7 @@ import cn.com.vortexa.control.config.ScriptAgentConfig;
 import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
-import cn.com.vortexa.control.dto.ArgsWrapper;
+import cn.com.vortexa.control.dto.RPCArgsWrapper;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.protocol.Serializer;
@@ -67,7 +67,7 @@ class ScriptAgentTest {
 
                 remotingCommand.setBody(
                         Serializer.Algorithm.Protostuff.serialize(
-                                new ArgsWrapper(new Object[]{"参数1", "参数2"})
+                                new RPCArgsWrapper(new Object[]{"参数1", "参数2"})
                         )
                 );
                 scriptAgent.sendRequest(remotingCommand).thenApply(customResponse -> {

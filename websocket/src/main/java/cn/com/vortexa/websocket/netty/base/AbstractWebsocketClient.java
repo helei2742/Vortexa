@@ -149,8 +149,8 @@ public abstract class AbstractWebsocketClient<T> extends AutoConnectWSService {
             AtomicReference<T> jb = new AtomicReference<>(null);
 
             boolean flag = handler.registryRequest(request, response -> {
-                latch.countDown();
                 jb.set(response);
+                latch.countDown();
             });
 
             if (flag) {

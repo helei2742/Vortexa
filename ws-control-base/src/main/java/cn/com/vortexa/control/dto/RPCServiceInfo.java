@@ -1,4 +1,4 @@
-package cn.com.vortexa.rpc.dto;
+package cn.com.vortexa.control.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package cn.com.vortexa.rpc.anno;
+package cn.com.vortexa.control.anno;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

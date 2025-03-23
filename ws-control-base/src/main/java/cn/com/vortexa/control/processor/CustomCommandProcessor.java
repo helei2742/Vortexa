@@ -3,7 +3,7 @@ package cn.com.vortexa.control.processor;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.dto.RequestHandleResult;
-import cn.com.vortexa.control.dto.ResultWrapper;
+import cn.com.vortexa.control.dto.RPCResultWrapper;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;
 import cn.com.vortexa.control.protocol.Serializer;
@@ -74,8 +74,8 @@ public class CustomCommandProcessor {
             response.setCode(RemotingCommandCodeConstants.FAIL);
         } else {
             response.setCode(RemotingCommandCodeConstants.SUCCESS);
-            response.setBody(Serializer.Algorithm.JSON.serialize(
-                    new ResultWrapper(result.getData())
+            response.setBody(Serializer.Algorithm.JDK.serialize(
+                    new RPCResultWrapper<>(result.getData(), null)
             ));
         }
         return response;

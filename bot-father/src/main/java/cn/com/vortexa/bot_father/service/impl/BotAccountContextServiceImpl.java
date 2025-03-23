@@ -15,7 +15,7 @@ import cn.com.vortexa.db_layer.plugn.table_shard.strategy.ITableShardStrategy;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
 import cn.com.vortexa.rpc.api.platform.IBrowserEnvRPC;
-import cn.com.vortexa.rpc.anno.RPCReference;
+import cn.com.vortexa.control.anno.RPCReference;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

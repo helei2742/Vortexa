@@ -1,9 +1,9 @@
-package cn.com.vortexa.bot_platform.config;
+package cn.com.vortexa.bot_platform.script_control;
 
 
 import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.control.config.ControlServerConfig;
-import cn.com.vortexa.control.dto.ArgsWrapper;
+import cn.com.vortexa.control.dto.RPCArgsWrapper;
 import cn.com.vortexa.control.dto.RequestHandleResult;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.exception.CustomCommandInvokeException;
@@ -13,8 +13,8 @@ import cn.com.vortexa.control.service.IConnectionService;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.service.impl.FileRegistryService;
 import cn.com.vortexa.control.service.impl.MemoryConnectionService;
-import cn.com.vortexa.rpc.dto.RPCServiceInfo;
-import cn.com.vortexa.rpc.util.RPCMethodUtil;
+import cn.com.vortexa.control.dto.RPCServiceInfo;
+import cn.com.vortexa.control.util.RPCMethodUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,9 +98,11 @@ public class BotPlatformControlServerConfig {
                     log.debug("invoke rpc method[{}]", method.getName());
                     try {
                         byte[] body = request.getBody();
-                        ArgsWrapper params = Serializer.Algorithm.Protostuff.deserialize(body, ArgsWrapper.class);
+                        RPCArgsWrapper params = Serializer.Algorithm.JDK.deserialize(body, RPCArgsWrapper.class);
 
-                        result.setData(method.invoke(ref, params.getArgs()));
+                        Object invoke = method.invoke(ref, params.getArgs());
+                        log.info("invoke rpc[{}] method[{}] return [{}]", request.getTransactionId(), key, invoke);
+                        result.setData(invoke);
                         result.setSuccess(true);
                         return result;
                     } catch (Exception e) {

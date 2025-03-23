@@ -11,7 +11,7 @@ import cn.com.vortexa.rpc.api.platform.IDiscordAccountRPC;
 import cn.com.vortexa.rpc.api.platform.IProxyInfoRPC;
 import cn.com.vortexa.rpc.api.platform.ITelegramAccountRPC;
 import cn.com.vortexa.rpc.api.platform.ITwitterAccountRPC;
-import cn.com.vortexa.rpc.anno.RPCReference;
+import cn.com.vortexa.control.anno.RPCReference;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

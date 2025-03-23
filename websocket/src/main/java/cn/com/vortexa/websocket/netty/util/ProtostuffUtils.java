@@ -54,7 +54,6 @@ public class ProtostuffUtils {
         Schema<T> schema = getSchema(clazz);
         T obj = schema.newMessage();
         ProtobufIOUtil.mergeFrom(data, obj, schema);
-//        ProtostuffIOUtil.mergeFrom(data, obj, schema);
         return obj;
     }
 

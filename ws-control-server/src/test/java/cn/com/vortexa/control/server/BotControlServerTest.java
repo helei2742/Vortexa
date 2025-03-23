@@ -3,7 +3,7 @@ package cn.com.vortexa.control.server;
 import cn.com.vortexa.control.BotControlServer;
 import cn.com.vortexa.control.TestRpc;
 import cn.com.vortexa.control.config.ControlServerConfig;
-import cn.com.vortexa.control.dto.ArgsWrapper;
+import cn.com.vortexa.control.dto.RPCArgsWrapper;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.dto.RequestHandleResult;
 import cn.com.vortexa.control.dto.ServiceInstance;
@@ -70,7 +70,7 @@ class BotControlServerTest {
             public RequestHandleResult handlerRequest(RemotingCommand request) {
                 log.warn("收到客户端自定义命令[{}]", request);
                 byte[] body = request.getBody();
-                ArgsWrapper params = Serializer.Algorithm.Protostuff.deserialize(body, ArgsWrapper.class);
+                RPCArgsWrapper params = Serializer.Algorithm.Protostuff.deserialize(body, RPCArgsWrapper.class);
                 try {
                     return RequestHandleResult.success(testMethod.invoke(testRPC, params.getArgs()));
                 } catch (IllegalAccessException | InvocationTargetException e) {

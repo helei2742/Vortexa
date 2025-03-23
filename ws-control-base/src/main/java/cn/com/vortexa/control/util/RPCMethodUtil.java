@@ -1,10 +1,10 @@
-package cn.com.vortexa.rpc.util;
+package cn.com.vortexa.control.util;
 
 
 import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
-import cn.com.vortexa.control.dto.ArgsWrapper;
+import cn.com.vortexa.control.dto.RPCArgsWrapper;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.protocol.Serializer;
 
@@ -49,8 +49,8 @@ public class RPCMethodUtil {
                 key
         );
 
-        remotingCommand.setBody(Serializer.Algorithm.Protostuff.serialize(
-                new ArgsWrapper(args)
+        remotingCommand.setBody(Serializer.Algorithm.JDK.serialize(
+                new RPCArgsWrapper(args)
         ));
 
         return remotingCommand;

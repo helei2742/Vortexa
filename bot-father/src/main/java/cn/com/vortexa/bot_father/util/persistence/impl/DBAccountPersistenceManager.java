@@ -99,6 +99,8 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
      */
     @Override
     public void fillAccountInfo(AccountContext accountContext) {
+//        if (accountContext.getId() != 48) return;
+
         // Step 2.1 绑定基础账号信息
         if (accountContext.getAccountBaseInfoId() != null) {
             accountContext.setAccountBaseInfo(botApi.getAccountBaseInfoRPC().queryByIdRPC(accountContext.getAccountBaseInfoId()));

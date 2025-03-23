@@ -8,6 +8,7 @@ import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
 import cn.com.vortexa.control.dto.ConnectEntry;
 import cn.com.vortexa.control.dto.RemotingCommand;
+import cn.com.vortexa.control.dto.RPCResultWrapper;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.exception.ControlServerException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;
@@ -16,6 +17,7 @@ import cn.com.vortexa.control.protocol.Serializer;
 import cn.com.vortexa.control.service.IConnectionService;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.processor.CustomCommandProcessor;
+import cn.com.vortexa.control.util.DistributeIdMaker;
 import cn.com.vortexa.control.util.NameserverUtil;
 import cn.com.vortexa.control.util.RemotingCommandDecoder;
 import cn.com.vortexa.control.util.RemotingCommandEncoder;
@@ -180,21 +182,19 @@ public class BotControlServer {
             }
 
             // Step 2 运行自定义命令
-x            response = customCommandProcessor.tryInvokeCustomCommandHandler(channel, request);
+            response = customCommandProcessor.tryInvokeCustomCommandHandler(channel, request);
 
             if (response.getTransactionId() == null) {
                 response.setTransactionId(request.getTransactionId());
             }
         } catch (Exception e) {
-             log.error("client custom command execute error", e);
+            log.error("client custom command execute error", e);
 
             response = new RemotingCommand();
             response.setTransactionId(request.getTransactionId());
             response.setFlag(RemotingCommandFlagConstants.CUSTOM_COMMAND_RESPONSE);
             response.setCode(RemotingCommandCodeConstants.FAIL);
-            response.setBody(
-                    Serializer.Algorithm.Protostuff.serialize(e.getMessage())
-            );
+            response.setBody(Serializer.Algorithm.JDK.serialize(new RPCResultWrapper<>(null, e)));
         }
 
         return response;
@@ -264,6 +264,10 @@ x            response = customCommandProcessor.tryInvokeCustomCommandHandler(cha
         } else if (channel.isActive()) {
             channel.close();
         }
+    }
+
+    public String nextTxId() {
+        return DistributeIdMaker.DEFAULT.nextId(controlServerConfig.getServiceInstance().toString());
     }
 
     /**
