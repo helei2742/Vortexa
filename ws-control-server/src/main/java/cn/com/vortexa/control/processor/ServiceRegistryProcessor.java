@@ -5,7 +5,7 @@ import cn.com.vortexa.control.constant.RegistryState;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
-import cn.com.vortexa.control.dto.ServiceInstance;
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.protocol.Serializer;
 import cn.com.vortexa.control.service.IRegistryService;
 import io.netty.channel.Channel;

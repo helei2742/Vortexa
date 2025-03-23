@@ -6,7 +6,7 @@ import cn.com.vortexa.control.config.ControlServerConfig;
 import cn.com.vortexa.control.dto.RPCArgsWrapper;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.dto.RequestHandleResult;
-import cn.com.vortexa.control.dto.ServiceInstance;
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.exception.ControlServerException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;

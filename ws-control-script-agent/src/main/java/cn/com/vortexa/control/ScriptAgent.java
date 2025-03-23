@@ -5,7 +5,7 @@ import cn.com.vortexa.control.config.ScriptAgentConfig;
 import cn.com.vortexa.control.constant.*;
 import cn.com.vortexa.control.dto.RemoteControlServerStatus;
 import cn.com.vortexa.control.dto.RemotingCommand;
-import cn.com.vortexa.control.dto.ServiceInstance;
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;
 import cn.com.vortexa.control.processor.CustomCommandProcessor;
@@ -25,7 +25,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**

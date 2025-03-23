@@ -2,7 +2,7 @@ package cn.com.vortexa.control.service;
 
 import cn.com.vortexa.control.constant.RegistryState;
 import cn.com.vortexa.control.dto.RegisteredService;
-import cn.com.vortexa.control.dto.ServiceInstance;
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 
 import java.io.IOException;
 import java.util.List;

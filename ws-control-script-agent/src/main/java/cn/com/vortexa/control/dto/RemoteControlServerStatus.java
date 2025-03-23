@@ -1,6 +1,7 @@
 package cn.com.vortexa.control.dto;
 
 
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.constant.NameserverState;
 import lombok.Data;
 

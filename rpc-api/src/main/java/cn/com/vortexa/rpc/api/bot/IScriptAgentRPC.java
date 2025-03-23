@@ -1,6 +1,7 @@
 package cn.com.vortexa.rpc.api.bot;
 
-import cn.com.vortexa.control.dto.ServiceInstance;
+
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 
 public interface IScriptAgentRPC {
 

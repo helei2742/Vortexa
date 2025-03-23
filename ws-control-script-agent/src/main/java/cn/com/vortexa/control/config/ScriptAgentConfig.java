@@ -2,7 +2,7 @@ package cn.com.vortexa.control.config;
 
 
 import cn.com.vortexa.common.util.YamlConfigLoadUtil;
-import cn.com.vortexa.control.dto.ServiceInstance;
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 import lombok.Data;
 
 import java.io.File;

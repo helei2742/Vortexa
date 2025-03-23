@@ -1,4 +1,4 @@
-package cn.com.vortexa.control.dto;
+package cn.com.vortexa.common.dto.control;
 
 import lombok.*;
 

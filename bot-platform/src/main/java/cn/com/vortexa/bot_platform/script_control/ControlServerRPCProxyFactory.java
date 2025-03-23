@@ -1,11 +1,10 @@
 package cn.com.vortexa.bot_platform.script_control;
 
 import cn.com.vortexa.control.BotControlServer;
-import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RPCResultWrapper;
 import cn.com.vortexa.control.dto.RemotingCommand;
-import cn.com.vortexa.control.dto.ServiceInstance;
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.exception.RPCException;
 import cn.com.vortexa.control.protocol.Serializer;
 import cn.com.vortexa.control.util.RPCMethodUtil;

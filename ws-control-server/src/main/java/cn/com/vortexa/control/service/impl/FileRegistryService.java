@@ -2,7 +2,7 @@ package cn.com.vortexa.control.service.impl;
 
 import cn.com.vortexa.control.constant.RegistryState;
 import cn.com.vortexa.control.dto.RegisteredService;
-import cn.com.vortexa.control.dto.ServiceInstance;
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.util.NameserverUtil;
 import cn.hutool.core.util.BooleanUtil;
