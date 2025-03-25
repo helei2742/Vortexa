@@ -18,9 +18,12 @@ import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.bot_father.dto.job.AutoBotJobRuntimeParam;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
+
 import com.alibaba.fastjson.JSONArray;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
@@ -31,10 +34,8 @@ import java.util.concurrent.*;
 import static cn.com.vortexa.common.entity.BotInfo.ACCOUNT_PARAMS_KEY;
 import static cn.com.vortexa.common.entity.BotInfo.CONFIG_PARAMS_KEY;
 
-
 @Slf4j
 public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobInvokeAutoBot {
-
 
     /**
      * ws client 启动器
@@ -72,7 +73,9 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
 
             if (annotation != null) {
                 String botName = annotation.name();
-                if (StrUtil.isBlank(botName)) throw new IllegalArgumentException("bot name 不能为空");
+                if (StrUtil.isBlank(botName)) {
+                    throw new IllegalArgumentException("bot name 不能为空");
+                }
 
                 //  解析bot 自定义配置, 看是否有满足的
                 AutoBotConfig botConfig = getAutoBotConfig();
@@ -107,7 +110,6 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         }
     }
 
-
     @Override
     protected void resolveBotJobMethod() {
         // 解析bot job 参数
@@ -132,7 +134,6 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         }
     }
 
-
     /**
      * 注册type账号
      *
@@ -142,8 +143,8 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
     public CompletableFuture<ACListOptResult> registerAccount() {
         if (registerMethod == null) {
             return CompletableFuture.completedFuture(ACListOptResult.fail(
-                    getBotInfo().getId(),
-                    getBotInfo().getName(),
+                    getBotInstance().getBotId(),
+                    getBotInstance().getBotName(),
                     BotJobType.REGISTER.name(),
                     "未找到注册方法"
             ));
@@ -152,7 +153,8 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 (accountContext, accountContexts) -> {
                     if (BooleanUtil.isTrue(accountContext.isSignUp())) {
                         // 账户注册过，
-                        String errorMsg = String.format("[%s]账户[%s]-email[%s]注册过", accountContext.getId(), accountContext.getName(),
+                        String errorMsg = String.format("[%s]账户[%s]-email[%s]注册过", accountContext.getId(),
+                                accountContext.getName(),
                                 accountContext.getAccountBaseInfo().getEmail());
 
                         log.warn(errorMsg);
@@ -198,8 +200,8 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
     public CompletableFuture<ACListOptResult> loginAndTakeTokenAccount() {
         if (loginMethod == null) {
             return CompletableFuture.completedFuture(ACListOptResult.fail(
-                    getBotInfo().getId(),
-                    getBotInfo().getName(),
+                    getBotInstance().getBotId(),
+                    getBotInstance().getBotName(),
                     BotJobType.LOGIN.name(),
                     "未找到登录方法"
             ));
@@ -229,18 +231,16 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         );
     }
 
-
     @Override
     public CompletableFuture<ACListOptResult> updateAccountRewordInfo() {
         if (updateRewordMethod == null) {
             return CompletableFuture.completedFuture(ACListOptResult.fail(
-                    getBotInfo().getId(),
-                    getBotInfo().getName(),
+                    getBotInstance().getBotId(),
+                    getBotInstance().getBotName(),
                     BotJobType.QUERY_REWARD.name(),
                     "未找到奖励查询方法"
             ));
         }
-
 
         return asyncForACList(
                 getUniqueACList(),
@@ -259,7 +259,6 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         return getJobParams().keySet();
     }
 
-
     protected abstract T getInstance();
 
     /**
@@ -268,6 +267,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
      * @param method method
      */
     private void registerMethodHandler(Method method) {
+        logger.debug("add register method");
         if (method.getReturnType() == Result.class
                 && method.getParameterCount() == 3
                 && method.getParameters()[0].getType() == AccountContext.class
@@ -276,6 +276,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
 
             if (this.registerMethod == null) {
                 this.registerMethod = method;
+                this.addBasicJob(BotJobType.REGISTER);
             } else {
                 throw new BotMethodFormatException("注册方法只能有一个");
             }
@@ -291,6 +292,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
      * @param method method
      */
     private void loginMethodHandler(Method method) {
+        logger.debug("add login method");
         if (method.getReturnType() == Result.class
                 && method.getParameterCount() == 1
                 && method.getParameters()[0].getType() == AccountContext.class
@@ -298,6 +300,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
 
             if (this.loginMethod == null) {
                 this.loginMethod = method;
+                this.addBasicJob(BotJobType.LOGIN);
             } else {
                 throw new BotMethodFormatException("登录方法只能有一个");
             }
@@ -314,6 +317,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
      * @param botJobMethod botJobMethod
      */
     private void queryRewardMethodHandler(Method method, BotMethod botJobMethod) {
+        logger.debug("add reword query method");
         if (method.getReturnType() == Result.class
                 && method.getParameterCount() == 2
                 && method.getParameters()[0].getType() == AccountContext.class
@@ -345,6 +349,8 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
      * @param botJobMethod botJobMethod
      */
     private void timedTaskMethodHandler(Method method, BotMethod botJobMethod) {
+        logger.debug("add [%s] method".formatted(botJobMethod));
+
         if (method.getParameterCount() > 2
                 || method.getParameterCount() < 1
                 || method.getParameters()[0].getType() != AccountContext.class
@@ -370,6 +376,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
      * @param botJobMethodAnno botJobMethodAnno
      */
     private void webSocketConnectMethodHandler(Method method, BotMethod botJobMethodAnno) {
+        logger.debug("add ws [%s] method".formatted(botJobMethodAnno));
         Class<?> returnType = method.getReturnType();
 
         // 检查方法是否符合要求
@@ -390,20 +397,22 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
 
                 if (runtimeParam != null) {
                     // 添加额外参数
-                    runtimeParam.setExtraParams(new Object[]{getJobParam(jobName), (AccountWSClientBuilder) accountContext -> {
+                    runtimeParam.setExtraParams(new Object[]{
+                            getJobParam(jobName), (AccountWSClientBuilder) accountContext -> {
                         Object invoke = method.invoke(getInstance(), accountContext);
                         return (BaseBotWSClient<?>) invoke;
-                    }});
+                    }
+                    });
                 }
 
             } catch (Exception e) {
                 throw new BotMethodFormatException(e);
             }
         } else {
-            throw new BotMethodFormatException("websocket 方法错误, 应为 BotWebSocketContext<?,?> methodName(AccountContext)");
+            throw new BotMethodFormatException(
+                    "websocket 方法错误, 应为 BotWebSocketContext<?,?> methodName(AccountContext)");
         }
     }
-
 
     /**
      * 运行bot method
@@ -419,13 +428,12 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new BotMethodInvokeException(String.format(
                         "执行[%s]-[%s]方法发生异常",
-                        getBotInfo().getName(),
+                        getBotInstance().getBotKey(),
                         method.getName()
                 ), e);
             }
         }, getExecutorService());
     }
-
 
     protected BotInfo generateFromAnno(BotApplication annotation) {
         BotInfo botInfo = new BotInfo();
@@ -433,8 +441,10 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         botInfo.setDescribe(annotation.describe());
         botInfo.setImage(annotation.image());
         botInfo.setLimitProjectIds(Arrays.toString(annotation.limitProjectIds()));
-        botInfo.getParams().put(CONFIG_PARAMS_KEY, JSONArray.parseArray(JSONArray.toJSONString(annotation.configParams())));
-        botInfo.getParams().put(ACCOUNT_PARAMS_KEY, JSONArray.parseArray(JSONArray.toJSONString(annotation.accountParams())));
+        botInfo.getParams()
+                .put(CONFIG_PARAMS_KEY, JSONArray.parseArray(JSONArray.toJSONString(annotation.configParams())));
+        botInfo.getParams()
+                .put(ACCOUNT_PARAMS_KEY, JSONArray.parseArray(JSONArray.toJSONString(annotation.accountParams())));
 
         return botInfo;
     }

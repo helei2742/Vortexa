@@ -7,6 +7,10 @@ import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.lang3.BooleanUtils;
+
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -21,7 +25,7 @@ public class MemoryConnectionService implements IConnectionService {
 
     @Override
     public void addServiceChannel(String key, Channel channel) {
-        connectionMap.compute(key, (k,v)->{
+        connectionMap.compute(key, (k, v) -> {
             if (v == null) {
                 channel.attr(NettyConstants.CLIENT_NAME).set(key);
                 v = ConnectEntry.builder()
@@ -65,5 +69,13 @@ public class MemoryConnectionService implements IConnectionService {
     @Override
     public void freshServiceInstanceConnection(String key, Channel channel) {
         addServiceChannel(key, channel);
+    }
+
+    @Override
+    public List<String> queryOnlineInstanceKey() {
+        return connectionMap.entrySet().stream()
+                .filter(entry -> BooleanUtils.isTrue(entry.getValue().isUsable()))
+                .map(Map.Entry::getKey)
+                .toList();
     }
 }

@@ -16,13 +16,15 @@
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.BotInstance">
         INSERT INTO t_bot_instance
-        (bot_id, bot_key, account_table_name, params, insert_datetime, update_datetime, is_valid)
-        VALUES (#{botId}, #{botKey}, #{accountTableName}, #{params}, #{insertDatetime}, #{updateDatetime},
+        (bot_id, bot_name, bot_key, account_table_name, job_params, params, insert_datetime, update_datetime, is_valid)
+        VALUES (#{botId}, #{botName}, #{botKey}, #{accountTableName}, #{jobParams}, #{params}, #{insertDatetime},
+                #{updateDatetime},
                 #{isValid}) ON CONFLICT(bot_id, bot_key)
 DO
         UPDATE SET
+            bot_name = excluded.bot_name,
             account_table_name = excluded.account_table_name,
-            params = excluded.params,
+            job_params = excluded.job_params,
             params = excluded.params,
             update_datetime = excluded.update_datetime;
     </insert>

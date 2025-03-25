@@ -1,0 +1,15 @@
+package cn.com.vortexa.control.service.impl;
+
+import cn.com.vortexa.control.dto.ScriptAgentMetrics;
+import cn.com.vortexa.control.service.IMetricsService;
+
+/**
+ * @author h30069248
+ * @since 2025/3/24 15:59
+ */
+public class InfluxDBMetricsService implements IMetricsService {
+    @Override
+    public int saveAgentMetrics(ScriptAgentMetrics agentMetrics) {
+        return 1;
+    }
+}

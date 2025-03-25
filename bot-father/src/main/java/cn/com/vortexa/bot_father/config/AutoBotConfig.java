@@ -14,7 +14,7 @@ import java.util.Map;
 @Data
 @ToString
 @Component
-@ConfigurationProperties(prefix = "bot")
+@ConfigurationProperties(prefix = "vortexa")
 public class AutoBotConfig {
 
     /**

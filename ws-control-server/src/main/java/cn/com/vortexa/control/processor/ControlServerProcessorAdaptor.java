@@ -29,6 +29,7 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
     private final PongCommandProcessor pongCommandProcessor;
     private final ServiceRegistryProcessor serviceRegistryProcessor;
     private final ServiceDiscoverProcessor serviceDiscoverProcessor;
+    private final ScriptAgentMetricsCommandProcessor scriptAgentMetricsCommandProcessor;
 
     public ControlServerProcessorAdaptor(
             BotControlServer nameServerService,
@@ -40,6 +41,7 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
         this.pongCommandProcessor = new PongCommandProcessor(botControlServer);
         this.serviceRegistryProcessor = new ServiceRegistryProcessor(registryService);
         this.serviceDiscoverProcessor = new ServiceDiscoverProcessor(registryService);
+        this.scriptAgentMetricsCommandProcessor = new ScriptAgentMetricsCommandProcessor(botControlServer);
 
         init(this.botControlServer.getExecutorService());
     }
@@ -83,13 +85,24 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
                             serviceDiscoverProcessor.handlerDiscoverService(channel, remotingCommand);
                     case RemotingCommandFlagConstants.CUSTOM_COMMAND ->
                             botControlServer.tryInvokeCustomCommand(channel, remotingCommand);
+                    case RemotingCommandFlagConstants.SCRIPT_AGENT_METRICS_UPLOAD ->
+                            scriptAgentMetricsCommandProcessor.handlerScriptAgentMetricsUpload(key, remotingCommand);
                     default -> throw new IllegalStateException("Unexpected value: " + opt);
                 }, getCallbackInvoker())
                 .whenCompleteAsync((response, ex) -> {
                     if (ex != null) {
                         log.error("client[{}] command process failed", key, ex);
-                    }
-                    if (response != null) {
+
+                        RemotingCommand errorResponse = new RemotingCommand();
+                        errorResponse.setFlag(-1 * opt);
+                        errorResponse.setCode(RemotingCommandCodeConstants.FAIL);
+                        errorResponse.addExtField(
+                                ExtFieldsConstants.REQUEST_ERROR_MSG,
+                                ex.getMessage()
+                        );
+
+                        ctx.channel().writeAndFlush(errorResponse);
+                    } else if (response != null) {
                         response.setTransactionId(txId);
 
                         log.debug("send response[{}]", response);

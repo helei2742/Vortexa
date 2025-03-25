@@ -35,6 +35,8 @@ public class BotInfo implements Serializable {
 
     public static final String ACCOUNT_PARAMS_KEY = "account_params_key";
 
+    public static final String BASIC_JOB_LIST_KEY = "basic_job_list";
+
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 

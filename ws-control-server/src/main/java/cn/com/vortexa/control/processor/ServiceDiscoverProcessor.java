@@ -1,10 +1,8 @@
 package cn.com.vortexa.control.processor;
 
-import cn.com.vortexa.control.constant.ExtFieldsConstants;
-import cn.com.vortexa.control.constant.LoadBalancePolicy;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
-import cn.com.vortexa.control.dto.RegisteredService;
+import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.dto.ServiceInstanceVO;
 import cn.com.vortexa.control.service.IRegistryService;
@@ -38,11 +36,9 @@ public class ServiceDiscoverProcessor {
         String group = remotingCommand.getGroup();
         String serviceId = remotingCommand.getServiceId();
         String clientId = remotingCommand.getClientId();
-        LoadBalancePolicy policy = LoadBalancePolicy.valueOf(remotingCommand.getExtFieldsValue(
-                ExtFieldsConstants.NAMESERVER_DISCOVER_LOAD_BALANCE_POLICY)
-        );
 
-        List<RegisteredService> services = discoverServiceList(group, clientId, serviceId, policy);
+
+        List<RegisteredService> services = discoverServiceList(group, clientId, serviceId);
 
         RemotingCommand response = new RemotingCommand();
         response.setFlag(RemotingCommandFlagConstants.CLIENT_DISCOVER_SERVICE_RESPONSE);
@@ -57,14 +53,12 @@ public class ServiceDiscoverProcessor {
      * @param group     group
      * @param serviceId serviceId
      * @param clientId  clientId
-     * @param policy    policy
      * @return List<RegisteredService>
      */
     public List<RegisteredService> discoverServiceList(
             String group,
             String serviceId,
-            String clientId,
-            LoadBalancePolicy policy
+            String clientId
     ) {
         List<RegisteredService> serviceInstances = registryService.queryServiceInstance(group, serviceId, clientId);
         log.debug("[{}]-[{}]-[{}] discover service total [{}]", group, serviceId, clientId, serviceInstances.size());

@@ -10,7 +10,7 @@
     <artifactId>ws-control-script-agent</artifactId>
     <packaging>jar</packaging>
 
-    <name>nameserver-client</name>
+    <name>ws-control-script-agent</name>
     <url>http://maven.apache.org</url>
 
     <properties>

@@ -35,7 +35,7 @@ public abstract class AbstractWebsocketClient<T> extends AutoConnectWSService {
 
     private final AbstractWebSocketClientHandler<T> handler;   //netty pipeline 最后一个执行的handler
     private final ExecutorService callbackInvoker;  //执行回调的线程池
-    private final String name;
+    private String name;
     private boolean handshake = true;
     private int allIdleTimeSecond = 10; //空闲时间
 

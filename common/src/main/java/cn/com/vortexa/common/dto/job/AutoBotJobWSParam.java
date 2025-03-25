@@ -22,6 +22,8 @@ public class AutoBotJobWSParam implements Serializable {
 
     private Boolean wsUnlimitedRetry;
 
+    private Integer nioEventLoopGroupThreads;
+
     private Integer wsConnectCount;
 
     private Integer reconnectLimit;

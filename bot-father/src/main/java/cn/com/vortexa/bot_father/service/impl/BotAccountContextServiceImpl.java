@@ -17,6 +17,7 @@ import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
 import cn.com.vortexa.rpc.api.platform.IBrowserEnvRPC;
 import cn.com.vortexa.control.anno.RPCReference;
 import cn.hutool.core.util.StrUtil;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -86,30 +87,11 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
             log.error("botId/botKey为空");
             return false;
         }
-
-        BotInstance query = BotInstance
-                .builder()
-                .botId(botId).botKey(botKey)
-                .build();
-
-        if (botInstanceRPC.existsBotInstanceRPC(query)) {
-
-            if (!existUpdate) {
-                throw new SQLException("[%s]-[%s]对应表已存在".formatted(botId, botKey));
-            }
-            log.warn("[{}]-[{}] 已存在对应表", botId, botKey);
-            return true;
-        }
-
-        String tableName = tableShardStrategy.generateTableName(BOT_ACCOUNT_CONTEXT_TABLE_PREFIX, new Object[]{botId, botKey});
-        query.setAccountTableName(tableName);
-
         try {
-            botInstanceRPC.insertOrUpdateRPC(query);
             getBaseMapper().createIfTableNotExist(botId, botKey);
             return true;
         } catch (Exception e) {
-            throw new SQLException("保存Bot实例信息失败", e);
+            throw new SQLException("check and create sharded table[%s]-[%s] error".formatted(botId, botKey), e);
         }
     }
 

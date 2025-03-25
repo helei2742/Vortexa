@@ -2,11 +2,13 @@ package cn.com.vortexa.common.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 
+import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import lombok.*;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -31,11 +33,17 @@ public class BotInstance implements Serializable {
     @TableField("bot_id")
     private Integer botId;
 
+    @TableField("bot_name")
+    private String botName;
+
     @TableField("bot_key")
     private String botKey;
 
     @TableField("account_table_name")
     private String accountTableName;
+
+    @TableField("job_params")
+    private Map<String, AutoBotJobParam> jobParams = new HashMap<>();
 
     @TableField("params")
     private Map<String, Object> params;
@@ -50,5 +58,6 @@ public class BotInstance implements Serializable {
     @TableLogic
     private Integer isValid;
 
+    @TableField(exist = false)
     public BotInfo botInfo;
 }

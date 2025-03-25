@@ -15,8 +15,10 @@ import cn.com.vortexa.control.handler.CustomRequestHandler;
 import cn.com.vortexa.control.processor.ControlServerProcessorAdaptor;
 import cn.com.vortexa.control.protocol.Serializer;
 import cn.com.vortexa.control.service.IConnectionService;
+import cn.com.vortexa.control.service.IMetricsService;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.processor.CustomCommandProcessor;
+import cn.com.vortexa.control.service.impl.InfluxDBMetricsService;
 import cn.com.vortexa.control.util.DistributeIdMaker;
 import cn.com.vortexa.control.util.NameserverUtil;
 import cn.com.vortexa.control.util.RemotingCommandDecoder;
@@ -56,6 +58,7 @@ public class BotControlServer {
     private ControlServerProcessorAdaptor processorAdaptor;  // 消息处理器
     private IRegistryService registryService;   // 注册服务
     private IConnectionService connectionService;   // 连接服务
+    private IMetricsService metricsService; // 指标服务
 
     public BotControlServer(ControlServerConfig controlServerConfig) throws ControlServerException {
         this(controlServerConfig, Executors.newThreadPerTaskExecutor(
@@ -90,6 +93,7 @@ public class BotControlServer {
                 this,
                 registryService
         );
+        this.metricsService = new InfluxDBMetricsService();
 
         serverBootstrap = new ServerBootstrap()
                 .group(new NioEventLoopGroup(controlServerConfig.getNioThreadCount()), new NioEventLoopGroup())
@@ -188,7 +192,7 @@ public class BotControlServer {
                 response.setTransactionId(request.getTransactionId());
             }
         } catch (Exception e) {
-            log.error("client custom command execute error", e);
+            log.error("client custom command[{}] execute error", request, e);
 
             response = new RemotingCommand();
             response.setTransactionId(request.getTransactionId());

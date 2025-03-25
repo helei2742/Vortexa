@@ -9,6 +9,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import org.apache.commons.compress.archivers.sevenz.CLI;
+
+import java.io.Serializable;
 import java.util.HashMap;
 
 
@@ -118,7 +121,8 @@ public class RemotingCommand {
     }
 
     public void setBodyFromObject(Object body) {
-        this.body = Serializer.Algorithm.Protostuff.serialize(body);
+        if (body == null) this.body = null;
+        else this.body = Serializer.Algorithm.Protostuff.serialize(body);
     }
 
     public void release() {
@@ -143,6 +147,7 @@ public class RemotingCommand {
         ping.setCode(RemotingCommandCodeConstants.SUCCESS);
         return ping;
     }
+
     public static RemotingCommand generatePongCommand(String key) {
         String txId = DistributeIdMaker.DEFAULT.nextId(key);
         RemotingCommand pong = new RemotingCommand();
@@ -150,6 +155,14 @@ public class RemotingCommand {
         pong.setTransactionId(txId);
         pong.setCode(RemotingCommandCodeConstants.SUCCESS);
         return pong;
+    }
+
+    public void setObjBody(Serializable objBody) {
+        this.body = Serializer.Algorithm.JDK.serialize(objBody);
+    }
+
+    public <T> T getObjBodY(Class<T> tClass) {
+        return Serializer.Algorithm.JDK.deserialize(this.body, tClass);
     }
 
     @Override

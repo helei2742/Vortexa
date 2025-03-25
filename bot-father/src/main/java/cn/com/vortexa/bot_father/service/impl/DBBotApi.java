@@ -3,9 +3,12 @@ package cn.com.vortexa.bot_father.service.impl;
 import cn.com.vortexa.bot_father.service.BotApi;
 import cn.com.vortexa.bot_father.service.IBotAccountContextService;
 import cn.com.vortexa.bot_father.service.IRewordInfoService;
+import cn.com.vortexa.db_layer.plugn.table_shard.strategy.ITableShardStrategy;
+import cn.com.vortexa.rpc.api.bot.IScriptAgentRPC;
 import cn.com.vortexa.rpc.api.platform.IAccountBaseInfoRPC;
 import cn.com.vortexa.rpc.api.platform.IBotInfoRPC;
 import cn.com.vortexa.job.service.BotJobService;
+import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
 import cn.com.vortexa.rpc.api.platform.IBrowserEnvRPC;
 import cn.com.vortexa.rpc.api.platform.IDiscordAccountRPC;
 import cn.com.vortexa.rpc.api.platform.IProxyInfoRPC;
@@ -35,6 +38,9 @@ public class DBBotApi implements BotApi {
     private IBotInfoRPC botInfoRPC;
 
     @RPCReference
+    private IBotInstanceRPC botInstanceRPC;
+
+    @RPCReference
     private IAccountBaseInfoRPC accountBaseInfoRPC;
 
     @RPCReference
@@ -51,4 +57,10 @@ public class DBBotApi implements BotApi {
 
     @RPCReference
     private IDiscordAccountRPC discordAccountRPC;
+
+    @Autowired
+    private IScriptAgentRPC scriptAgentRPC;
+
+    @Autowired
+    private ITableShardStrategy tableShardStrategy;
 }

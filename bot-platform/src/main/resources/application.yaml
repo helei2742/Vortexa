@@ -1,16 +1,6 @@
 spring:
   datasource:
-    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/plantfrom.db"
-
-dubbo:
-  application:
-    name: bot-platform
-    logger: slf4j
-  registry:
-    #    id: zk-registry
-    #    address: zookeeper://127.0.0.1:2181
-    id: nacos-registry
-    address: nacos://localhost:8848
+    url: "jdbc:sqlite://D:\\workspace\\BotFramework-dev_1.0\\botData\\db\\auto_bot.db"
 
 mybatis-plus:
   configuration:

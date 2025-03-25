@@ -209,7 +209,7 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
         CommandMenuNode accountListMenuNode = new PageMenuNode<>("查看账号", "当前账户详情列表:", (pageNum, pageSize) -> {
             try {
                 HashMap<String, Object> filter = new HashMap<>();
-                filter.put("botId", getBot().getBotInfo().getId());
+                filter.put("botId", getBot().getBotInstance().getBotId());
                 filter.put("botKey", getBot().getAutoBotConfig().getBotKey());
 
                 PageResult<AccountContext> pageResult = getBot().getBotApi().getBotAccountService().conditionPageQuery(pageNum, pageSize, filter);

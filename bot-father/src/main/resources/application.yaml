@@ -2,8 +2,14 @@ mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+logging:
+  level:
+    org:
+      apache:
+        dubbo: WARN
+        zookeeper: WARN
 
-bot:
+vortexa:
   botKey: ''
   filePathConfig:
     proxyFileBotConfigPath: "proxy.xlsx"
@@ -14,20 +20,6 @@ bot:
     baseAccountFileBotConfigPath: "base_account.xlsx"
   accountConfig:
     configFilePath: ""
-
-
-logging:
-  level:
-    org:
-      apache:
-        dubbo: WARN
-        zookeeper: WARN
-
-
-server:
-  port: 10012
-
-vortexa:
   script-agent:
     registryCenterUrl: ws://localhost:18848
     nio-thread-count: 1
@@ -38,3 +30,7 @@ vortexa:
       group: test1
       serviceId: client
       instanceId: client-1
+
+spring:
+  main:
+    banner-mode: OFF

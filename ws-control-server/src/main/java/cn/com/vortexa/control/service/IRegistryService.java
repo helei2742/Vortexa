@@ -1,7 +1,7 @@
 package cn.com.vortexa.control.service;
 
 import cn.com.vortexa.control.constant.RegistryState;
-import cn.com.vortexa.control.dto.RegisteredService;
+import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ public interface IRegistryService {
      * @param serviceInstance serviceInstance
      * @return 注册状态
      */
-    RegistryState registryService(ServiceInstance serviceInstance, Map<?, ?> props);
+    RegistryState registryService(ServiceInstance serviceInstance, Map<Object, Object> props);
 
     /**
      * 保存注册信息
@@ -32,9 +32,19 @@ public interface IRegistryService {
     /**
      * 查找服务实例
      *
-     * @param groupId groupId
+     * @param keyPattern keyPattern
+     * @return List<ServiceInstance>
+     */
+    List<RegisteredService> queryServiceInstance(
+            String keyPattern
+    );
+
+    /**
+     * 查找服务实例
+     *
+     * @param groupId   groupId
      * @param serviceId serviceId
-     * @param clientId clientId
+     * @param clientId  clientId
      * @return List<ServiceInstance>
      */
     List<RegisteredService> queryServiceInstance(
@@ -47,7 +57,7 @@ public interface IRegistryService {
      * 是否存在已注册的实例
      *
      * @param key key
-     * @return  boolean
+     * @return boolean
      */
     boolean existServiceInstance(String key);
 }

@@ -10,7 +10,7 @@
     <artifactId>ws-control-server</artifactId>
     <packaging>jar</packaging>
 
-    <name>nameserver-server</name>
+    <name>ws-control-server</name>
     <url>http://maven.apache.org</url>
 
     <properties>

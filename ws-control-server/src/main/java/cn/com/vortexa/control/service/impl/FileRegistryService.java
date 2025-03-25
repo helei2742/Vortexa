@@ -1,7 +1,7 @@
 package cn.com.vortexa.control.service.impl;
 
 import cn.com.vortexa.control.constant.RegistryState;
-import cn.com.vortexa.control.dto.RegisteredService;
+import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.util.NameserverUtil;
@@ -10,6 +10,7 @@ import cn.hutool.core.util.StrUtil;
 
 import com.alibaba.fastjson.JSONObject;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,18 +34,14 @@ import java.util.regex.Pattern;
 public class FileRegistryService implements IRegistryService {
 
     private static final String FILE_NAME = "nameserver-registry.dat";
-
     private final ConcurrentHashMap<String, RegisteredService> registryServiceMap = new ConcurrentHashMap<>();
-
-    private final ExecutorService executorService;
-
+    private final AtomicBoolean updated = new AtomicBoolean(false);
+    @Setter
     private int saveIntervalSecond = 60;
-
     private boolean running = true;
 
     public FileRegistryService(ExecutorService executorService) {
-        this.executorService = executorService;
-        executorService.execute(()->{
+        executorService.execute(() -> {
             while (running) {
                 try {
                     saveRegistryInfo();
@@ -53,13 +51,14 @@ public class FileRegistryService implements IRegistryService {
                     throw new RuntimeException(e);
                 } catch (InterruptedException e) {
                     log.warn("registry file auto store task interrupted", e);
+                    running = false;
                 }
             }
         });
     }
 
     @Override
-    public RegistryState registryService(ServiceInstance serviceInstance, Map<?, ?> props) {
+    public RegistryState registryService(ServiceInstance serviceInstance, Map<Object, Object> props) {
         String group = serviceInstance.getGroup();
         String serviceId = serviceInstance.getServiceId();
         String clientId = serviceInstance.getInstanceId();
@@ -73,6 +72,7 @@ public class FileRegistryService implements IRegistryService {
 
             // 存内存
             registryServiceMap.put(key, new RegisteredService(serviceInstance, props));
+            updated.set(true);
 
             // 存磁盘
             Boolean b = null;
@@ -91,18 +91,35 @@ public class FileRegistryService implements IRegistryService {
 
     @Override
     public Boolean saveRegistryInfo() throws IOException {
-        log.info("start save registry info - [{}]", registryServiceMap.keySet());
+        if (updated.compareAndSet(true, false)) {
+            log.info("start save registry info - [{}]", registryServiceMap.keySet());
 
-        Path path = Paths.get(NameserverUtil.getStoreFileResourcePath(FILE_NAME));
-        if (!Files.exists(path.getParent())) {
-            Files.createDirectories(path.getParent());
-        }
+            Path path = Paths.get(NameserverUtil.getStoreFileResourcePath(FILE_NAME));
+            if (!Files.exists(path.getParent())) {
+                Files.createDirectories(path.getParent());
+            }
 
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path.toFile()))) {
-            bw.write(JSONObject.toJSONString(registryServiceMap));
-            bw.flush();
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(path.toFile()))) {
+                bw.write(JSONObject.toJSONString(registryServiceMap));
+                bw.flush();
+                return true;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            log.debug("no update cancel save registry info to file");
             return true;
         }
+    }
+
+    @Override
+    public List<RegisteredService> queryServiceInstance(String keyPattern) {
+        Pattern compile = Pattern.compile(keyPattern);
+
+        return registryServiceMap.keySet().stream().filter(key -> {
+            Matcher matcher = compile.matcher(key);
+            return matcher.find();
+        }).map(registryServiceMap::get).toList();
     }
 
     @Override
@@ -116,12 +133,8 @@ public class FileRegistryService implements IRegistryService {
                 StrUtil.isBlank(serviceId) ? "*" : serviceId,
                 StrUtil.isBlank(clientId) ? "*" : clientId
         );
-        Pattern compile = Pattern.compile(keyPattern);
 
-        return registryServiceMap.keySet().stream().filter(key -> {
-            Matcher matcher = compile.matcher(key);
-            return matcher.find();
-        }).map(registryServiceMap::get).toList();
+        return queryServiceInstance(keyPattern);
     }
 
     @Override

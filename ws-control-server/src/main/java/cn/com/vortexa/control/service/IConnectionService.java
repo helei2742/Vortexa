@@ -3,6 +3,8 @@ package cn.com.vortexa.control.service;
 import cn.com.vortexa.control.dto.ConnectEntry;
 import io.netty.channel.Channel;
 
+import java.util.List;
+
 /**
  * @author helei
  * @since 2025/3/18 15:02
@@ -50,4 +52,6 @@ public interface IConnectionService {
      * @param channel channel
      */
     void freshServiceInstanceConnection(String key, Channel channel);
+
+    List<String> queryOnlineInstanceKey();
 }

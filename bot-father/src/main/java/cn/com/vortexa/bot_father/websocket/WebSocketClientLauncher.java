@@ -77,7 +77,7 @@ public class WebSocketClientLauncher {
         String key = generateAccountKey(accountContext, jobParam.getJobName());
 
         String prefix = String.format("bot[%s]-job[%s]-account[%s]-[%s]",
-                bot.getBotInfo().getName(), jobParam.getJobName(), accountContext.getId(), accountContext.getName());
+                bot.getBotInstance().getBotKey(), jobParam.getJobName(), accountContext.getId(), accountContext.getName());
 
         AutoBotJobWSParam autoBotJobWSParam = jobParam.getAutoBotJobWSParam();
 
@@ -167,9 +167,11 @@ public class WebSocketClientLauncher {
                         log.error("ws client connect error", throwable);
                         return Result.fail(prefix + "connect error, " + throwable.getMessage());
                     }, executorService);
-            case WebsocketClientStatus.STARTING, WebsocketClientStatus.RUNNING -> CompletableFuture.completedFuture(Result.ok());
+            case WebsocketClientStatus.STARTING, WebsocketClientStatus.RUNNING ->
+                    CompletableFuture.completedFuture(Result.ok());
             // 被禁止使用，抛出异常
-            case WebsocketClientStatus.SHUTDOWN -> CompletableFuture.completedFuture(Result.fail(prefix + " ws client can not connect"));
+            case WebsocketClientStatus.SHUTDOWN ->
+                    CompletableFuture.completedFuture(Result.fail(prefix + " ws client can not connect"));
         };
     }
 
@@ -188,7 +190,7 @@ public class WebSocketClientLauncher {
     /**
      * 添加ws状态改变的handler
      *
-     * @param <T>             t
+     * @param <T>               t
      * @param wsClient          wsClient
      * @param autoBotJobWSParam autoBotJobWSParam
      */
@@ -197,6 +199,7 @@ public class WebSocketClientLauncher {
         wsClient.setAllIdleTimeSecond(autoBotJobWSParam.getHeartBeatIntervalSecond());
         wsClient.setReconnectCountDownSecond(autoBotJobWSParam.getReconnectCountDownSecond());
         wsClient.setReconnectLimit(autoBotJobWSParam.getReconnectLimit());
+        wsClient.setEventLoopGroupThreads(autoBotJobWSParam.getNioEventLoopGroupThreads());
 
         //设置相关回调
         wsClient.setClientStatusChangeHandler(newStatus -> {

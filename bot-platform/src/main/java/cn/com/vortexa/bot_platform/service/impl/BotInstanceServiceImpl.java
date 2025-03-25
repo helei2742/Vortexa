@@ -1,6 +1,8 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.common.dto.PageResult;
+import cn.com.vortexa.control.BotControlServer;
+import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.db_layer.mapper.BotInfoMapper;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.common.entity.BotInfo;
@@ -13,10 +15,12 @@ import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,11 +35,14 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMapper, BotInstance>
-        implements IBotInstanceRPC, IBotInstanceService {
+public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMapper, BotInstance> implements IBotInstanceRPC, IBotInstanceService {
 
     @Autowired
     private BotInfoMapper botInfoMapper;
+
+    @Lazy
+    @Autowired
+    private BotControlServer botControlServer;
 
     public BotInstanceServiceImpl() {
         super(botInstance -> {
@@ -69,6 +76,21 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
     }
 
     @Override
+    public List<RegisteredService> queryOnLineInstance() {
+        List<RegisteredService> res = new ArrayList<>();
+        List<String> keys = botControlServer.getConnectionService().queryOnlineInstanceKey();
+        keys.forEach(key -> res.addAll(botControlServer.getRegistryService().queryServiceInstance(key)));
+        res.forEach(service -> {
+            BotInstanceMapper mapper = getBaseMapper();
+            BotInstance botInstance = mapper.selectOne(
+                    new QueryWrapper<>(BotInstance.builder().botKey(service.getAddress().getInstanceId()).build())
+            );
+            service.addProps("bot_info", botInstance);
+        });
+        return res;
+    }
+
+    @Override
     public Boolean existsBotInstanceRPC(BotInstance query) {
         return existsBotInstance(query);
     }
@@ -76,5 +98,10 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
     @Override
     public Integer insertOrUpdateRPC(BotInstance instance) throws SQLException {
         return insertOrUpdate(instance);
+    }
+
+    @Override
+    public BotInstance selectOneRPC(BotInstance query) {
+        return getOne(new QueryWrapper<>(query));
     }
 }

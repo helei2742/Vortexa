@@ -1,21 +1,27 @@
 package cn.com.vortexa.bot_father.bot;
 
 import cn.com.vortexa.bot_father.config.AutoBotConfig;
+import cn.com.vortexa.bot_father.constants.BotStatus;
 import cn.com.vortexa.bot_father.service.BotApi;
 import cn.com.vortexa.bot_father.view.MenuCMDLineAutoBot;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStartException;
+import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
-
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * @param <T>
  */
 public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoDriveAutoBot<T> {
 
+    private static final Logger log = LoggerFactory.getLogger(AutoLaunchBot.class);
 
     @Override
     protected final void doInit() throws BotInitException {
@@ -30,7 +36,7 @@ public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoD
      * @throws BotStartException BotStartException
      * @throws BotInitException  BotInitException
      */
-    public void launch(AutoBotConfig botConfig, BotApi botApi) throws BotStartException, BotInitException {
+    public void launch(AutoBotConfig botConfig, BotApi botApi, Supplier<Boolean> initHandler) throws BotStartException, BotInitException {
         String botKey = botConfig.getBotKey();
         if (StrUtil.isBlank(botKey)) {
             throw new BotStartException("botKey is empty");
@@ -41,14 +47,23 @@ public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoD
         // 初始化
         instance.init(botApi, botConfig);
 
-        botInitialized(botConfig, botApi);
+        if (BooleanUtil.isTrue(initHandler.get())) {
+            botInitialized(botConfig, botApi);
 
-        if (botConfig.isCommandMenu()) {
-            MenuCMDLineAutoBot<AutoBotConfig> menuCMDLineAutoBot
-                    = new MenuCMDLineAutoBot<>(instance, List.of());
+            if (botConfig.isCommandMenu()) {
+                MenuCMDLineAutoBot<AutoBotConfig> menuCMDLineAutoBot
+                        = new MenuCMDLineAutoBot<>(instance, List.of());
 
-            // 启动
-            menuCMDLineAutoBot.start();
+                // 启动
+                menuCMDLineAutoBot.start();
+                log.info("bot[{}] running as cli-ui mode", getBotInstance().getBotKey());
+            } else {
+                // 启动
+                instance.updateState(BotStatus.RUNNING);
+                log.info("bot[{}] running as headless mode", getBotInstance().getBotKey());
+            }
+        } else {
+            log.error("bot start cancel by init");
         }
     }
 

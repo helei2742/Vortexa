@@ -1,14 +1,19 @@
 package cn.com.vortexa.bot_father.bot;
 
+import static cn.com.vortexa.bot_father.service.impl.BotAccountContextServiceImpl.BOT_ACCOUNT_CONTEXT_TABLE_PREFIX;
+import static cn.com.vortexa.common.entity.BotInfo.BASIC_JOB_LIST_KEY;
+
 import cn.com.vortexa.bot_father.service.BotApi;
 import cn.com.vortexa.bot_father.constants.BotStatus;
 import cn.com.vortexa.common.config.SystemConfig;
+import cn.com.vortexa.common.constants.BotJobType;
 import cn.com.vortexa.common.constants.HttpMethod;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.bot_father.util.log.AppendLogger;
 import cn.com.vortexa.common.dto.AutoBotRuntimeInfo;
 import cn.com.vortexa.bot_father.config.AutoBotConfig;
 import cn.com.vortexa.common.entity.BotInfo;
+import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.common.entity.ProxyInfo;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStatusException;
@@ -17,17 +22,21 @@ import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.common.util.http.RestApiClientFactory;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+
 import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
-
 
 public abstract class AbstractAutoBot {
 
@@ -64,6 +73,9 @@ public abstract class AbstractAutoBot {
      */
     @Getter
     private BotInfo botInfo;
+
+    @Getter
+    private BotInstance botInstance;
 
     /**
      * 配置
@@ -105,11 +117,13 @@ public abstract class AbstractAutoBot {
         // Step 2 进入INIT状态，获取参数
         updateState(BotStatus.INIT);
         this.autoBotConfig = autoBotConfig;
-
-        // Step 2.1 获取BotInfo,解析Bot Job
-        this.botInfo = buildBotInfo();
-
-        resolveBotJobMethod();
+        try {
+            // Step 2.1 获取BotInfo,解析Bot Job
+            botInfo = buildBotInfo();
+            resolveBotJobMethod();
+        } catch (Exception e) {
+            throw new BotInitException("resolve bot job error", e);
+        }
 
         // Step 2.2 保存bot info
         try {
@@ -126,19 +140,55 @@ public abstract class AbstractAutoBot {
             throw new BotInitException("save bot info error", e);
         }
 
+        this.botInstance = BotInstance.builder()
+                .botId(botInfo.getId())
+                .botName(botInfo.getName())
+                .botKey(autoBotConfig.getBotKey())
+                .build();
+
         // Step 2.3 设置logger前缀与线程池
         String botName = runtimeBotName();
         logger.append(botName);
-        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(botInfo.getName() + "-executor"));
+        this.executorService = Executors.newThreadPerTaskExecutor(
+                new NamedThreadFactory(botInfo.getName() + "-executor"));
 
         try {
             // Step 2.4 初始化存储的Table
             logger.info("start init database table");
             // 检查对应分表是否存在
-            if (!botApi.getBotAccountService().checkAndCreateShardedTable(botInfo.getId(), getAutoBotConfig().getBotKey(), true)) {
+            if (!botApi.getBotAccountService()
+                    .checkAndCreateShardedTable(botInfo.getId(), getAutoBotConfig().getBotKey(), true)) {
                 throw new RuntimeException("bot account table create error");
             }
             logger.info("database table init finish");
+
+            // Step 2.5 初始化BotInstance实例
+            logger.info("start init bot instance");
+
+            BotInstance dbInstance = getBotApi().getBotInstanceRPC().selectOneRPC(botInstance);
+
+            // 数据库存在bot instance实例信息，用数据库的。 否则用BotInfo信息生成BotInstance信息写入库
+            if (dbInstance != null) {
+                this.botInstance = dbInstance;
+                logger.info("exist botInstance, use exist instance config");
+            } else {
+                logger.info("no instance, create it...");
+
+                String tableName = getBotApi().getTableShardStrategy().generateTableName(
+                        BOT_ACCOUNT_CONTEXT_TABLE_PREFIX,
+                        new Object[]{botInstance.getBotId(), botInstance.getBotKey()}
+                );
+                botInstance.setBotName(botInfo.getName());
+                botInstance.setAccountTableName(tableName);
+                botInstance.setJobParams(botInfo.getJobParams());
+                botInstance.setParams(botInfo.getParams());
+
+                if (botApi.getBotInstanceRPC().insertOrUpdateRPC(botInstance) > 0) {
+                    logger.info("new bot instance create success");
+                } else {
+                    throw new BotInitException("new bot instance create error");
+                }
+            }
 
             // Step 2.5 子类初始化
             doInit();
@@ -150,7 +200,6 @@ public abstract class AbstractAutoBot {
             updateState(BotStatus.INIT_ERROR);
         }
     }
-
 
     /**
      * 初始化方法
@@ -233,7 +282,6 @@ public abstract class AbstractAutoBot {
                 1
         );
     }
-
 
     /**
      * 同步请求，使用syncController控制并发
@@ -321,7 +369,6 @@ public abstract class AbstractAutoBot {
                     return v;
                 });
 
-
         return CompletableFuture.supplyAsync(() -> {
             try {
                 networkController.acquire();
@@ -362,9 +409,8 @@ public abstract class AbstractAutoBot {
      * @return String
      */
     public String getAppConfigDir() {
-        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, botInfo.getName());
+        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, getBotInstance().getBotKey());
     }
-
 
     /**
      * 更新BotStatus
@@ -395,32 +441,52 @@ public abstract class AbstractAutoBot {
             };
         }
 
-
         if (b) {
             logger.info("Status change [%s] => [%s]".formatted(status, newStatus));
             this.status = newStatus;
         } else {
-            throw new BotStatusException(String.format("%s status can't from[%s] -> to[%s]", runtimeBotName(), status, newStatus));
+            throw new BotStatusException(
+                    String.format("%s status can't from[%s] -> to[%s]", runtimeBotName(), status, newStatus));
         }
     }
 
-
     public String runtimeBotName() {
-        return "Bot[%s]-[%s]".formatted(botInfo.getName(), autoBotConfig.getBotKey());
+        return "Bot[%s]-[%s]".formatted(botInstance.getBotName(), autoBotConfig.getBotKey());
     }
 
     protected synchronized Map<String, AutoBotJobParam> getJobParams() {
-        return this.botInfo.getJobParams();
+        return this.botInstance.getJobParams();
     }
 
     protected synchronized AutoBotJobParam getJobParam(String jobName) {
-        return this.botInfo.getJobParams() == null ? null : this.botInfo.getJobParams().get(jobName);
+        return this.botInstance.getJobParams() == null ? null : this.botInstance.getJobParams().get(jobName);
     }
 
     protected synchronized void setJobParam(String jobKey, AutoBotJobParam jobParam) {
-//        if (!this.botInfo.getJobParams().containsKey(jobKey)) {
+        //        if (!this.botInfo.getJobParams().containsKey(jobKey)) {
         this.botInfo.getJobParams().put(jobKey, jobParam);
-//        }
+        //        }
+    }
+
+    protected synchronized void addBasicJob(BotJobType jobType) {
+        if (this.botInfo.getJobParams() == null) {
+            this.botInfo.setParams(new HashMap<>());
+        }
+
+        this.botInfo.getParams().compute(BASIC_JOB_LIST_KEY, (k, v) -> {
+            if (v == null) {
+                v = new HashSet<String>();
+            }
+            if (v instanceof JSONArray t) {
+                v = new HashSet<String>();
+                for (int i = 0; i < t.size(); i++) {
+                    ((HashSet<String>) v).add(t.getString(i));
+                }
+            }
+            Set<String> set = (HashSet<String>) v;
+            set.add(jobType.name());
+            return v;
+        });
     }
 
     protected abstract BotInfo buildBotInfo() throws BotInitException;

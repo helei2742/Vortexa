@@ -9,7 +9,9 @@ import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.hutool.core.util.BooleanUtil;
+
 import com.alibaba.fastjson.JSONArray;
+
 import lombok.Getter;
 
 import java.util.*;
@@ -20,7 +22,6 @@ import java.util.stream.Collectors;
 
 import static cn.com.vortexa.common.entity.BotInfo.ACCOUNT_PARAMS_KEY;
 
-
 public abstract class AccountManageAutoBot extends AbstractAutoBot {
 
     /**
@@ -28,10 +29,8 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      */
     private final ConcurrentMap<String, Semaphore> jobCCSemaphoreMap = new ConcurrentHashMap<>();
 
-
     @Getter
     private final List<AccountContext> accountContexts = new ArrayList<>();
-
 
     @Getter
     private final Map<Integer, List<AccountContext>> acMap = new HashMap<>();
@@ -80,14 +79,12 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      */
     public abstract CompletableFuture<ACListOptResult> loginAndTakeTokenAccount();
 
-
     /**
      * 更新账户奖励信息
      *
      * @return CompletableFuture<Result>
      */
     public abstract CompletableFuture<ACListOptResult> updateAccountRewordInfo();
-
 
     /**
      * 获取jb name列表
@@ -103,7 +100,6 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      */
     protected void accountsLoadedHandler(List<AccountContext> accountContexts) {
     }
-
 
     public CompletableFuture<ACListOptResult> uniqueAsyncForACList(
             BiFunction<AccountContext, List<AccountContext>, CompletableFuture<Result>> buildResultFuture,
@@ -183,8 +179,8 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
             for (AccountContext accountContext : new HashSet<>(accountContexts)) {
                 if (checkAccountContainsParams(accountContext)) {
                     BotACJobResult botACJobResult = new BotACJobResult(
-                            getBotInfo().getId(),
-                            getBotInfo().getName(),
+                            getBotInstance().getBotId(),
+                            getBotInstance().getBotName(),
                             jobName,
                             accountContext.getId()
                     );
@@ -193,7 +189,9 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
 
                     try {
                         Result result = future.get();
-                        if (result.getSuccess()) successCount++;
+                        if (result.getSuccess()) {
+                            successCount++;
+                        }
                         botACJobResult = resultHandler.apply(accountContext, botACJobResult.setResult(result));
                         results.add(botACJobResult);
                     } catch (InterruptedException | ExecutionException e) {
@@ -203,8 +201,8 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
             }
 
             return ACListOptResult.builder()
-                    .botId(getBotInfo().getId())
-                    .botName(getBotInfo().getName())
+                    .botId(getBotInstance().getBotId())
+                    .botName(getBotInstance().getBotName())
                     .jobName(jobName)
                     .successCount(successCount)
                     .success(true)
@@ -212,7 +210,6 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
                     .build();
         }, getExecutorService());
     }
-
 
     /**
      * 异步遍历账户
@@ -238,9 +235,9 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
                         throw new RuntimeException(e);
                     }
 
-                    BotACJobResult botACJobResult  = new BotACJobResult(
-                            getBotInfo().getId(),
-                            getBotInfo().getName(),
+                    BotACJobResult botACJobResult = new BotACJobResult(
+                            getBotInstance().getBotId(),
+                            getBotInstance().getBotKey(),
                             jobName,
                             accountContext.getId()
                     );
@@ -275,7 +272,9 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
                             BotACJobResult result = future.get();
                             BotACJobResult botACJobResult = resultHandler.apply(accountContext, result);
 
-                            if (BooleanUtil.isTrue(botACJobResult.getSuccess())) success++;
+                            if (BooleanUtil.isTrue(botACJobResult.getSuccess())) {
+                                success++;
+                            }
 
                             results.add(botACJobResult);
                         } catch (InterruptedException | ExecutionException e) {
@@ -286,8 +285,8 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
 
                             results.add(
                                     new BotACJobResult(
-                                            getBotInfo().getId(),
-                                            getBotInfo().getName(),
+                                            getBotInstance().getBotId(),
+                                            getBotInstance().getBotKey(),
                                             jobName,
                                             accountContext.getId(),
                                             false,
@@ -299,8 +298,8 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
                     }
 
                     return ACListOptResult.builder()
-                            .botId(getBotInfo().getId())
-                            .botName(getBotInfo().getName())
+                            .botId(getBotInstance().getBotId())
+                            .botName(getBotInstance().getBotKey())
                             .jobName(jobName)
                             .successCount(success)
                             .success(true)
@@ -317,7 +316,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      */
     private boolean checkAccountContainsParams(AccountContext accountContext) {
         // 过滤掉没有账户需要参数的
-        Object o = getBotInfo().getParams().get(ACCOUNT_PARAMS_KEY);
+        Object o = getBotInstance().getParams().get(ACCOUNT_PARAMS_KEY);
         // 使用的json序列化进db，反序列化得到的是JsonArray
         if (o instanceof JSONArray jsonArray) {
             for (Object obj : jsonArray) {
@@ -330,12 +329,11 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         return true;
     }
 
-
     /**
      * 初始化账号方法
      */
     private void initAccounts() throws BotInitException {
-        Integer botId = getBotInfo().getId();
+        Integer botId = getBotInstance().getBotId();
 
         try {
             logger.info("开始加载账户数据");
@@ -361,7 +359,6 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         }
     }
 
-
     /**
      * 将账户加载到bot， 会注册监听，当属性发生改变时自动刷入磁盘
      *
@@ -370,7 +367,6 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
     private void registerAccountsInBot(List<AccountContext> accountContexts) {
         persistenceManager.registerPersistenceListener(accountContexts);
     }
-
 
     /**
      * 获取并发控制的信号量

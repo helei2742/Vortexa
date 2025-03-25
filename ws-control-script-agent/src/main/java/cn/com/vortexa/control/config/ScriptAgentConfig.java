@@ -48,26 +48,12 @@ public class ScriptAgentConfig {
         return INSTANCE;
     }
 
+    private String registryCenterUrl;   // 注册中心地址
+    private Integer nioThreadCount = 1; // netty nio 线程数
+    private ServiceInstance serviceInstance;    // 服务地址
+    private Integer serviceOfflineTtl; // 服务被判断为下线时间（ping interval）
 
-    /**
-     * 注册中心地址
-     */
-    private String registryCenterUrl;
-
-    /**
-     * netty nio 线程数
-     */
-    private Integer nioThreadCount = 1;
-
-    /**
-     * 服务地址
-     */
-    private ServiceInstance serviceInstance;
-
-    /**
-     * 下线时间
-     */
-    private Integer serviceOfflineTtl;
+    private int metricUploadIntervalSeconds = 15 * 60;  //  指标上报间隔（秒）
 
     private static String toCamelCase(String name) {
         String[] parts = name.split("-");

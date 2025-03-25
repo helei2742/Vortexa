@@ -1,6 +1,5 @@
 package cn.com.vortexa.control;
 
-
 import cn.com.vortexa.control.config.ScriptAgentConfig;
 import cn.com.vortexa.control.constant.*;
 import cn.com.vortexa.control.dto.RemoteControlServerStatus;
@@ -11,6 +10,7 @@ import cn.com.vortexa.control.handler.CustomRequestHandler;
 import cn.com.vortexa.control.processor.CustomCommandProcessor;
 import cn.com.vortexa.control.processor.ScriptAgentProcessorAdaptor;
 import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.control.service.ScriptAgentMetricsUploadService;
 import cn.com.vortexa.control.util.DistributeIdMaker;
 import cn.com.vortexa.control.util.RemotingCommandDecoder;
 import cn.com.vortexa.control.util.RemotingCommandEncoder;
@@ -21,30 +21,48 @@ import io.netty.channel.*;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * @author helei
  * @since 2025-03-13
  */
 @Slf4j
+@Getter
 public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
 
     private final ScriptAgentConfig clientConfig;  // 配置
-    private final String clientName;    // 客户端name
+    private final ServiceInstance serviceInstance;
     private final RemoteControlServerStatus remoteStatus; // 远程服务命名中心状态
-    private final CustomCommandProcessor customCommandProcessor;
+    private final CustomCommandProcessor customCommandProcessor;    // 自定义命令处理器
+    private final ScriptAgentMetricsUploadService metricsUploadService; // 指标上传服务
 
+    @Setter
+    private Supplier<Object> registryBodySetter = null; // 注册时的body
     @Setter
     private Consumer<RemotingCommand> afterRegistryHandler = null;  // 注册成功后回调
 
-
     public ScriptAgent(ScriptAgentConfig clientConfig) {
         this(clientConfig, new ScriptAgentProcessorAdaptor(clientConfig));
+    }
+
+    public ScriptAgent(ScriptAgentConfig clientConfig, ScriptAgentProcessorAdaptor scriptAgentProcessorAdaptor) {
+        super(clientConfig.getRegistryCenterUrl(), clientConfig.getServiceInstance().toString(),
+                scriptAgentProcessorAdaptor);
+        super.setHandshake(false);
+        this.clientConfig = clientConfig;
+        this.serviceInstance = clientConfig.getServiceInstance();
+        super.setName(this.serviceInstance.toString());
+        this.remoteStatus = new RemoteControlServerStatus();
+        this.customCommandProcessor = new CustomCommandProcessor();
+
+        this.metricsUploadService = new ScriptAgentMetricsUploadService(this, this.getCallbackInvoker());
+        ((ScriptAgentProcessorAdaptor) getHandler()).setScriptAgent(this);
     }
 
     @Override
@@ -52,17 +70,6 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
         // 每次连接成功，都发送注册消息
         channel.attr(NettyConstants.CLIENT_NAME).set(getName());
         sendRegistryCommand();
-    }
-
-    public ScriptAgent(ScriptAgentConfig clientConfig, ScriptAgentProcessorAdaptor scriptAgentProcessorAdaptor) {
-        super(clientConfig.getRegistryCenterUrl(), clientConfig.getServiceInstance().toString(), scriptAgentProcessorAdaptor);
-        super.setHandshake(false);
-        this.clientConfig = clientConfig;
-        this.clientName = clientConfig.getServiceInstance().toString();
-        this.remoteStatus = new RemoteControlServerStatus();
-        this.customCommandProcessor = new CustomCommandProcessor();
-
-        ((ScriptAgentProcessorAdaptor) getHandler()).setScriptAgent(this);
     }
 
     @Override
@@ -79,7 +86,6 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
         p.addLast(getHandler());
     }
 
-
     @Override
     protected void doSendMessage(RemotingCommand message, boolean b) {
         log.debug("send message to nameserver: {}", message);
@@ -87,7 +93,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
         ServiceInstance serviceInstance = clientConfig.getServiceInstance();
 
         if (b && StrUtil.isBlank(message.getTransactionId())) {
-            message.setTransactionId(clientName);
+            message.setTransactionId(nextTxId());
         }
 
         message.setGroup(serviceInstance.getGroup());
@@ -106,13 +112,12 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
      * 发送服务注册命令
      */
     public void sendRegistryCommand() {
-        RemotingCommand remotingCommand = new RemotingCommand();
-        remotingCommand.setFlag(RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE);
-        remotingCommand.setTransactionId(
-                DistributeIdMaker.DEFAULT.nextId(clientConfig.getServiceInstance().getServiceId())
-        );
-
-        remotingCommand.setBodyFromObject(new HashMap<>());
+        RemotingCommand remotingCommand = buildRequestCommand(RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE);
+        Object body = null;
+        if (registryBodySetter != null) {
+            body = registryBodySetter.get();
+        }
+        remotingCommand.setBodyFromObject(body);
 
         sendRequest(remotingCommand).whenComplete((response, throwable) -> {
             if (throwable != null) {
@@ -177,7 +182,29 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
         return response;
     }
 
+    /**
+     * 构建命令
+     *
+     * @param commandFlag commandFlag
+     * @return RemotingCommand
+     */
+    public RemotingCommand buildRequestCommand(int commandFlag) {
+        RemotingCommand command = new RemotingCommand();
+        command.setGroup(serviceInstance.getGroup());
+        command.setServiceId(serviceInstance.getServiceId());
+        command.setClientId(serviceInstance.getInstanceId());
+        command.setTransactionId(nextTxId());
+
+        command.setFlag(commandFlag);
+        return command;
+    }
+
+    /**
+     * 获取下一个事务id
+     *
+     * @return String
+     */
     public String nextTxId() {
-        return DistributeIdMaker.DEFAULT.nextId(clientName);
+        return DistributeIdMaker.DEFAULT.nextId(getName());
     }
 }

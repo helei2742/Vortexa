@@ -1,9 +1,12 @@
 package cn.com.vortexa.common.constants;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * Bot Job 类型
  */
-public enum BotJobType {
+public enum BotJobType implements Serializable {
     /**
      * 注册
      */
@@ -32,5 +35,9 @@ public enum BotJobType {
     /**
      * 按账户拆分后的JOB
      */
-    ACCOUNT_SPLIT_JOB
+    ACCOUNT_SPLIT_JOB;
+
+
+    @Serial
+    private static final long serialVersionUID = 89472398479283L;
 }

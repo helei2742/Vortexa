@@ -1,6 +1,7 @@
 package cn.com.vortexa.control.dto;
 
 
+import cn.com.vortexa.common.dto.control.RegisteredService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

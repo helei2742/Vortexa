@@ -28,7 +28,7 @@ import static cn.com.vortexa.bot_father.service.impl.BotAccountContextServiceImp
 )
 public interface BotAccountContextMapper extends IBaseMapper<AccountContext> {
 
-    Boolean createIfTableNotExist(@Param("botId") Integer botId, @Param("botKey") String botKey);
+    Integer createIfTableNotExist(@Param("botId") Integer botId, @Param("botKey") String botKey);
 
     List<String> queryBotAccountTableNames(@Param("botId") Integer botId);
 }

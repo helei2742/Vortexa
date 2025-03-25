@@ -1,6 +1,9 @@
 package cn.com.vortexa.db_layer.service;
 
+import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.common.entity.BotInstance;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +16,11 @@ import cn.com.vortexa.common.entity.BotInstance;
 public interface IBotInstanceService extends IBaseService<BotInstance> {
 
     Boolean existsBotInstance(BotInstance query);
+
+    /**
+     * 查询正在运行的bot实例
+     *
+     * @return List<BotInfo>
+     */
+    List<RegisteredService> queryOnLineInstance();
 }

@@ -9,7 +9,6 @@ import cn.com.vortexa.control.exception.CustomCommandInvokeException;
 import cn.com.vortexa.control.protocol.Serializer;
 import cn.com.vortexa.control.dto.RPCServiceInfo;
 import cn.com.vortexa.control.util.RPCMethodUtil;
-import cn.hutool.core.util.BooleanUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,16 +48,6 @@ public class BotScriptAgentConfig {
 
         addCustomCommandHandler(scriptAgent);
 
-        scriptAgent.connect().whenComplete((success, throwable) -> {
-            if (throwable != null) {
-                log.error("script agent connect to ControlServer[{}] error",
-                        scriptAgentConfig.getRegistryCenterUrl(),throwable);
-            }
-            if (BooleanUtil.isTrue(success)) {
-                log.info("script agent connect to ControlServer[{}] success",
-                        scriptAgentConfig.getRegistryCenterUrl(),throwable);
-            }
-        });
         return scriptAgent;
     }
 

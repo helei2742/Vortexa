@@ -35,10 +35,10 @@ import javax.net.ssl.SSLException;
 @Setter
 @Getter
 public abstract class AutoConnectWSService implements IWSService {
+    private static volatile EventLoopGroup eventLoopGroup;    //netty线程组
     private final AtomicInteger reconnectTimes = new AtomicInteger(0);  //重链接次数
     private final ReentrantLock reconnectLock = new ReentrantLock();    //重连锁
     private final Condition startingWaitCondition = reconnectLock.newCondition();   //启动中阻塞的condition
-    private final EventLoopGroup eventLoopGroup;    //netty线程组
     private final String url; //websocket的url字符串
     private Bootstrap bootstrap; //netty bootstrap
     private Channel channel;    //连接channel
@@ -49,13 +49,13 @@ public abstract class AutoConnectWSService implements IWSService {
     private ProxyInfo proxy = null; //代理
     private int reconnectCountDownSecond = 180; //重连次数减少的间隔
     private int reconnectLimit = 3; //重连次数限制
+    private int eventLoopGroupThreads = 1; // 线程数
     private volatile WebsocketClientStatus clientStatus = WebsocketClientStatus.NEW;    //客户端当前状态
     private Consumer<WebsocketClientStatus> clientStatusChangeHandler = socketCloseStatus -> {
     };    //clientStatus更新的回调
 
     protected AutoConnectWSService(String url) {
         this.url = url;
-        this.eventLoopGroup = new NioEventLoopGroup();
     }
 
     protected abstract void init() throws SSLException, URISyntaxException;
@@ -146,7 +146,7 @@ public abstract class AutoConnectWSService implements IWSService {
 
                     init();
                 } catch (SSLException | URISyntaxException e) {
-                    throw new RuntimeException("init websocket clioent error", e);
+                    throw new RuntimeException("init websocket client error", e);
                 }
                 log.info("init Websocket finish，start connect server [{}]", url);
 
@@ -154,7 +154,7 @@ public abstract class AutoConnectWSService implements IWSService {
                 if (reconnectTimes.incrementAndGet() <= reconnectLimit) {
 
                     //Step 4.1 每进行重连都会先将次数加1并设置定时任务将重连次数减1
-                    eventLoopGroup.schedule(() -> {
+                    getEventLoopGroup().schedule(() -> {
                         reconnectTimes.decrementAndGet();
                     }, reconnectCountDownSecond, TimeUnit.SECONDS);
 
@@ -166,7 +166,7 @@ public abstract class AutoConnectWSService implements IWSService {
                     CountDownLatch latch = new CountDownLatch(1);
 
                     //Step 4.3 延迟再进行连接
-                    eventLoopGroup.schedule(() -> {
+                    getEventLoopGroup().schedule(() -> {
                         try {
                             channel = bootstrap.connect(host, port).sync().channel();
 
@@ -249,7 +249,7 @@ public abstract class AutoConnectWSService implements IWSService {
             channel.close();
             channel = null;
         }
-        eventLoopGroup.shutdownGracefully();
+        getEventLoopGroup().shutdownGracefully();
         log.warn("web socket client [{}] already shutdown !", getName());
     }
 
@@ -277,6 +277,17 @@ public abstract class AutoConnectWSService implements IWSService {
                 clientStatus = newStatus;
             }
         }
+    }
+
+    protected EventLoopGroup getEventLoopGroup() {
+        if (eventLoopGroup == null) {
+            synchronized (AutoConnectWSService.class) {
+                if (eventLoopGroup == null) {
+                    eventLoopGroup = new NioEventLoopGroup(eventLoopGroupThreads);
+                }
+            }
+        }
+        return eventLoopGroup;
     }
 
     /**

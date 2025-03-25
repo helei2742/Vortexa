@@ -1,4 +1,26 @@
+spring:
+  datasource:
+    quartz:
+      url: jdbc:mysql://localhost:3306/job_store
+      username: root
+      password: 123456
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      type: com.zaxxer.hikari.HikariDataSource
+
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      table-prefix: QRTZ_
+      driver-class: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/job_store
+      user: root
+      password: 123456
+      scheduler:
+        instance-name: QuartzScheduler
+
 vortexa:
+  botKey: stork_test
+
   script-agent:
     registryCenterUrl: ws://localhost:18848
     nio-thread-count: 1
@@ -6,6 +28,3 @@ vortexa:
     service-instance:
       host: localhost
       port: 20001
-      group: test1
-      serviceId: client
-      instanceId: client-1

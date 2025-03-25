@@ -7,6 +7,7 @@ import cn.com.vortexa.bot_father.config.AutoBotConfig;
 import cn.com.vortexa.common.exception.BotStartException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.impl.DefaultParser;
@@ -17,7 +18,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Stack;
 import java.util.concurrent.CountDownLatch;
-
 
 /**
  * 命令行交互的depin机器人
@@ -38,7 +38,8 @@ public abstract class CommandLineAutoBot {
 
         this.mainManu = new CommandMenuNode(
                 "主菜单",
-                String.format("欢迎使用[%s]-bot", getBot().getBotInfo().getName()),
+                String.format("欢迎使用[%s][%s]-bot",
+                        getBot().getBotInstance().getBotName(), getBot().getBotInstance().getBotKey()),
                 this::printBanner
         );
     }
@@ -47,7 +48,6 @@ public abstract class CommandLineAutoBot {
      * 构建command菜单
      */
     protected abstract void buildMenuNode(CommandMenuNode mainManu);
-
 
     /**
      * 异步启动
@@ -90,7 +90,6 @@ public abstract class CommandLineAutoBot {
         }
     }
 
-
     /**
      * 运行机器人
      *
@@ -111,7 +110,8 @@ public abstract class CommandLineAutoBot {
             //Step 2.1 获取输入
             String choice;
             try {
-                choice = reader.readLine("\n<\n" + getInvokeActionAndMenuNodePrintStr(currentMenuNode) + "请选择>").trim();
+                choice = reader.readLine("\n<\n" + getInvokeActionAndMenuNodePrintStr(currentMenuNode) + "请选择>")
+                        .trim();
             } catch (Exception e) {
                 log.error("进入菜单节点[{}]发生异常", currentMenuNode.getTittle(), e);
                 currentMenuNode = menuNodeStack.pop();
@@ -159,7 +159,6 @@ public abstract class CommandLineAutoBot {
         }
     }
 
-
     /**
      * 获取菜单， 会放入额外的固定菜单
      *
@@ -197,7 +196,9 @@ public abstract class CommandLineAutoBot {
             sb.append(currentMenuNode.getAction().get()).append("\n");
         }
 
-        if (currentMenuNode.isEnd()) return sb.toString();
+        if (currentMenuNode.isEnd()) {
+            return sb.toString();
+        }
 
         sb.append("选项:\n");
         List<CommandMenuNode> menuNodeList = currentMenuNode.getSubNodeList();

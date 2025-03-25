@@ -6,7 +6,6 @@ import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
-import cn.com.vortexa.control.protocol.Serializer;
 import cn.com.vortexa.control.service.IRegistryService;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
@@ -53,10 +52,10 @@ public class ServiceRegistryProcessor {
                 .port(Integer.parseInt(serviceAddress[1]))
                 .build();
 
-        Map<?, ?> serviceProps = null;
+        Map<Object, Object> serviceProps = null;
         if (remotingCommand.getBody() != null && remotingCommand.getBody().length > 0) {
             try {
-                serviceProps = Serializer.Algorithm.Protostuff.deserialize(remotingCommand.getBody(), HashMap.class);
+                serviceProps = remotingCommand.getObjBodY(HashMap.class);
             } catch (Exception e) {
                 log.warn("get service props from remoting command error, {}", e.getMessage());
             }

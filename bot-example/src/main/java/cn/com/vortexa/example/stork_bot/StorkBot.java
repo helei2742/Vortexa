@@ -51,9 +51,9 @@ public class StorkBot extends AutoLaunchBot<StorkBot> {
     public static void main(String[] args) throws BotStartException, BotInitException {
         List<String> list = new ArrayList<>(List.of(args));
 
-        list.add("--bot.botKey=stork_test");
-        list.add("--bot.customConfig.invite_code=WSJQRJD5CB");
-        list.add("--bot.accountConfig.configFilePath=stork_google.xlsx");
+        list.add("--vortexa.botKey=stork_test");
+        list.add("--vortexa.customConfig.invite_code=WSJQRJD5CB");
+        list.add("--vortexa.accountConfig.configFilePath=stork_google.xlsx");
         list.add("--add-opens java.base/java.lang=ALL-UNNAMED");
 
         BotLauncher.launch(StorkBot.class, list.toArray(new String[0]));

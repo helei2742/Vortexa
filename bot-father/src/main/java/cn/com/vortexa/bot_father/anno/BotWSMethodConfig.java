@@ -26,7 +26,12 @@ public @interface BotWSMethodConfig {
     /**
      * 心跳间隔
      */
-    int heartBeatIntervalSecond() default  30;
+    int heartBeatIntervalSecond() default 30;
+
+    /**
+     * nio 线程数
+     */
+    int nioEventLoopGroupThreads() default 1;
 
     /**
      * websocket 并发数量

@@ -35,8 +35,6 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
 
     private final Map<String, AutoBotJobRuntimeParam> jobRuntimeParamMap = new ConcurrentHashMap<>();
 
-    private final Map<String, Method> jobMethodMap = new ConcurrentHashMap<>();
-
     private final Random random = new Random();
 
     @Override
@@ -143,7 +141,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
         } catch (ParseException e) {
             throw new IllegalArgumentException(
                     String.format("[%s]-[%s]BotJobMethod上错误的cron表达式[%s]",
-                            getBotInfo().getName(), method.getName(), botJobMethodAnno.cronExpression()),
+                            getBotInstance().getBotKey(), method.getName(), botJobMethodAnno.cronExpression()),
                     e
             );
         }
@@ -217,7 +215,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
      *
      * @param runtimeParam runtimeParam
      * @param jobName      jobName
-     * @param jobParam jobParam
+     * @param jobParam     jobParam
      * @return CompletableFuture<ACListOptResult>
      */
     private CompletableFuture<ACListOptResult> normalForEachAccount(
@@ -250,7 +248,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
      *
      * @param runtimeParam runtimeParam
      * @param jobName      jobName
-     * @param jobParam  jobParam
+     * @param jobParam     jobParam
      * @return CompletableFuture<ACListOptResult>
      */
     private CompletableFuture<ACListOptResult> uniqueForEachAccount(AutoBotJobRuntimeParam runtimeParam, String jobName, AutoBotJobParam jobParam, AccountJobMethodInvokeHandler handler) {
@@ -400,6 +398,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
         return new AutoBotJobWSParam(
                 methodConfig.isRefreshWSConnection(),
                 methodConfig.wsUnlimitedRetry(),
+                methodConfig.nioEventLoopGroupThreads(),
                 methodConfig.wsConnectCount(),
                 methodConfig.reconnectLimit(),
                 methodConfig.heartBeatIntervalSecond(),

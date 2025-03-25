@@ -14,4 +14,5 @@ public interface IBotInstanceRPC {
 
     Integer insertOrUpdateRPC(BotInstance instance) throws SQLException;
 
+    BotInstance selectOneRPC(BotInstance query);
 }
