@@ -20,11 +20,10 @@ spring:
 
 vortexa:
   botKey: stork_test
-
   script-agent:
     registryCenterUrl: ws://localhost:18848
     nio-thread-count: 1
     service-offline-ttl: 60
     service-instance:
       host: localhost
-      port: 20001
+      port: 20002

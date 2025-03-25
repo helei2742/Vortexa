@@ -459,7 +459,7 @@ public abstract class AbstractAutoBot {
     }
 
     protected synchronized AutoBotJobParam getJobParam(String jobName) {
-        return this.botInstance.getJobParams() == null ? null : this.botInstance.getJobParams().get(jobName);
+        return this.botInfo.getJobParams() == null ? null : this.botInfo.getJobParams().get(jobName);
     }
 
     protected synchronized void setJobParam(String jobKey, AutoBotJobParam jobParam) {

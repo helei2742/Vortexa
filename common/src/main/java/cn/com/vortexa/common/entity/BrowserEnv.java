@@ -14,6 +14,7 @@ import java.util.Map;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 
 /**
@@ -26,6 +27,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 @TableName("t_browser_env")
 public class BrowserEnv implements Serializable {
     @Serial

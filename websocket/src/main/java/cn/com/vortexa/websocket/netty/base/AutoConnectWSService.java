@@ -5,6 +5,7 @@ import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import cn.com.vortexa.websocket.netty.constants.WebsocketClientStatus;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -168,16 +169,25 @@ public abstract class AutoConnectWSService implements IWSService {
                     //Step 4.3 延迟再进行连接
                     getEventLoopGroup().schedule(() -> {
                         try {
-                            channel = bootstrap.connect(host, port).sync().channel();
+                            ChannelFuture connect = bootstrap.connect(host, port);
 
-                            afterBoostrapConnected(channel);
+                            connect.addListener(future -> {
+                                if (future.isSuccess()) {
+                                    channel = connect.channel();
+                                    afterBoostrapConnected(channel);
 
-                            log.info("success connect to {}", url);
-                            //Step 4.4 连接成功设置标识
-                            isSuccess.set(true);
+                                    log.info("success connect to {}", url);
+                                    //Step 4.4 连接成功设置标识
+                                    isSuccess.set(true);
+                                } else {
+                                    log.error("connect client [{}], url[{}] error, times [{}]",
+                                            name, url, reconnectTimes.get(), future.cause());
+
+                                    isSuccess.set(false);
+                                }
+                            });
                         } catch (Exception e) {
-                            log.error("connect client [{}], url[{}] error, times [{}]", name, url, reconnectTimes.get(),
-                                    e);
+                            log.error("connect client [{}], url[{}] error, times [{}]", name, url, reconnectTimes.get(), e);
                             isSuccess.set(false);
                         } finally {
                             latch.countDown();

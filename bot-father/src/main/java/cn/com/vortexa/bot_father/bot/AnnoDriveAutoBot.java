@@ -397,12 +397,10 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
 
                 if (runtimeParam != null) {
                     // 添加额外参数
-                    runtimeParam.setExtraParams(new Object[]{
-                            getJobParam(jobName), (AccountWSClientBuilder) accountContext -> {
+                    runtimeParam.setExtraParams(new Object[]{getJobParam(jobName), (AccountWSClientBuilder) accountContext -> {
                         Object invoke = method.invoke(getInstance(), accountContext);
                         return (BaseBotWSClient<?>) invoke;
-                    }
-                    });
+                    }});
                 }
 
             } catch (Exception e) {

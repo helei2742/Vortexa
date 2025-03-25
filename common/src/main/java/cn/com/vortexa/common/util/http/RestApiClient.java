@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.Proxy;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -173,9 +174,16 @@ public class RestApiClient {
 
         RequestBody requestBody = null;
         if (body != null) {
-            String contentType = headers.getOrDefault("Content-Type",
-                            headers.getOrDefault("content-type", "application/json; charset=utf-8"))
-                    .toLowerCase();
+            String contentType = "application/json";
+            if (headers != null) {
+                contentType = headers.getOrDefault(
+                        "Content-Type",
+                        headers.getOrDefault("content-type", "application/json; charset=utf-8")
+                ).toLowerCase();
+            } else {
+                headers = new HashMap<>(1);
+            }
+
 
             if (contentType.contains("x-www-form-urlencoded")) {
                 StringBuilder formData = new StringBuilder();
@@ -190,8 +198,10 @@ public class RestApiClient {
                 requestBody = RequestBody.create(formData.toString(),
                         MediaType.parse("application/x-www-form-urlencoded"));
             } else {
-                MediaType JSON = MediaType.parse("application/" + headers.getOrDefault("Content-Type",
-                        headers.getOrDefault("content-type", "application/json; charset=utf-8")));
+                MediaType JSON = MediaType.parse(
+                        "application/" + headers.getOrDefault("Content-Type",
+                        headers.getOrDefault("content-type", "application/json; charset=utf-8"))
+                );
 
                 requestBody = RequestBody.create(body.toJSONString(), JSON);
             }

@@ -32,7 +32,7 @@ import java.util.Optional;
 @ImportAutoConfiguration({BotFatherAutoConfig.class})
 public class BotLauncher {
 
-    private static final String BOT_KEY_PARAM_KEY = "--bot.botKey=";
+    private static final String BOT_KEY_PARAM_KEY = "--vortexa.botKey=";
 
     public static AutoLaunchBot<?> LAUNCHED_BOT = null;
 
@@ -51,7 +51,7 @@ public class BotLauncher {
         BannerUtil.printBanner("");
 
         // 命令行参数设置app name
-        Optional<String> botKeyOp = Arrays.stream(args).filter(arg -> arg.startsWith("--bot.botKey=")).findFirst();
+        Optional<String> botKeyOp = Arrays.stream(args).filter(arg -> arg.startsWith(BOT_KEY_PARAM_KEY)).findFirst();
         if (botKeyOp.isEmpty()) {
             throw new BotStartException("bot key is empty");
         }
