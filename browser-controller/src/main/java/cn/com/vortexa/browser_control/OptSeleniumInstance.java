@@ -1,5 +1,6 @@
 package cn.com.vortexa.browser_control;
 
+import cn.com.vortexa.browser_control.dto.SeleniumProxy;
 import com.alibaba.fastjson.JSONObject;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;

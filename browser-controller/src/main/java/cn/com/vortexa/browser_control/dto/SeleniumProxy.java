@@ -1,4 +1,4 @@
-package cn.com.vortexa.browser_control;
+package cn.com.vortexa.browser_control.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

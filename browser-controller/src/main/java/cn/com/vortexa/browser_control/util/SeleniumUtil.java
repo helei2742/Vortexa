@@ -1,4 +1,4 @@
-package cn.com.vortexa.browser_control;
+package cn.com.vortexa.browser_control.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;

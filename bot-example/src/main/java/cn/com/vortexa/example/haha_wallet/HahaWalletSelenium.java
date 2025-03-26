@@ -1,6 +1,9 @@
 package cn.com.vortexa.example.haha_wallet;
 
 import cn.com.vortexa.browser_control.*;
+import cn.com.vortexa.browser_control.dto.SeleniumProxy;
+import cn.com.vortexa.browser_control.execute.ExecuteGroup;
+import cn.com.vortexa.browser_control.execute.ExecuteItem;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.entity.BrowserEnv;
 import cn.com.vortexa.common.entity.ProxyInfo;

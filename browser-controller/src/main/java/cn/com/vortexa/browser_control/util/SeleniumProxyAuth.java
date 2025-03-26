@@ -1,4 +1,4 @@
-package cn.com.vortexa.browser_control;
+package cn.com.vortexa.browser_control.util;
 
 import java.io.*;
 import java.nio.file.Files;

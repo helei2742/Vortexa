@@ -19,7 +19,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static cn.com.vortexa.browser_control.SeleniumProxyAuth.createProxyAuthExtension;
+import static cn.com.vortexa.browser_control.util.SeleniumProxyAuth.createProxyAuthExtension;
 
 public class SeleniumExample {
 
