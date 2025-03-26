@@ -25,6 +25,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -41,6 +44,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
     private final RemoteControlServerStatus remoteStatus; // 远程服务命名中心状态
     private final CustomCommandProcessor customCommandProcessor;    // 自定义命令处理器
     private final ScriptAgentMetricsUploadService metricsUploadService; // 指标上传服务
+    private final Map<Integer, BiFunction<Channel, RemotingCommand, RemotingCommand>> customRemotingCommandHandlerMap = new HashMap<>();
 
     @Setter
     private Supplier<Object> registryBodySetter = null; // 注册时的body
@@ -112,7 +116,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
      * 发送服务注册命令
      */
     public void sendRegistryCommand() {
-        RemotingCommand remotingCommand = buildRequestCommand(RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE);
+        RemotingCommand remotingCommand = newRequestCommand(RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE);
         Object body = null;
         if (registryBodySetter != null) {
             body = registryBodySetter.get();
@@ -188,12 +192,22 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
      * @param commandFlag commandFlag
      * @return RemotingCommand
      */
-    public RemotingCommand buildRequestCommand(int commandFlag) {
+    public RemotingCommand newRequestCommand(int commandFlag) {
+        return newRequestCommand(commandFlag, true);
+    }
+
+    /**
+     * 构建命令
+     *
+     * @param commandFlag commandFlag
+     * @return RemotingCommand
+     */
+    public RemotingCommand newRequestCommand(int commandFlag, boolean needTxId) {
         RemotingCommand command = new RemotingCommand();
         command.setGroup(serviceInstance.getGroup());
         command.setServiceId(serviceInstance.getServiceId());
         command.setClientId(serviceInstance.getInstanceId());
-        command.setTransactionId(nextTxId());
+        command.setTransactionId(needTxId ? nextTxId() : null);
 
         command.setFlag(commandFlag);
         return command;

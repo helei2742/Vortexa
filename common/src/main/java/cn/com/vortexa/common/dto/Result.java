@@ -4,10 +4,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Result {
+public class Result implements Serializable {
+    @Serial
+    private static final long serialVersionUID = -43978563748658346L;
+
     private Boolean success;
     private String errorMsg;
     private Object data;

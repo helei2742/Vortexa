@@ -24,5 +24,10 @@ public class ConnectEntry {
         if (channel != null && channel.isActive()) {
             channel.close();
         }
+        usable = false;
+    }
+
+    public boolean isUsable() {
+        return usable && channel != null && channel.isActive();
     }
 }

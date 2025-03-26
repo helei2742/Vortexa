@@ -10,21 +10,22 @@
     <name>Vortexa</name>
     <url>http://maven.apache.org</url>
     <modules>
-        <module>bot-father</module>
-        <module>bot-platform</module>
-        <module>websocket</module>
-        <module>common</module>
-        <module>mail</module>
-        <module>db-layer</module>
-        <module>bot-example</module>
-        <module>captcha</module>
-        <module>rpc-api</module>
-        <module>job</module>
-        <module>browser-controller</module>
-        <module>web3</module>
+        <module>vortexa-platform</module>
+        <module>vortexa-script-node</module>
+        <module>vortexa-example</module>
+        <module>vortexa-model-db-layer</module>
+        <module>vortexa-model-rpc-api</module>
+        <module>vortexa-model-job</module>
+        <module>util-web3</module>
+        <module>util-websocket</module>
+        <module>util-captcha</module>
+        <module>util-browser-controller</module>
+        <module>util-web3</module>
+        <module>util-mail</module>
         <module>ws-control-base</module>
         <module>ws-control-server</module>
         <module>ws-control-script-agent</module>
+        <module>common</module>
     </modules>
 
     <properties>

@@ -4,7 +4,7 @@ import cn.com.vortexa.control.constant.RegistryState;
 import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.service.IRegistryService;
-import cn.com.vortexa.control.util.NameserverUtil;
+import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 
@@ -68,7 +68,7 @@ public class FileRegistryService implements IRegistryService {
         }
 
         try {
-            String key = NameserverUtil.generateServiceInstanceKey(group, serviceId, clientId);
+            String key = ControlServerUtil.generateServiceInstanceKey(group, serviceId, clientId);
 
             // 存内存
             registryServiceMap.put(key, new RegisteredService(serviceInstance, props));
@@ -94,7 +94,7 @@ public class FileRegistryService implements IRegistryService {
         if (updated.compareAndSet(true, false)) {
             log.info("start save registry info - [{}]", registryServiceMap.keySet());
 
-            Path path = Paths.get(NameserverUtil.getStoreFileResourcePath(FILE_NAME));
+            Path path = Paths.get(ControlServerUtil.getStoreFileResourcePath(FILE_NAME));
             if (!Files.exists(path.getParent())) {
                 Files.createDirectories(path.getParent());
             }
@@ -128,7 +128,7 @@ public class FileRegistryService implements IRegistryService {
             String serviceId,
             String clientId
     ) {
-        String keyPattern = NameserverUtil.generateServiceInstanceKey(
+        String keyPattern = ControlServerUtil.generateServiceInstanceKey(
                 StrUtil.isBlank(groupId) ? "*" : groupId,
                 StrUtil.isBlank(serviceId) ? "*" : serviceId,
                 StrUtil.isBlank(clientId) ? "*" : clientId

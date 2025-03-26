@@ -41,7 +41,7 @@ class BotControlServerTest {
     static int command_service = 3002;
 
     @BeforeAll
-    public static void setUp() throws ControlServerException, FileNotFoundException {
+    public static void setUp() throws Exception {
         controlServerConfig = new ControlServerConfig();
 
         ServiceInstance address = ServiceInstance.builder()

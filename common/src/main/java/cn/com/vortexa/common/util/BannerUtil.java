@@ -1,7 +1,7 @@
 package cn.com.vortexa.common.util;
 
 /**
- * @author h30069248
+ * @author helei
  * @since 2025/3/25 16:32
  */
 public class BannerUtil {

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.vortexa.script_node.mapper.BotAccountContextMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.AccountContext">
+        <id column="id" property="id"/>
+        <result column="bot_id" property="botId"/>
+        <result column="bot_key" property="botKey"/>
+        <result column="account_base_info_id" property="accountBaseInfoId"/>
+        <result column="twitter_id" property="twitterId"/>
+        <result column="discord_id" property="discordId"/>
+        <result column="proxy_id" property="proxyId"/>
+        <result column="browser_env_id" property="browserEnvId"/>
+        <result column="telegram_id" property="telegramId"/>
+        <result column="wallet_id" property="walletId"/>
+        <result column="reward_id" property="rewardId"/>
+        <result column="status" property="status"/>
+        <result column="params" property="params"/>
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="is_valid" property="isValid"/>
+    </resultMap>
+
+    <insert id="createIfTableNotExist" parameterType="java.lang.String">
+        CREATE TABLE IF NOT EXISTS t_bot_account_context
+        (
+            "id"
+            INTEGER
+            PRIMARY
+            KEY
+            AUTOINCREMENT,
+            "bot_id"
+            INTEGER
+            NOT
+            NULL,
+            "bot_key"
+            TEXT
+            NOT
+            NULL,
+            "account_base_info_id"
+            INTEGER,
+            "twitter_id"
+            INtEGER,
+            "discord_id"
+            INTEGER,
+            "proxy_id"
+            INTEGER,
+            "browser_env_id"
+            INTEGER,
+            "telegram_id"
+            INTEGER,
+            "wallet_id"
+            INTEGER,
+            "reward_id"
+            INTEGER,
+            "status"
+            INTEGER,
+            "usable"
+            INTEGER
+        (
+            1
+        ),
+            "params" TEXT,
+            "insert_datetime" TEXT,
+            "update_datetime" TEXT,
+            "is_valid" INTEGER
+        (
+            1
+        ),
+            UNIQUE
+        (
+            bot_key,
+            account_base_info_id,
+            proxy_id
+        )
+            );
+
+    </insert>
+
+    <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.AccountContext">
+
+        INSERT INTO t_bot_account_context
+        (bot_id, bot_key, account_base_info_id, twitter_id, discord_id, proxy_id, browser_env_id, telegram_id,
+         wallet_id,
+         reward_id, status, params, insert_datetime, update_datetime, is_valid)
+        VALUES (#{botId}, #{botKey}, #{accountBaseInfoId}, #{twitterId}, #{discordId}, #{proxyId}, #{browserEnvId},
+                #{telegramId},
+                #{walletId}, #{rewardId}, #{status}, #{params}, #{insertDatetime}, #{updateDatetime},
+                #{isValid}) ON CONFLICT(bot_key, account_base_info_id, proxy_id) DO
+        UPDATE SET
+            bot_id = excluded.bot_id,
+            twitter_id = excluded.twitter_id,
+            discord_id = excluded.discord_id,
+            proxy_id = excluded.proxy_id,
+            browser_env_id = excluded.browser_env_id,
+            telegram_id = excluded.telegram_id,
+            wallet_id = excluded.wallet_id,
+            reward_id = excluded.reward_id,
+            status = excluded.status,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime;
+    </insert>
+
+    <select id="queryBotAccountTableNames" resultType="java.lang.String">
+        SELECT
+        name
+        FROM
+        sqlite_master
+        WHERE
+        type='table'
+        AND
+        name LIKE 't_bot_account_context'
+        <if test="botId == null">
+            _%
+        </if>
+        <if test="botId != null">
+            #{botId}_%
+        </if>
+    </select>
+
+    <select id="multipleConditionQuery"
+            parameterType="cn.com.vortexa.common.entity.AccountContext"
+            resultType="cn.com.vortexa.common.entity.AccountContext">
+        select
+        t.id,
+        t.bot_id as botId, t.bot_key as botKey, t.account_base_info_id as accountBaseInfoId,
+        t.twitter_id as twitterId, t.discord_id as discordId, t.proxy_id as proxyId,
+        t.browser_env_id as browserEnvId, t.telegram_id as telegramId,
+        t.wallet_id as walletId, t.reward_id as rewardId, t.status,
+        t.params,
+        t.insert_datetime as insertDatetime,
+        t.update_datetime as updateDatetime,
+        t.is_valid as isValid
+        from
+        t_bot_account_context as t
+        <if test="params != null and !params.isEmpty()">
+            left join json_each(t.params) json_each
+        </if>
+        <where>
+            is_valid = 1
+            <if test="id != null">
+                and t.id = #{id}
+            </if>
+            <if test="botId != null">
+                and t.bot_id = #{botId}
+            </if>
+            <if test="botKey != null">
+                and t.bot_key = #{botKey}
+            </if>
+            <if test="accountBaseInfoId != null">
+                and t.account_base_info_id = #{accountBaseInfoId}
+            </if>
+            <if test="twitterId != null">
+                and t.twitter_id = #{twitterId}
+            </if>
+            <if test="discordId != null">
+                and t.discord_id = #{discordId}
+            </if>
+            <if test="proxyId != null">
+                and t.proxy_id = #{proxyId}
+            </if>
+            <if test="browserEnvId != null">
+                and t.browser_env_id = #{browsserEnvId}
+            </if>
+            <if test="telegramId != null">
+                and t.telegram_id = #{telegramId}
+            </if>
+            <if test="walletId != null">
+                and t.wallet_id = #{walletId}
+            </if>
+            <if test="status != null">
+                and t.status = #{status}
+            </if>
+            <if test="params != null and !params.isEmpty()">
+                and
+                <foreach collection="params" item='entry' index='key' separator='AND'>
+                    json_each.key = #{key} and json_each.value = #{entry}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+</mapper>

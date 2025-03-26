@@ -39,6 +39,9 @@ build/
 
 botData/
 nacos/
-A_back//
+nameserver/
+proxy_auth_extension
+selenium_data/
+A_back/
 
 **/.db

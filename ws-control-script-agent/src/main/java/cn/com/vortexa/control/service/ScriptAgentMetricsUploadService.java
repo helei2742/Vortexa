@@ -20,7 +20,7 @@ import java.util.function.Function;
 /**
  * Script agent 指标上传服务
  *
- * @author h30069248
+ * @author helei
  * @since 2025/3/24 15:09
  */
 @Slf4j
@@ -59,7 +59,7 @@ public class ScriptAgentMetricsUploadService {
      */
     private CompletableFuture<RemotingCommand> uploadMetricsLogic(Long times) {
         // Step 1 构建请求
-        RemotingCommand request = scriptAgent.buildRequestCommand(
+        RemotingCommand request = scriptAgent.newRequestCommand(
                 RemotingCommandFlagConstants.SCRIPT_AGENT_METRICS_UPLOAD
         );
 

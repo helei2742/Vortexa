@@ -1,5 +1,6 @@
 package cn.com.vortexa.control;
 
+import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.control.config.ControlServerConfig;
 import cn.com.vortexa.control.constant.NameserverState;
@@ -20,7 +21,7 @@ import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.processor.CustomCommandProcessor;
 import cn.com.vortexa.control.service.impl.InfluxDBMetricsService;
 import cn.com.vortexa.control.util.DistributeIdMaker;
-import cn.com.vortexa.control.util.NameserverUtil;
+import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.control.util.RemotingCommandDecoder;
 import cn.com.vortexa.control.util.RemotingCommandEncoder;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
@@ -37,11 +38,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import static cn.com.vortexa.control.constant.NameserverState.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 
 @Slf4j
 @Getter
@@ -50,6 +54,7 @@ public class BotControlServer {
     private final CustomCommandProcessor customCommandProcessor;   // 自定义命令处理服务
     private final ExecutorService executorService;
     private final long startTime;   //启动时间
+    private final Map<Integer, BiFunction<Channel, RemotingCommand, RemotingCommand>> customRemotingCommandHandlerMap = new HashMap<>();
 
     private volatile NameserverState state; // name server state
     private ServerBootstrap serverBootstrap;    //serverBootstrap
@@ -86,7 +91,7 @@ public class BotControlServer {
     public void init(
             IRegistryService registryService,
             IConnectionService connectionService
-    ) throws ControlServerException {
+    ) throws Exception {
         this.registryService = registryService;
         this.connectionService = connectionService;
         this.processorAdaptor = new ControlServerProcessorAdaptor(
@@ -219,8 +224,22 @@ public class BotControlServer {
             String instanceId,
             RemotingCommand remotingCommand
     ) {
+        String key = ControlServerUtil.generateServiceInstanceKey(group, serviceId, instanceId);
+        return sendCommandToServiceInstance(key, remotingCommand);
+    }
+
+    /**
+     * 给服务实例发送命令
+     *
+     * @param key             key
+     * @param remotingCommand remotingCommand
+     * @return CompletableFuture<RemotingCommand>
+     */
+    public CompletableFuture<RemotingCommand> sendCommandToServiceInstance(
+            String key, RemotingCommand remotingCommand
+    ) {
         // Step 1 获取连接
-        String key = NameserverUtil.generateServiceInstanceKey(group, serviceId, instanceId);
+
         ConnectEntry connectEntry = connectionService.getServiceInstanceChannel(key);
 
         if (connectEntry == null || !connectEntry.isUsable()) {
@@ -239,11 +258,14 @@ public class BotControlServer {
                     latch.countDown();
                 });
 
-                if (registry) {
-                    connectEntry.getChannel().writeAndFlush(remotingCommand);
-                }
-
+                connectEntry.getChannel().writeAndFlush(remotingCommand);
                 latch.await();
+
+                // Step 3 没有注册到请求，说明只是发的消息，唤醒线程
+                if (!registry) {
+                    result.set(null);
+                    latch.countDown();
+                }
                 return result.get();
             } catch (InterruptedException e) {
                 throw new RuntimeException("send command %s error".formatted(remotingCommand), e);
@@ -268,6 +290,23 @@ public class BotControlServer {
         } else if (channel.isActive()) {
             channel.close();
         }
+    }
+
+    /**
+     * 新建命令
+     *
+     * @param flag flag
+     * @return RemotingCommand
+     */
+    public RemotingCommand newRemotingCommand(int flag, boolean needId) {
+        RemotingCommand remotingCommand = new RemotingCommand();
+        remotingCommand.setFlag(flag);
+        ServiceInstance serviceInstance = controlServerConfig.getServiceInstance();
+        remotingCommand.setGroup(serviceInstance.getGroup());
+        remotingCommand.setServiceId(serviceInstance.getServiceId());
+        remotingCommand.setClientId(serviceInstance.getInstanceId());
+        remotingCommand.setTransactionId(needId ? nextTxId() : null);
+        return remotingCommand;
     }
 
     public String nextTxId() {

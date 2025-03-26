@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.vortexa.bot_platform.mapper.TwitterAccountMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.TwitterAccount">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="email" property="email"/>
+        <result column="email_password" property="emailPassword"/>
+        <result column="token" property="token"/>
+        <result column="f2a_key" property="f2aKey"/>
+        <result column="params" property="params"/>
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="is_valid" property="isValid"/>
+    </resultMap>
+
+    <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.TwitterAccount">
+        INSERT INTO t_twitter_account
+        (username, password, email, email_password, token, f2a_key, params, insert_datetime, update_datetime, is_valid)
+        VALUES (#{username}, #{password}, #{email}, #{emailPassword}, #{token}, #{f2aKey}, #{params},
+                #{insertDatetime}, #{updateDatetime}, #{isValid})
+            ON CONFLICT(username) DO
+        UPDATE SET
+            password = excluded.password,
+            email = excluded.email,
+            email_password = excluded.email_password,
+            token = excluded.token,
+            f2a_key = excluded.f2a_key,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime;
+    </insert>
+
+    <select id="multipleConditionQuery"
+            parameterType="cn.com.vortexa.common.entity.TwitterAccount"
+            resultType="cn.com.vortexa.common.entity.TwitterAccount">
+        select
+        t.id,
+        t.username,
+        t.password,
+        t.email,
+        t.email_password as emailPassword,
+        t.token,
+        t.f2a_key as f2aKey,
+        t.params,
+        t.insert_datetime as insertDatetime,
+        t.update_datetime as updateDatetime,
+        t.is_valid as isValid
+        from
+        t_twitter_account as t
+        <if test="params != null and !params.isEmpty()">
+            left join json_each(t.params) json_each
+        </if>
+        <where>
+            is_valid = 1
+            <if test="id != null">
+                and t.id = #{id}
+            </if>
+            <if test="username != null">
+                and t.username = #{username}
+            </if>
+            <if test="password != null">
+                and t.password = #{password}
+            </if>
+
+            <if test="email != null">
+                and t.email = #{email}
+            </if>
+            <if test="emailPassword != null">
+                and t.email_password = #{emailPassword}
+            </if>
+            <if test="token != null">
+                and t.token = #{token}
+            </if>
+            <if test="f2aKey != null">
+                and t.f2a_key = #{f2aKey}
+            </if>
+            <if test="params != null and !params.isEmpty()">
+                and
+                <foreach collection="params" item='entry' index='key' separator='AND'>
+                    json_each.key = #{key} and json_each.value = #{entry}
+                </foreach>
+            </if>
+        </where>
+    </select>
+</mapper>
+

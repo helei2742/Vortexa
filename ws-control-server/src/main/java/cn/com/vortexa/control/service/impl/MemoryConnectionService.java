@@ -2,7 +2,7 @@ package cn.com.vortexa.control.service.impl;
 
 import cn.com.vortexa.control.dto.ConnectEntry;
 import cn.com.vortexa.control.service.IConnectionService;
-import cn.com.vortexa.control.util.NameserverUtil;
+import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,7 @@ public class MemoryConnectionService implements IConnectionService {
 
     @Override
     public void addServiceChannel(String group, String serviceId, String instanceId, Channel channel) {
-        String key = NameserverUtil.generateServiceInstanceKey(
+        String key = ControlServerUtil.generateServiceInstanceKey(
                 group,
                 serviceId,
                 instanceId

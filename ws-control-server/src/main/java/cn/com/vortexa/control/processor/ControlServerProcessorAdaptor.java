@@ -4,7 +4,7 @@ import cn.com.vortexa.control.constant.*;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.BotControlServer;
 import cn.com.vortexa.control.service.IRegistryService;
-import cn.com.vortexa.control.util.NameserverUtil;
+import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.websocket.netty.handler.BaseWebSocketInboundHandler;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import io.netty.channel.Channel;
@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * @author helei
@@ -66,7 +67,7 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
                             String group = remotingCommand.getGroup();
                             String serviceId = remotingCommand.getServiceId();
                             String clientId = remotingCommand.getClientId();
-                            String newKey = NameserverUtil.generateServiceInstanceKey(group, serviceId, clientId);
+                            String newKey = ControlServerUtil.generateServiceInstanceKey(group, serviceId, clientId);
 
                             channel.attr(NettyConstants.CLIENT_NAME).set(newKey);
 
@@ -87,7 +88,14 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
                             botControlServer.tryInvokeCustomCommand(channel, remotingCommand);
                     case RemotingCommandFlagConstants.SCRIPT_AGENT_METRICS_UPLOAD ->
                             scriptAgentMetricsCommandProcessor.handlerScriptAgentMetricsUpload(key, remotingCommand);
-                    default -> throw new IllegalStateException("Unexpected value: " + opt);
+                    default -> {
+                        BiFunction<Channel, RemotingCommand, RemotingCommand> customProcessor = botControlServer.getCustomRemotingCommandHandlerMap().get(opt);
+                        if (customProcessor != null) {
+                            yield customProcessor.apply(channel, remotingCommand);
+                        } else {
+                            throw new IllegalStateException("Unexpected value: " + opt);
+                        }
+                    }
                 }, getCallbackInvoker())
                 .whenCompleteAsync((response, ex) -> {
                     if (ex != null) {
