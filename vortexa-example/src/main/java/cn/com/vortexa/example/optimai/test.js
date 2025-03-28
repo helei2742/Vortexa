@@ -1,21 +1,68 @@
-const generateCodeVerifier = async () => {
-    const e = new Uint8Array(32);  // 生成 32 字节（256 位）的随机数组
-    window.crypto.getRandomValues(e);  // 使用加密安全的随机数填充数组
-    return Array.from(e, s => s.toString(16).padStart(2, "0")).join("");  // 转为十六进制字符串
-};
-const generateCodeChallenge = async (e) => {
-    const a = new TextEncoder().encode(e);  // 将 `code_verifier` 转换为 UTF-8 字节
-    const i = await crypto.subtle.digest("SHA-256", a);  // 计算 SHA-256 哈希
-    const c = Array.from(new Uint8Array(i));  // 转换为字节数组
-    return btoa(String.fromCharCode.apply(null, c))  // Base64 编码
-        .replace(/\+/g, "-")  // URL 安全编码（`+` → `-`）
-        .replace(/\//g, "_")  // URL 安全编码（`/` → `_`）
-        .replace(/=/g, "");   // 去掉 `=` 填充
-};
-(async () => {
-    const codeVerifier = await generateCodeVerifier();
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
+function stableStringify(obj, options) {
+    const opts = {};
+    const space = typeof opts.space === "number" ? " ".repeat(opts.space) : opts.space || "";
+    const allowCycles = opts.cycles ?? false;
+    const replacer = opts.replacer || ((key, value) => value);
+    const compareFn = opts.cmp ? (node) => (a, b) => opts.cmp({ key: a, value: node[a] }, { key: b, value: node[b] }) : void 0;
+    const seenObjects = [];
+    function stringify(parent, key, node, level) {
+        const indent = space ? "\n" + space.repeat(level) : "";
+        const colonSeparator = space ? ": " : ":";
+        if (node && typeof node.toJSON === "function") {
+            node = node.toJSON();
+        }
+        node = replacer.call(parent, key, node);
+        if (node === void 0) return;
+        if (typeof node !== "object" || node === null) return JSON.stringify(node);
+        if (Array.isArray(node)) {
+            const items = node.map(
+                (item, index) => stringify(node, index, item, level + 1) || JSON.stringify(null)
+            );
+            return `[${items.map((item) => indent + space + item).join(",")}${indent}]`;
+        } else {
+            if (seenObjects.includes(node)) {
+                if (allowCycles) return JSON.stringify("__cycle__");
+                throw new TypeError("Converting circular structure to JSON");
+            }
+            seenObjects.push(node);
+            const keys = Object.keys(node).sort(compareFn && compareFn(node));
+            const keyValuePairs = keys.map((propKey) => {
+                const value = stringify(node, propKey, node[propKey], level + 1);
+                return value ? `${indent + space + JSON.stringify(propKey) + colonSeparator + value}` : "";
+            }).filter(Boolean);
+            seenObjects.splice(seenObjects.indexOf(node), 1);
+            return `{${keyValuePairs.join(",")}${indent}}`;
+        }
+    }
+    return stringify({ "": obj }, "", obj, 0) || "";
+}
 
-    console.log("Code Verifier:", codeVerifier);
-    console.log("Code Challenge:", codeChallenge);
-})();
+function generateClientToken(deviceInfo) {
+    try {
+        const payload = {
+            client_app_id: CLIENT_APP_ID || "",
+            timestamp: Date.now(),
+            device_info: deviceInfo
+        };
+        if (!CLIENT_SECRET) ;
+        const payloadString = stableStringify(payload);
+        const keyData = stringToUint8Array(CLIENT_SECRET);
+        const key = await crypto.subtle.importKey(
+            "raw",
+            keyData,
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign"]
+        );
+        const signatureBuffer = await crypto.subtle.sign("HMAC", key, stringToUint8Array(payloadString));
+        const signature = uint8ArrayToHexString(new Uint8Array(signatureBuffer));
+        const tokenPayload = {
+            ...payload,
+            signature
+        };
+        return btoa(stableStringify(tokenPayload));
+    } catch (error) {
+        console.log("Generate client token error", error);
+        return "";
+    }
+}

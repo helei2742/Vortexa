@@ -29,6 +29,10 @@ public class RestApiClient {
 
     private static final int RETRY_TIMES = 1;
 
+    public static int connectTimeout = 25;
+    public static int readTimeout = 120;
+    public static int writeTimeout = 60;
+
     @Getter
     private final OkHttpClient okHttpClient;
 
@@ -42,11 +46,11 @@ public class RestApiClient {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         builder
                 // 连接超时
-                .connectTimeout(25, TimeUnit.SECONDS)
+                .connectTimeout(connectTimeout, TimeUnit.SECONDS)
                 // 读取超时
-                .readTimeout(120, TimeUnit.SECONDS)
+                .readTimeout(readTimeout, TimeUnit.SECONDS)
                 // 写入超时
-                .writeTimeout(60, TimeUnit.SECONDS);
+                .writeTimeout(writeTimeout, TimeUnit.SECONDS);
 
         if (proxy != null) {
             builder.proxy(new Proxy(Proxy.Type.HTTP, proxy.generateAddress()));
@@ -200,7 +204,7 @@ public class RestApiClient {
             } else {
                 MediaType JSON = MediaType.parse(
                         "application/" + headers.getOrDefault("Content-Type",
-                        headers.getOrDefault("content-type", "application/json; charset=utf-8"))
+                        headers.getOrDefault("content-type", "json; charset=utf-8"))
                 );
 
                 requestBody = RequestBody.create(body.toJSONString(), JSON);

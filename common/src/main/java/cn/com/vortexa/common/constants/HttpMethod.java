@@ -4,5 +4,5 @@ public enum HttpMethod {
 
     POST,
 
-    GET
+    PUT, GET
 }

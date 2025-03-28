@@ -75,13 +75,13 @@ public class BotScriptAgent extends ScriptAgent {
         }
 
         // Step 2 其它命令处理
-        getCustomRemotingCommandHandlerMap().put(
-                BotRemotingCommandFlagConstants.START_UP_BOT_LOG,
-                logUploadService::startUploadLogRCHandler
-        );
-        getCustomRemotingCommandHandlerMap().put(
-                BotRemotingCommandFlagConstants.STOP_UP_BOT_LOG,
-                logUploadService::stopUploadLogRCHandler
-        );
+//        getCustomRemotingCommandHandlerMap().put(
+//                BotRemotingCommandFlagConstants.START_UP_BOT_LOG,
+//                logUploadService::startUploadLogRCHandler
+//        );
+//        getCustomRemotingCommandHandlerMap().put(
+//                BotRemotingCommandFlagConstants.STOP_UP_BOT_LOG,
+//                logUploadService::stopUploadLogRCHandler
+//        );
     }
 }

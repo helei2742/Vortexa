@@ -136,7 +136,13 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
                         true,
                         "开始注册",
                         "开始注册所有账号...",
-                        () -> getBot().registerAccount().toString()
+                        () -> {
+                            try {
+                                return getBot().registerAccount().get().toString();
+                            } catch (InterruptedException | ExecutionException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
                 ));
     }
 

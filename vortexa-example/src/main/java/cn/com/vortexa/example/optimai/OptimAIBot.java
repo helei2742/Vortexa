@@ -52,8 +52,7 @@ public class OptimAIBot extends AutoLaunchBot<OptimAIBot> {
             jobType = BotJobType.LOGIN
     )
     public Result login(AccountContext accountContext) throws Exception {
-        Result login = optimAIAPI.login(accountContext);
-        return login;
+        return optimAIAPI.login(accountContext);
     }
 
     @BotMethod(
@@ -77,7 +76,6 @@ public class OptimAIBot extends AutoLaunchBot<OptimAIBot> {
         List<String> list = new ArrayList<>(List.of(args));
 
         list.add("--vortexa.botKey=optimai_test");
-        list.add("--vortexa.customConfig.two_captcha_api_key=");
         list.add("--vortexa.accountConfig.configFilePath=optimai_google.xlsx");
         list.add("--add-opens java.base/java.lang=ALL-UNNAMED");
 

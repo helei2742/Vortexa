@@ -6,12 +6,15 @@ import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.entity.ProxyInfo;
 import com.alibaba.fastjson.JSONObject;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.HostAccess;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -43,6 +46,13 @@ public class OptimAIAPI {
         return null;
     }
 
+    /**
+     * 登录
+     *
+     * @param accountContext accountContext
+     * @return Result
+     * @throws Exception Exception
+     */
     public Result login(AccountContext accountContext) throws Exception {
         if (accountContext.getId() != 1) return Result.fail("");
         ProxyInfo proxy = accountContext.getProxy();
@@ -115,6 +125,38 @@ public class OptimAIAPI {
         });
 
         return future.get();
+    }
+
+
+    public JSONObject registryWSClient(AccountContext accountContext) throws Exception {
+        HashMap<String, Object> deviceInfo = new HashMap<>();
+        deviceInfo.put("cpu_cores", 1);
+        deviceInfo.put("memory_gb", 0);
+        deviceInfo.put("screen_width_px", 375);
+        deviceInfo.put("screen_height_px", 600);
+        deviceInfo.put("color_depth", 30);
+        deviceInfo.put("scale_factor", 1);
+        deviceInfo.put("browser_name", "chrome");
+        deviceInfo.put("device_type", "extension");
+        deviceInfo.put("language", "zh-CN");
+        deviceInfo.put("timezone", "Asia/Shanghai");
+
+
+        return null;
+    }
+
+    public String generateClientId(HashMap<String, Object> deviceInfo) {
+        try (Context context = Context.newBuilder("js").allowHostAccess(HostAccess.ALL).build()) {
+
+            // 绑定 Java 对象到 JavaScript
+            context.getBindings("js").putMember("deviceInfo", deviceInfo);
+
+            // 运行 JS 代码
+            String result = context.eval("js", "user.name + ' is ' + user.age + ' years old'").asString();
+            System.out.println(result); // 输出 "Alice is 25 years old"
+        }
+
+        return null;
     }
 
     @NotNull
