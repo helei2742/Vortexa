@@ -38,7 +38,7 @@ public class AutoBotJob implements Job {
                 // 调用invoke方法
                 invoker.invokeJob(key, param);
             } else {
-                log.warn("job[{}] invoker is null, cancel job execute", key);
+                log.debug("job[{}] invoker is null, cancel job execute", key);
             }
         } finally {
             if (ACCOUNT_SPLIT_JOB.equals(param.getJobType()) || ONCE_TASK.equals(param.getJobType())) {

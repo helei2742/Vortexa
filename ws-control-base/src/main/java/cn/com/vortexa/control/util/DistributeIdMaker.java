@@ -18,8 +18,13 @@ public interface DistributeIdMaker {
                 if(snowFlakeShortUtil == null) {
                     synchronized (this) {
                         long c = serviceName.hashCode()%100000;
-                        long m = ByteBuffer.wrap(NetUtil.getLocalMacAddress().getBytes()).getLong()%100000;
-                        snowFlakeShortUtil = new SnowFlakeShortUtil(Math.abs(c), Math.abs(m));
+                        String localMacAddress = NetUtil.getLocalMacAddress();
+                        if (localMacAddress != null) {
+                            long m = ByteBuffer.wrap(localMacAddress.getBytes()).getLong()%100000;
+                            snowFlakeShortUtil = new SnowFlakeShortUtil(Math.abs(c), Math.abs(m));
+                        } else {
+                            snowFlakeShortUtil = new SnowFlakeShortUtil(Math.abs(c), 1001L);
+                        }
                     }
                 }
                 return String.valueOf(snowFlakeShortUtil.nextId());

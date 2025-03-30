@@ -1,6 +1,7 @@
 spring:
   datasource:
-    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/plantfrom.db"
+#    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/plantfrom.db"
+    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/test_plantfrom.db"
 
 mybatis-plus:
   configuration:
