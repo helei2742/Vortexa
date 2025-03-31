@@ -125,6 +125,10 @@ public class RemotingCommand {
         else this.body = Serializer.Algorithm.Protostuff.serialize(body);
     }
 
+    public boolean isSuccess() {
+        return code == RemotingCommandCodeConstants.SUCCESS;
+    }
+
     public void release() {
     }
 

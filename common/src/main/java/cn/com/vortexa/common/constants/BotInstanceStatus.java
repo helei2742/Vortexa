@@ -1,7 +1,7 @@
 package cn.com.vortexa.common.constants;
 
 public enum BotInstanceStatus {
-    NEW,
+    UN_USABLE,
     STOPPED,
     RUNNING
 }

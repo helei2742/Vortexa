@@ -3,8 +3,8 @@ package cn.com.vortexa.control;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.control.config.ControlServerConfig;
-import cn.com.vortexa.control.constant.NameserverState;
-import cn.com.vortexa.control.constant.NameserverSystemConstants;
+import cn.com.vortexa.control.constant.ControlServerState;
+import cn.com.vortexa.control.constant.WSControlSystemConstants;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
 import cn.com.vortexa.control.dto.ConnectEntry;
@@ -36,7 +36,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import static cn.com.vortexa.control.constant.NameserverState.*;
+import static cn.com.vortexa.control.constant.ControlServerState.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +56,7 @@ public class BotControlServer {
     private final long startTime;   //启动时间
     private final Map<Integer, BiFunction<Channel, RemotingCommand, RemotingCommand>> customRemotingCommandHandlerMap = new HashMap<>();
 
-    private volatile NameserverState state; // name server state
+    private volatile ControlServerState state; // name server state
     private ServerBootstrap serverBootstrap;    //serverBootstrap
     private ChannelFuture nameserverChannelFuture;  //nameserverChannelFuture
 
@@ -116,7 +116,7 @@ public class BotControlServer {
                                 0, 0, controlServerConfig.getServiceOfflineTtl()));
 
                         ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(
-                                NameserverSystemConstants.MAX_FRAME_LENGTH, 0,
+                                WSControlSystemConstants.MAX_FRAME_LENGTH, 0,
                                 4, 0, 4));
 
                         ch.pipeline().addLast(new LengthFieldPrepender(4));
@@ -239,7 +239,6 @@ public class BotControlServer {
             String key, RemotingCommand remotingCommand
     ) {
         // Step 1 获取连接
-
         ConnectEntry connectEntry = connectionService.getServiceInstanceChannel(key);
 
         if (connectEntry == null || !connectEntry.isUsable()) {
@@ -319,7 +318,7 @@ public class BotControlServer {
      * @param newState newState
      * @throws ControlServerException NameserverException
      */
-    private void updateNameServerState(NameserverState newState) throws ControlServerException {
+    private void updateNameServerState(ControlServerState newState) throws ControlServerException {
         synchronized (this) {
             boolean isUpdate = switch (newState) {
                 case JUST_START: {

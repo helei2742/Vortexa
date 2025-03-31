@@ -1,14 +1,19 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
+import cn.com.vortexa.bot_platform.dto.BotJob;
+import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
 import cn.com.vortexa.common.dto.PageResult;
-import cn.com.vortexa.control.BotControlServer;
+import cn.com.vortexa.common.dto.Result;
+import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.bot_platform.mapper.BotInfoMapper;
+import cn.com.vortexa.control.constant.WSControlSystemConstants;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.common.entity.BotInfo;
 import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.bot_platform.mapper.BotInstanceMapper;
 import cn.com.vortexa.bot_platform.service.IBotInstanceService;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
@@ -23,6 +28,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -35,14 +42,15 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMapper, BotInstance> implements IBotInstanceRPC, IBotInstanceService {
+public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMapper, BotInstance>
+        implements IBotInstanceRPC, IBotInstanceService {
 
     @Autowired
     private BotInfoMapper botInfoMapper;
 
     @Lazy
     @Autowired
-    private BotControlServer botControlServer;
+    private BotPlatformControlServer botControlServer;
 
     public BotInstanceServiceImpl() {
         super(botInstance -> {
@@ -53,7 +61,8 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
     }
 
     @Override
-    public PageResult<BotInstance> conditionPageQuery(int page, int limit, Map<String, Object> filterMap) throws SQLException {
+    public PageResult<BotInstance> conditionPageQuery(int page, int limit, Map<String, Object> filterMap)
+            throws SQLException {
 
         PageResult<BotInstance> result = super.conditionPageQuery(page, limit, filterMap);
 
@@ -64,11 +73,14 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
 
         for (BotInstance instance : result.getList()) {
             instance.setBotInfo(idMapBotInfo.get(instance.getBotId()));
+
+            instance.addParam(BotInstance.BOT_INSTANCE_STATUS_KEY, botControlServer.getBotInstanceStatus(
+                    WSControlSystemConstants.DEFAULT_GROUP, instance.getBotName(), instance.getBotKey()
+            ));
         }
 
         return result;
     }
-
 
     @Override
     public Boolean existsBotInstance(BotInstance query) {
@@ -88,6 +100,21 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
             service.addProps("bot_info", botInstance);
         });
         return res;
+    }
+
+    @Override
+    public Result startJob(BotJob botJob) throws BotStartException {
+        try {
+            return botControlServer.startJob(
+                    botJob.getGroup(),
+                    botJob.getBotName(),
+                    botJob.getBotKey(),
+                    botJob.getJobName()
+            ).get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("[{}] start job error", botJob, e);
+            return Result.fail(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
+        }
     }
 
     @Override

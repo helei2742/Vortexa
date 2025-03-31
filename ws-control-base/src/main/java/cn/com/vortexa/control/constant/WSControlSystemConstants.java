@@ -5,9 +5,11 @@ package cn.com.vortexa.control.constant;
  * @author helei
  * @since 2025-03-12
  */
-public class NameserverSystemConstants {
+public class WSControlSystemConstants {
 
-    public static final int MAX_FRAME_LENGTH = 10240;
+    public static final String DEFAULT_GROUP = "default";
+
+    public static final int MAX_FRAME_LENGTH =  10 * 1024 * 1024;
 
     public static final int MESSAGE_OBJ_POOL_INIT_SIZE = 100;
 

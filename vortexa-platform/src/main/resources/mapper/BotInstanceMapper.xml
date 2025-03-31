@@ -37,7 +37,9 @@ DO
         t.id as id,
         t.bot_id as botId,
         t.bot_key as botKey,
+        t.bot_name as botName,
         t.account_table_name as accountTableName,
+        t.job_params as jobParams,
         t.params,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,
@@ -54,6 +56,9 @@ DO
             </if>
             <if test="botKey != null">
                 and t.bot_key = #{botKey}
+            </if>
+            <if test="botName != null">
+                and t.bot_name = #{botName}
             </if>
             <if test="accountTableName != null">
                 and t.account_table_name = #{accountTableName}

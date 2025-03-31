@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 
 @Slf4j
-@Component
+//@Component
 public class GlobalExceptionHandler implements HandlerExceptionResolver {
     @Override
     public ModelAndView resolveException(@NotNull HttpServletRequest request,

@@ -57,7 +57,7 @@ public class BotPlatformControlServerConfig {
     }
 
     @Bean
-    public BotControlServer botControlServer() throws Exception {
+    public BotPlatformControlServer botControlServer() throws Exception {
         ControlServerConfig controlServerConfig = controlServerConfig();
         log.info("start launch BotPlatFormNameserver[{}]", controlServerConfig.getServiceInstance());
         BotPlatformControlServer botControlServer = new BotPlatformControlServer(controlServerConfig, rpcServiceInfos);

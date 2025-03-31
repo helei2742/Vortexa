@@ -463,13 +463,11 @@ public abstract class AbstractAutoBot {
     }
 
     protected synchronized void setJobParam(String jobKey, AutoBotJobParam jobParam) {
-        //        if (!this.botInfo.getJobParams().containsKey(jobKey)) {
         this.botInfo.getJobParams().put(jobKey, jobParam);
-        //        }
     }
 
     protected synchronized void addBasicJob(BotJobType jobType) {
-        if (this.botInfo.getJobParams() == null) {
+        if (this.botInfo.getParams() == null) {
             this.botInfo.setParams(new HashMap<>());
         }
 

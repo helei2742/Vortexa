@@ -1,6 +1,5 @@
 package cn.com.vortexa.script_node.scriptagent;
 
-import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
 import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.config.ScriptAgentConfig;
 import cn.com.vortexa.control.dto.RPCArgsWrapper;
@@ -15,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLException;
 
@@ -24,6 +24,8 @@ import javax.net.ssl.SSLException;
  */
 @Slf4j
 public class BotScriptAgent extends ScriptAgent {
+
+    private final AtomicInteger initCount = new AtomicInteger(0);
 
     private final List<RPCServiceInfo<?>> rpcServiceInfos;
 
@@ -43,7 +45,10 @@ public class BotScriptAgent extends ScriptAgent {
         if (rpcServiceInfos == null) {
             return;
         }
-
+        if (initCount.getAndIncrement() > 0) {
+            return;
+        }
+        log.info("start registry rpc services");
         for (RPCServiceInfo<?> rpcServiceInfo : rpcServiceInfos) {
             Class<?> interfaces = rpcServiceInfo.getInterfaces();
             Object ref = rpcServiceInfo.getRef();
@@ -69,7 +74,7 @@ public class BotScriptAgent extends ScriptAgent {
                         }
                     });
                 } catch (CustomCommandException e) {
-                    throw new RuntimeException(e);
+                    log.error("registry custom method error", e);
                 }
             }
         }

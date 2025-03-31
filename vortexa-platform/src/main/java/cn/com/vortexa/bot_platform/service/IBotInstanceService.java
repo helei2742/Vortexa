@@ -1,7 +1,10 @@
 package cn.com.vortexa.bot_platform.service;
 
+import cn.com.vortexa.bot_platform.dto.BotJob;
+import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.common.entity.BotInstance;
+import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.db_layer.service.IBaseService;
 
 import java.util.List;
@@ -24,4 +27,12 @@ public interface IBotInstanceService extends IBaseService<BotInstance> {
      * @return List<BotInfo>
      */
     List<RegisteredService> queryOnLineInstance();
+
+    /**
+     * 启动job
+     *
+     * @param botJob botJob
+     * @return boolean
+     */
+    Result startJob(BotJob botJob) throws BotStartException;
 }

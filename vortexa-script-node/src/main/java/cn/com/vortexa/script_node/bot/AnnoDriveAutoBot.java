@@ -124,8 +124,8 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
 
                 // Step 3 根据BotMethod注解 的jobType，方法分类
                 switch (botJobMethod.jobType()) {
-                    case REGISTER -> registerMethodHandler(method);
-                    case LOGIN -> loginMethodHandler(method);
+                    case REGISTER -> registerMethodHandler(method, botJobMethod);
+                    case LOGIN -> loginMethodHandler(method, botJobMethod);
                     case QUERY_REWARD -> queryRewardMethodHandler(method, botJobMethod);
                     case ONCE_TASK, TIMED_TASK -> timedTaskMethodHandler(method, botJobMethod);
                     case WEB_SOCKET_CONNECT -> webSocketConnectMethodHandler(method, botJobMethod);
@@ -264,9 +264,10 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
     /**
      * 注册方法处理器
      *
-     * @param method method
+     * @param method       method
+     * @param botJobMethod botJobMethod
      */
-    private void registerMethodHandler(Method method) {
+    private void registerMethodHandler(Method method, BotMethod botJobMethod) {
         logger.debug("add register method");
         if (method.getReturnType() == Result.class
                 && method.getParameterCount() == 3
@@ -277,6 +278,13 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
             if (this.registerMethod == null) {
                 this.registerMethod = method;
                 this.addBasicJob(BotJobType.REGISTER);
+
+                registryJobInBot(
+                        getInstance(),
+                        method,
+                        null,
+                        botJobMethod
+                );
             } else {
                 throw new BotMethodFormatException("注册方法只能有一个");
             }
@@ -289,9 +297,10 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
     /**
      * 登录方法处理器
      *
-     * @param method method
+     * @param method       method
+     * @param botJobMethod botJobMethod
      */
-    private void loginMethodHandler(Method method) {
+    private void loginMethodHandler(Method method, BotMethod botJobMethod) {
         logger.debug("add login method");
         if (method.getReturnType() == Result.class
                 && method.getParameterCount() == 1
@@ -301,6 +310,13 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
             if (this.loginMethod == null) {
                 this.loginMethod = method;
                 this.addBasicJob(BotJobType.LOGIN);
+
+                registryJobInBot(
+                        getInstance(),
+                        method,
+                        null,
+                        botJobMethod
+                );
             } else {
                 throw new BotMethodFormatException("登录方法只能有一个");
             }

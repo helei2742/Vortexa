@@ -1,6 +1,8 @@
 package cn.com.vortexa.bot_platform.controller;
 
+import cn.com.vortexa.bot_platform.dto.BotJob;
 import cn.com.vortexa.common.dto.control.RegisteredService;
+import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.control.anno.RPCReference;
@@ -9,6 +11,7 @@ import cn.com.vortexa.rpc.api.bot.IScriptAgentRPC;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,7 +37,7 @@ public class BotInstanceController {
     private IScriptAgentRPC scriptAgentRPC;
 
     @PostMapping("/pageQuery")
-    public Result pageQuery(PageQuery query) throws SQLException {
+    public Result pageQuery(@RequestBody PageQuery query) throws SQLException {
         return Result.ok(botInstanceService.conditionPageQuery(
                 query.getPage(),
                 query.getLimit(),
@@ -46,5 +49,10 @@ public class BotInstanceController {
     public Result onlineInstance() {
         List<RegisteredService> registeredServices = botInstanceService.queryOnLineInstance();
         return Result.ok(registeredServices);
+    }
+
+    @PostMapping("/startJob")
+    public Result startJob(@RequestBody BotJob botJob) throws BotStartException {
+        return botInstanceService.startJob(botJob);
     }
 }

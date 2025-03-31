@@ -101,7 +101,11 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
             } else if (StrUtil.isNotBlank(botJobMethodAnno.cronExpression())) {
                 cronExpression = new CronExpression(botJobMethodAnno.cronExpression());
                 logger.info("%s cronExpression:[%s]".formatted(jobName, cronExpression.getCronExpression()));
-            } else if (botJobMethodAnno.jobType() != BotJobType.ONCE_TASK) {
+            } else if (
+                    botJobMethodAnno.jobType() != BotJobType.ONCE_TASK
+                            && botJobMethodAnno.jobType() != BotJobType.REGISTER
+                            && botJobMethodAnno.jobType() != BotJobType.LOGIN
+            ) {
                 throw new IllegalArgumentException("定时任务需设置时间间隔或cron表达式");
             }
 

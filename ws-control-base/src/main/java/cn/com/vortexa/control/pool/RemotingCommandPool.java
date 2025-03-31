@@ -1,7 +1,7 @@
 package cn.com.vortexa.control.pool;
 
 
-import cn.com.vortexa.control.constant.NameserverSystemConstants;
+import cn.com.vortexa.control.constant.WSControlSystemConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,8 +23,8 @@ public class RemotingCommandPool {
     private volatile int currentCount = 0;
 
     static {
-        POOL_INIT_SIZE = NameserverSystemConstants.MESSAGE_OBJ_POOL_INIT_SIZE;
-        POOL_MAX_SIZE = NameserverSystemConstants.MESSAGE_OBJ_POOL_MAX_SIZE;
+        POOL_INIT_SIZE = WSControlSystemConstants.MESSAGE_OBJ_POOL_INIT_SIZE;
+        POOL_MAX_SIZE = WSControlSystemConstants.MESSAGE_OBJ_POOL_MAX_SIZE;
 
         INSTANCE = new RemotingCommandPool(new PriorityBlockingQueue<PooledRemotingCommand>(POOL_INIT_SIZE,
                 (m1,m2)->Boolean.compare(m1.busy, m2.busy)));

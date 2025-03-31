@@ -81,7 +81,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
         p.addLast(new IdleStateHandler(0,
                 0, clientConfig.getServiceOfflineTtl()));
 
-        p.addLast(new LengthFieldBasedFrameDecoder(NameserverSystemConstants.MAX_FRAME_LENGTH,
+        p.addLast(new LengthFieldBasedFrameDecoder(WSControlSystemConstants.MAX_FRAME_LENGTH,
                 0, 4, 0, 4));
         p.addLast(new LengthFieldPrepender(4));
 
@@ -147,7 +147,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
             }
 
             remoteStatus.setLastUpdateTimestamp(System.currentTimeMillis());
-            remoteStatus.setNameserverState(NameserverState.valueOf(
+            remoteStatus.setControlServerState(ControlServerState.valueOf(
                     response.getExtFieldsValue(ExtFieldsConstants.NAMESERVER_STATUS)
             ));
         });

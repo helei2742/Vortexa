@@ -22,6 +22,7 @@ import java.util.Map;
 @NoArgsConstructor
 @TableName("t_bot_instance")
 public class BotInstance implements Serializable {
+    public static final String BOT_INSTANCE_STATUS_KEY = "bot_instance_status";
 
     @Serial
     private static final long serialVersionUID = 4984719841947412242L;
@@ -60,4 +61,9 @@ public class BotInstance implements Serializable {
 
     @TableField(exist = false)
     public BotInfo botInfo;
+
+    public synchronized void addParam(String key, Object value) {
+        if (params == null) params = new HashMap<>();
+        params.put(key, value);
+    }
 }

@@ -22,6 +22,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -36,13 +38,15 @@ import javax.net.ssl.SSLException;
 @Setter
 @Getter
 public abstract class AutoConnectWSService implements IWSService {
+    private static final AtomicReferenceFieldUpdater<AutoConnectWSService, Channel> CHANNEL_ATOMIC_UPDATER
+            = AtomicReferenceFieldUpdater.newUpdater(AutoConnectWSService.class, Channel.class, "channel");
     private static volatile EventLoopGroup eventLoopGroup;    //netty线程组
     private final AtomicInteger reconnectTimes = new AtomicInteger(0);  //重链接次数
     private final ReentrantLock reconnectLock = new ReentrantLock();    //重连锁
     private final Condition startingWaitCondition = reconnectLock.newCondition();   //启动中阻塞的condition
     private final String url; //websocket的url字符串
     private Bootstrap bootstrap; //netty bootstrap
-    private Channel channel;    //连接channel
+    private volatile Channel channel;    //连接channel
     private String host;    //连接host
     private int port;    //连接port
     private boolean useSSL; //是否ssl
@@ -170,26 +174,31 @@ public abstract class AutoConnectWSService implements IWSService {
                     getEventLoopGroup().schedule(() -> {
                         try {
                             ChannelFuture connect = bootstrap.connect(host, port);
-
                             connect.addListener(future -> {
-                                if (future.isSuccess()) {
-                                    channel = connect.channel();
-                                    afterBoostrapConnected(channel);
+                                try {
+                                    if (future.isSuccess()) {
+                                        setChannel(connect.channel());
+                                        afterBoostrapConnected(getChannel());
 
-                                    log.info("success connect to {}", url);
-                                    //Step 4.4 连接成功设置标识
-                                    isSuccess.set(true);
-                                } else {
-                                    log.error("connect client [{}], url[{}] error, times [{}]",
-                                            name, url, reconnectTimes.get(), future.cause());
+                                        log.info("success connect to {}", url);
+                                        //Step 4.4 连接成功设置标识
+                                        isSuccess.set(true);
+                                    } else {
+                                        log.error("connect client [{}], url[{}] error, times [{}]",
+                                                name, url, reconnectTimes.get(), future.cause());
 
-                                    isSuccess.set(false);
+                                        isSuccess.set(false);
+                                    }
+                                } finally {
+                                    if (latch.getCount() != 0) {
+                                        latch.countDown();
+                                    }
                                 }
                             });
                         } catch (Exception e) {
-                            log.error("connect client [{}], url[{}] error, times [{}]", name, url, reconnectTimes.get(), e);
+                            log.error("connect client [{}], url[{}] error, times [{}]", name, url, reconnectTimes.get(),
+                                    e);
                             isSuccess.set(false);
-                        } finally {
                             latch.countDown();
                         }
                     }, waitingConnectTime, TimeUnit.SECONDS);
@@ -218,6 +227,7 @@ public abstract class AutoConnectWSService implements IWSService {
                 }
             } catch (Exception e) {
                 //exception 遇到未处理异常，直接关闭
+                log.error("connect client [{}] appear unknown error", name, e);
                 close();
                 throw new RuntimeException(String.format("connect client [%s] appear unknown error", name), e);
             } finally {
@@ -244,7 +254,7 @@ public abstract class AutoConnectWSService implements IWSService {
         log.info("closing websocket client [{}], [{}]", getName(), channel == null ? "null" : getChannel().hashCode());
         if (channel != null) {
             channel.close();
-            channel = null;
+            setChannel(null);
         }
         log.warn("web socket client [{}] closed", getName());
     }
@@ -257,7 +267,7 @@ public abstract class AutoConnectWSService implements IWSService {
 
         if (channel != null) {
             channel.close();
-            channel = null;
+            setChannel(null);
         }
         getEventLoopGroup().shutdownGracefully();
         log.warn("web socket client [{}] already shutdown !", getName());
@@ -341,6 +351,14 @@ public abstract class AutoConnectWSService implements IWSService {
                 reconnectLock.unlock();
             }
         }, getCallbackInvoker());
+    }
+
+    public Channel getChannel() {
+        return CHANNEL_ATOMIC_UPDATER.get(this);
+    }
+
+    public void setChannel(Channel channel) {
+        CHANNEL_ATOMIC_UPDATER.set(this, channel);
     }
 
     /**

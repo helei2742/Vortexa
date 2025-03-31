@@ -2,7 +2,7 @@ package cn.com.vortexa.control.dto;
 
 
 import cn.com.vortexa.common.dto.control.ServiceInstance;
-import cn.com.vortexa.control.constant.NameserverState;
+import cn.com.vortexa.control.constant.ControlServerState;
 import lombok.Data;
 
 /**
@@ -12,7 +12,7 @@ import lombok.Data;
 @Data
 public class RemoteControlServerStatus {
 
-    private NameserverState nameserverState = NameserverState.SHUT_DOWN;
+    private ControlServerState controlServerState = ControlServerState.SHUT_DOWN;
 
     private long lastUpdateTimestamp = System.currentTimeMillis();
 
