@@ -32,7 +32,7 @@ public class MemoryConnectionService implements IConnectionService {
                         .channel(channel)
                         .build();
             }
-
+            v.setChannel(channel);
             v.setUsable(true);
             v.setLastActiveTimestamp(System.currentTimeMillis());
             return v;

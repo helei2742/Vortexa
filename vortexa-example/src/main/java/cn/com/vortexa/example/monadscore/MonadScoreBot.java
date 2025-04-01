@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
- * @author h30069248
+ * @author helei
  * @since 2025/3/28 9:51
  */
 @BotApplication(

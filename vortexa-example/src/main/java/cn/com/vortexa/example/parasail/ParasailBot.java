@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * @author h30069248
+ * @author helei
  * @since 2025/3/28 11:13
  */
 @BotApplication(

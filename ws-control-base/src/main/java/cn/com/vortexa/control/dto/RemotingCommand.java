@@ -126,7 +126,7 @@ public class RemotingCommand {
     }
 
     public boolean isSuccess() {
-        return code == RemotingCommandCodeConstants.SUCCESS;
+        return code != null && code == RemotingCommandCodeConstants.SUCCESS;
     }
 
     public void release() {

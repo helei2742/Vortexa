@@ -132,4 +132,10 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
     protected Object getMessageId(RemotingCommand message) {
         return message.getTransactionId();
     }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+
+        log.error("channel error", cause);
+    }
 }

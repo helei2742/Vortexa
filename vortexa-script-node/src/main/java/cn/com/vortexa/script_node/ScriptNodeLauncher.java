@@ -1,16 +1,18 @@
 package cn.com.vortexa.script_node;
 
+import cn.com.vortexa.control.config.ScriptAgentConfig;
+import cn.com.vortexa.control.dto.RPCServiceInfo;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.script_node.config.AutoBotConfig;
 import cn.com.vortexa.script_node.constants.BotStatus;
+import cn.com.vortexa.script_node.scriptagent.BotScriptAgent;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.script_node.service.impl.ScriptAgentRPCImpl;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.common.util.BannerUtil;
-import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.hutool.core.util.BooleanUtil;
@@ -26,6 +28,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 @SpringBootApplication(exclude = ServletWebServerFactoryAutoConfiguration.class)
@@ -72,7 +75,8 @@ public class ScriptNodeLauncher {
         // Step 2 获取配置Bean
         AutoBotConfig botConfig = applicationContext.getBean(AutoBotConfig.class);
         BotApi botApi = applicationContext.getBean(BotApi.class);
-        ScriptAgent scriptAgent = applicationContext.getBean(ScriptAgent.class);
+        BotScriptAgent scriptAgent = applicationContext.getBean(BotScriptAgent.class);
+        ScriptAgentConfig scriptAgentConfig = applicationContext.getBean(ScriptAgentConfig.class);
 
         // Step 3 创建bot实例
         Constructor<T> constructor = null;
@@ -89,10 +93,12 @@ public class ScriptNodeLauncher {
 
         // Step 4 启动script agent
         // Step 4.1 替换ScriptAgent的配置，设置为botName和botKey
-        ServiceInstance scriptAgentConfig = scriptAgent.getClientConfig().getServiceInstance();
-        scriptAgentConfig.setGroup(scriptAgentConfig.getGroup() == null ? "default" : scriptAgentConfig.getGroup());
-        scriptAgentConfig.setServiceId(botName);
-        scriptAgentConfig.setInstanceId(botKey);
+        scriptAgent.setBot(LAUNCHED_BOT);
+
+        ServiceInstance scripAgentInstance = scriptAgent.getClientConfig().getServiceInstance();
+        scripAgentInstance.setGroup(scripAgentInstance.getGroup());
+        scripAgentInstance.setServiceId(botName);
+        scripAgentInstance.setInstanceId(botKey);
         scriptAgent.setName(scriptAgentConfig.toString());
 
         // Step 4.2 设置注册完成后的回调，回调中启动bot

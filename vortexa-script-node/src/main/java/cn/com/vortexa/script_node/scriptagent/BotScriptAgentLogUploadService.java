@@ -1,5 +1,6 @@
 package cn.com.vortexa.script_node.scriptagent;
 
+import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.script_node.config.AutoBotConfig;
 import cn.com.vortexa.common.constants.BotExtFieldConstants;
 import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
@@ -30,6 +31,14 @@ public class BotScriptAgentLogUploadService {
         this.botScriptAgent = botScriptAgent;
     }
 
+    public void pushLog(String content) {
+        try {
+            logCache.put(content);
+        } catch (InterruptedException e) {
+            log.error("put script node log error", e);
+        }
+    }
+
     /**
      * 开始上传日志命令处理器
      *
@@ -41,6 +50,7 @@ public class BotScriptAgentLogUploadService {
         // 开始上传日志
         String logUploadTXID = command.getExtFieldsValue(BotExtFieldConstants.LOG_UPLOAD_TX_ID);
 
+        log.info("start upload log, logUploadTXID[{}]", logUploadTXID);
         RemotingCommand response = new RemotingCommand();
         response.setTransactionId(command.getTransactionId());
         response.setCode(RemotingCommandCodeConstants.FAIL);
@@ -49,6 +59,11 @@ public class BotScriptAgentLogUploadService {
         // 开启日志上传任务
         if (startBotLogUploadTask(logUploadTXID)) {
             response.setCode(RemotingCommandCodeConstants.SUCCESS);
+            log.info("start log upload task success, logUploadTXID[{}]", logUploadTXID);
+        } else {
+            log.error("start log upload task error, logUploadTXID[{}]", logUploadTXID);
+            response.addExtField(ExtFieldsConstants.REQUEST_ERROR_MSG,
+                    "script node log in uploading");
         }
 
         return response;
@@ -72,6 +87,12 @@ public class BotScriptAgentLogUploadService {
         return response;
     }
 
+    /**
+     * 开启bot日志上传任务
+     *
+     * @param logUploadTXID logUploadTXID
+     * @return boolean
+     */
     private boolean startBotLogUploadTask(String logUploadTXID) {
         if (upload.compareAndSet(false, true)) {
             botScriptAgent.getCallbackInvoker().execute(() -> {
@@ -79,12 +100,17 @@ public class BotScriptAgentLogUploadService {
                     try {
                         String logContent = logCache.take();
 
-                        RemotingCommand message = botScriptAgent.newRequestCommand(
-                                BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG, false);
-                        message.addExtField(BotExtFieldConstants.LOG_UPLOAD_TX_ID, logUploadTXID);
-                        message.setPayLoad(logContent);
+                        RemotingCommand command = botScriptAgent.newRequestCommand(
+                                BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG, true);
+                        command.addExtField(BotExtFieldConstants.LOG_UPLOAD_TX_ID, logUploadTXID);
+                        command.setPayLoad(logContent);
 
-                        botScriptAgent.sendMessage(message).get();
+                        log.debug("upload log, logUploadTXID[{}]", logUploadTXID);
+                        RemotingCommand response = botScriptAgent.sendRequest(command).get();
+                        if (response == null || !response.isSuccess()) {
+                            log.error("upload log response error, {}", response);
+                            upload.set(false);
+                        }
                     } catch (InterruptedException e) {
                         upload.set(false);
                         log.error("log upload task interrupted");
@@ -92,6 +118,7 @@ public class BotScriptAgentLogUploadService {
                         log.error("upload log error", e);
                     }
                 }
+                log.warn("stopped upload log upload task");
             });
             return true;
         }

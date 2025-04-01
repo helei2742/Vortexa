@@ -9,9 +9,6 @@ import cn.com.vortexa.common.exception.BotStartException;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -19,8 +16,6 @@ import java.util.function.Supplier;
  * @param <T>
  */
 public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoDriveAutoBot<T> {
-
-    private static final Logger log = LoggerFactory.getLogger(AutoLaunchBot.class);
 
     @Override
     protected final void doInit() throws BotInitException {
@@ -55,14 +50,14 @@ public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoD
 
                 // 启动
                 menuCMDLineAutoBot.start();
-                log.info("bot[{}] running as cli-ui mode", getBotInstance().getBotKey());
+                logger.debug("bot[%s] running as cli-ui mode".formatted(getBotInstance().getBotKey()));
             } else {
                 // 启动
                 instance.updateState(BotStatus.RUNNING);
-                log.info("bot[{}] running as headless mode", getBotInstance().getBotKey());
+                logger.debug("bot[%s] running as headless mode".formatted(getBotInstance().getBotKey()));
             }
         } else {
-            log.error("bot start cancel by init");
+            logger.error("bot start cancel by init");
         }
     }
 

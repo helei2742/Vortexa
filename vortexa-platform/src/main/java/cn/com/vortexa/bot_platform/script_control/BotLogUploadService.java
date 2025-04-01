@@ -1,11 +1,13 @@
 package cn.com.vortexa.bot_platform.script_control;
 
+import cn.com.vortexa.bot_platform.wsController.FrontWSException;
+import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;
+import cn.com.vortexa.bot_platform.wsController.UIWSMessage;
+import cn.com.vortexa.common.constants.BotInstanceStatus;
 import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
 import cn.com.vortexa.common.constants.BotExtFieldConstants;
-import cn.com.vortexa.common.dto.Result;
-import cn.com.vortexa.control.BotControlServer;
+import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
-import cn.com.vortexa.control.dto.ConnectEntry;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
@@ -14,6 +16,7 @@ import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,41 +27,35 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class BotLogUploadService {
 
-    private final BotControlServer botControlServer;
+    private final BotPlatformControlServer platformControlServer;
 
-    private final Map<String, String> botLogTxIdToBrowserKeyMap = new HashMap<>();
+    private final Map<String, String> botLogTxIdToFrontTokenMap = new HashMap<>();
+    private final Map<String, String> botLogTxIdToFrontInstanceKeyMap = new HashMap<>();
 
-    public BotLogUploadService(BotControlServer botControlServer) {
-        this.botControlServer = botControlServer;
+    public BotLogUploadService(BotPlatformControlServer platformControlServer) {
+        this.platformControlServer = platformControlServer;
     }
 
     /**
      * 浏览器请求获取bot的日志命令处理器
      *
-     * @param browserChannel browserChannel
-     * @param request request
      * @return RemotingCommand
      */
-    public RemotingCommand browserRequestBotLogRCHandler(Channel browserChannel, RemotingCommand request) {
-        RemotingCommand response = new RemotingCommand();
-        response.setFlag(BotRemotingCommandFlagConstants.START_UP_BOT_LOG_RESPONSE);
-        String txId = request.getTransactionId();
-        response.setTransactionId(txId);
+    public UIWSMessage browserRequestBotLogRCHandler(
+            String group, String botName, String botKey, String token
+    ) {
+        UIWSMessage.UIWSMessageBuilder responseBuilder = UIWSMessage.builder();
 
         // Step 0 参数校验
-        String browserInstanceKey = browserChannel.attr(NettyConstants.CLIENT_NAME).get();
-        if (StrUtil.isBlank(browserInstanceKey)) {
-            log.error("browserInstanceKey is blank, browser channel[{}]", browserChannel.id());
+        if (StrUtil.isBlank(botName) || StrUtil.isBlank(botKey)) {
+            log.error("botName/botKey is blank");
 
-            response.setCode(RemotingCommandCodeConstants.FAIL);
-            response.setObjBody(Result.fail("browserInstanceKey is blank"));
-            return response;
+            responseBuilder.success(false);
+            responseBuilder.errorMsg("browserInstanceKey is blank");
+            return responseBuilder.build();
         }
 
         //.收到开始获取bot的日志命令
-        String group = request.getExtFieldsValue(BotExtFieldConstants.TARGET_GROUP_KEY);
-        String botName = request.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_NAME_KEY);
-        String botKey = request.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
         String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(group, botName, botKey);
 
         log.info("receive command[{}] to start get bot[{}] runtime log",
@@ -66,47 +63,57 @@ public class BotLogUploadService {
                 botInstanceKey
         );
 
-        ConnectEntry connectEntry = botControlServer.getConnectionService().getServiceInstanceChannel(
-                botInstanceKey
-        );
+        BotInstanceStatus status = platformControlServer.getBotInstanceStatus(botInstanceKey);
 
         // Step 1 判断bot是否可用
-        if (connectEntry == null || !connectEntry.isUsable()) {
+        if (status != BotInstanceStatus.RUNNING) {
             log.warn("bot [{}] not running, can't upload runtime log", botInstanceKey);
 
-            response.setCode(RemotingCommandCodeConstants.FAIL);
-            response.setObjBody(Result.fail("bot cannot use"));
-            return response;
+            responseBuilder.success(false);
+            responseBuilder.errorMsg("browser instance status is " + status);
+            return responseBuilder.build();
         }
 
         // Step 2 发送命令到该Bot，让它开始发
         try {
-            request.addExtField(BotExtFieldConstants.LOG_UPLOAD_TX_ID, txId);
-            RemotingCommand botStartResponse = botControlServer.sendCommandToServiceInstance(
-                    group, botName, botKey, request
+            RemotingCommand command = platformControlServer.newRemotingCommand(
+                    BotRemotingCommandFlagConstants.START_UP_BOT_LOG,
+                    true
+            );
+            String logUploadTxId = platformControlServer.nextTxId();
+            command.addExtField(BotExtFieldConstants.LOG_UPLOAD_TX_ID, logUploadTxId);
+
+            // 发送，并等待结果
+            RemotingCommand botStartResponse = platformControlServer.sendCommandToServiceInstance(
+                    group, botName, botKey, command
             ).get();
 
             if (botStartResponse.getCode() == RemotingCommandCodeConstants.SUCCESS) {
-                // Step 2.1 成功
-                botLogTxIdToBrowserKeyMap.put(txId, browserInstanceKey);
-                response.setFlag(RemotingCommandCodeConstants.SUCCESS);
+                // Step 2.1 成功, 注册监听
+                botLogTxIdToFrontTokenMap.put(logUploadTxId, token);
+                botLogTxIdToFrontInstanceKeyMap.put(logUploadTxId, botInstanceKey);
+                responseBuilder.success(true);
 
                 log.info("bot [{}] start upload runtime log", botInstanceKey);
             } else {
                 // Step 2.2 失败
-                response.setFlag(RemotingCommandCodeConstants.FAIL);
-                response.setBody(botStartResponse.getBody());
-                botLogTxIdToBrowserKeyMap.remove(txId);
+                responseBuilder.success(false);
+                responseBuilder.errorMsg(botStartResponse.getExtFieldsValue(
+                        ExtFieldsConstants.REQUEST_ERROR_MSG
+                ));
+                botLogTxIdToFrontTokenMap.remove(logUploadTxId);
+                botLogTxIdToFrontInstanceKeyMap.remove(logUploadTxId);
+
                 log.error("bot [{}] start upload runtime log error, [{}]", botInstanceKey, botStartResponse);
             }
 
-            return response;
+            return responseBuilder.build();
         } catch (Exception e) {
             log.error("bot [{}] start upload runtime log error", botInstanceKey, e);
 
-            response.setCode(RemotingCommandCodeConstants.FAIL);
-            response.setObjBody(Result.fail("unknown error"));
-            return response;
+            responseBuilder.success(false);
+            responseBuilder.errorMsg("unknown error");
+            return responseBuilder.build();
         }
     }
 
@@ -119,38 +126,49 @@ public class BotLogUploadService {
      */
     public RemotingCommand botUploadLogRCHandler(Channel channel, RemotingCommand command) {
         String logUploadTxId = command.getExtFieldsValue(BotExtFieldConstants.LOG_UPLOAD_TX_ID);
-        String browserInstanceKey = botLogTxIdToBrowserKeyMap.get(logUploadTxId);
+        String token = botLogTxIdToFrontTokenMap.get(logUploadTxId);
         String botInstanceKey = channel.attr(NettyConstants.CLIENT_NAME).get();
 
-        RemotingCommand response = botControlServer.newRemotingCommand(BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG_RESPONSE, false);
+        RemotingCommand response = platformControlServer.newRemotingCommand(BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG_RESPONSE, false);
         response.addExtField(BotExtFieldConstants.LOG_UPLOAD_TX_ID, logUploadTxId);
         response.setCode(RemotingCommandCodeConstants.FAIL);
 
+        FrontWebSocketServer frontWebSocketServer = platformControlServer.getFrontWebSocketServer();
+
         // Step 1 浏览器实例请求不在map里，让bot取消上传
-        if (StrUtil.isBlank(browserInstanceKey)) {
+        if (!frontWebSocketServer.isSessionOnline(token)) {
             log.warn("browser instance[{}] upload log request canceled, interrupt bot[{}] upload",
-                    browserInstanceKey, botInstanceKey);
+                    token, botInstanceKey);
             stopBotUploadLog(botInstanceKey, logUploadTxId);
+
+            response.addExtField(
+                    ExtFieldsConstants.REQUEST_ERROR_MSG,
+                    "log upload canceled"
+            );
             return response;
         }
 
-        // Step 2 查找请求该txId的log的browser channel，推送给它
-        ConnectEntry browserConnect = botControlServer.getConnectionService().getServiceInstanceChannel(browserInstanceKey);
-        if (browserConnect != null && browserConnect.isUsable()) {
-            try {
-                // 发送给browser
-                RemotingCommand message = botControlServer.newRemotingCommand(BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG, false);
-                botControlServer.sendCommandToServiceInstance(browserInstanceKey, message).get();
+        // Step 2 推送给前端
+        try {
+            frontWebSocketServer.sendMessage(
+                    token,
+                    UIWSMessage.builder()
+                            .code(BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG)
+                            .success(true)
+                            .message(String.valueOf(command.getPayLoad()))
+                            .build()
+            );
 
-                // 发送给browser成功后，返回响应
-                response.setCode(RemotingCommandCodeConstants.SUCCESS);
-            } catch (Exception e) {
-                log.error("reword bot[{}] log to browser[{}] error", botInstanceKey, browserInstanceKey, e);
-            }
-        } else {
+            response.setCode(RemotingCommandCodeConstants.SUCCESS);
+        } catch (FrontWSException e) {
             // channel不可用，让bot不发送
-            log.warn("browser instance[{}] channel cannot use", browserInstanceKey);
+            log.error("push bot[{}] log to front[{}] error", botInstanceKey, token, e);
             stopBotUploadLog(botInstanceKey, logUploadTxId);
+
+            response.addExtField(
+                    ExtFieldsConstants.REQUEST_ERROR_MSG,
+                    e.getCause() == null ? e.getCause().getMessage() : e.getMessage()
+            );
         }
 
         return response;
@@ -163,12 +181,17 @@ public class BotLogUploadService {
      * @return CompletableFuture<RemotingCommand>
      */
     public CompletableFuture<RemotingCommand> stopBotUploadLog(String botInstanceKey, String txId) {
-        RemotingCommand command = botControlServer.newRemotingCommand(BotRemotingCommandFlagConstants.STOP_UP_BOT_LOG, true);
-
         // 不管是否成功都把map里的txId删掉
-        botLogTxIdToBrowserKeyMap.remove(txId);
+        String token = botLogTxIdToFrontTokenMap.remove(txId);
+        botLogTxIdToFrontInstanceKeyMap.remove(txId);
 
-        return botControlServer.sendCommandToServiceInstance(
+        if (token == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        RemotingCommand command = platformControlServer.newRemotingCommand(BotRemotingCommandFlagConstants.STOP_UP_BOT_LOG, true);
+
+        return platformControlServer.sendCommandToServiceInstance(
                 botInstanceKey, command
         ).whenComplete((response, throwable) -> {
             if (throwable != null) {
@@ -179,5 +202,22 @@ public class BotLogUploadService {
                 log.info("stop bot[{}] log upload success", botInstanceKey, throwable);
             }
         });
+    }
+
+    /**
+     * 去除监听
+     *
+     * @param token token
+     */
+    public void stopFrontLogListener(String token) {
+        Iterator<Map.Entry<String, String>> iterator = botLogTxIdToFrontTokenMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> entry = iterator.next();
+            if (entry.getValue().equals(token)) {
+                stopBotUploadLog(botLogTxIdToFrontInstanceKeyMap.get(entry.getKey()), token);
+
+                iterator.remove();
+            }
+        }
     }
 }

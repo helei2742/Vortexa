@@ -3,6 +3,7 @@ package cn.com.vortexa.control.config;
 
 import cn.com.vortexa.common.util.YamlConfigLoadUtil;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
+import cn.com.vortexa.control.dto.RPCServiceInfo;
 import lombok.Data;
 
 import java.io.File;
@@ -54,6 +55,8 @@ public class ScriptAgentConfig {
     private Integer serviceOfflineTtl; // 服务被判断为下线时间（ping interval）
 
     private int metricUploadIntervalSeconds = 15 * 60;  //  指标上报间隔（秒）
+
+    private List<RPCServiceInfo<?>> rpcServiceInfos;
 
     private static String toCamelCase(String name) {
         String[] parts = name.split("-");

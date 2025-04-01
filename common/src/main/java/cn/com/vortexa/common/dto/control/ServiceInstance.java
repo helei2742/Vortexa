@@ -29,4 +29,11 @@ public class ServiceInstance implements Serializable {
     public String toString() {
         return "[%s][%s][%s]-[%s:%s]".formatted(group, serviceId, instanceId, host, port);
     }
+
+    public String getGroup() {
+        if (group == null) {
+            return "default";
+        }
+        return group;
+    }
 }

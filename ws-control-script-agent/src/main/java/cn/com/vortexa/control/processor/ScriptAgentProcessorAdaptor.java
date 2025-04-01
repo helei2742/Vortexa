@@ -2,6 +2,7 @@ package cn.com.vortexa.control.processor;
 
 import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.config.ScriptAgentConfig;
+import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.util.DistributeIdMaker;
@@ -14,6 +15,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * @author helei
@@ -45,14 +47,26 @@ public class ScriptAgentProcessorAdaptor extends AbstractWebSocketClientHandler<
                     case RemotingCommandFlagConstants.PING -> this.handlerPing(remotingCommand);
                     case RemotingCommandFlagConstants.PONG -> this.handlerPong(remotingCommand);
                     case RemotingCommandFlagConstants.CUSTOM_COMMAND -> this.handlerCustomCommand(remotingCommand);
-                    case RemotingCommandFlagConstants.CUSTOM_COMMAND_RESPONSE -> this.handlerCustomCommandResponse(remotingCommand);
-                    default -> throw new RuntimeException("resolve custom request[%s] error ".formatted(
-                            remotingCommand
-                    ));
+                    case RemotingCommandFlagConstants.CUSTOM_COMMAND_RESPONSE ->
+                            this.handlerCustomCommandResponse(remotingCommand);
+                    default -> {
+                        BiFunction<Channel, RemotingCommand, RemotingCommand> processor = scriptAgent.getCustomRemotingCommandHandlerMap().get(opt);
+                        if (processor == null) {
+                            throw new IllegalArgumentException("resolve custom request[%s] error ".formatted(
+                                    remotingCommand
+                            ));
+                        }
+                        // 执行自定义命令
+                        yield processor.apply(channel, remotingCommand);
+                    }
                 }, scriptAgent.getCallbackInvoker())
                 .whenCompleteAsync((response, throwable) -> {
                     if (throwable != null) {
                         log.error("remote command[{}} resolve error", remotingCommand, throwable);
+                        response = scriptAgent.newRequestCommand(-1 * opt, false);
+                        response.setTransactionId(txId);
+                        response.setCode(RemotingCommandCodeConstants.FAIL);
+                        scriptAgent.sendRequest(response);
                         return;
                     }
                     if (response != null) {

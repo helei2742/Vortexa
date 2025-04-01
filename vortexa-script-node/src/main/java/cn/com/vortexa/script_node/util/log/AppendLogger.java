@@ -1,8 +1,11 @@
 package cn.com.vortexa.script_node.util.log;
 
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.function.Consumer;
 
 
 public class AppendLogger {
@@ -11,6 +14,8 @@ public class AppendLogger {
 
     private final StringBuilder format = new StringBuilder();
 
+    @Setter
+    private Consumer<String> beforePrintHandler;
 
     public AppendLogger(Class<?> clazz) {
         log = LoggerFactory.getLogger(clazz);
@@ -45,6 +50,10 @@ public class AppendLogger {
     }
 
     private @NotNull String getPrefix(Object context) {
-        return format + " - " + context;
+        String logContent = format + " - " + context;
+        if (beforePrintHandler != null) {
+            beforePrintHandler.accept(logContent);
+        }
+        return logContent;
     }
 }

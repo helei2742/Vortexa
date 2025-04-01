@@ -1,7 +1,11 @@
 package cn.com.vortexa.bot_platform.script_control;
 
+import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;
+import cn.com.vortexa.bot_platform.wsController.UIWSMessage;
+import cn.com.vortexa.common.constants.BotExtFieldConstants;
 import cn.com.vortexa.common.constants.BotInstanceStatus;
 import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
+import cn.com.vortexa.common.dto.BotACJobResult;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.control.BotControlServer;
@@ -14,6 +18,7 @@ import cn.com.vortexa.control.service.IConnectionService;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.control.util.RPCMethodUtil;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
@@ -29,10 +34,17 @@ public class BotPlatformControlServer extends BotControlServer {
 
     private final List<RPCServiceInfo<?>> rpcServiceInfos;
     private final BotLogUploadService botLogUploadService;
+    @Getter
+    private final FrontWebSocketServer frontWebSocketServer;
 
-    public BotPlatformControlServer(ControlServerConfig controlServerConfig, List<RPCServiceInfo<?>> rpcServiceInfos) throws ControlServerException {
+    public BotPlatformControlServer(
+            ControlServerConfig controlServerConfig,
+            FrontWebSocketServer frontWebSocketServer,
+            List<RPCServiceInfo<?>> rpcServiceInfos
+    ) throws ControlServerException {
         super(controlServerConfig);
         this.rpcServiceInfos = rpcServiceInfos;
+        this.frontWebSocketServer = frontWebSocketServer;
         this.botLogUploadService = new BotLogUploadService(this);
     }
 
@@ -73,15 +85,36 @@ public class BotPlatformControlServer extends BotControlServer {
             }
         }
 
-        // 2 自定义的请求
-        // 2.1 浏览器客户端请求获取某个bot日志的命令处理器
-        getCustomRemotingCommandHandlerMap().put(
+        // 2 日志上传
+        initScriptNodeUploadLogHandler();
+    }
+
+    /**
+     * 初始化节点日志上传命令处理器
+     */
+    protected void initScriptNodeUploadLogHandler() {
+        frontWebSocketServer.setCloseHandler((server, token)->{
+            botLogUploadService.stopFrontLogListener(token);
+        });
+
+        // 前端websocket server 监听命令
+        frontWebSocketServer.addMessageHandler(
                 BotRemotingCommandFlagConstants.START_UP_BOT_LOG,
-                botLogUploadService::browserRequestBotLogRCHandler
+                (token, session, request) -> {
+                    String group = request.getParams().getString(BotExtFieldConstants.TARGET_GROUP_KEY);
+                    String botName = request.getParams().getString(BotExtFieldConstants.TARGET_BOT_NAME_KEY);
+                    String botKey = request.getParams().getString(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
+
+                    UIWSMessage response = botLogUploadService.browserRequestBotLogRCHandler(group, botName, botKey, token);
+                    request.setCode(BotRemotingCommandFlagConstants.START_UP_BOT_LOG_RESPONSE);
+                    return response;
+                });
+
+        // 后端websocket server 响应
+        getCustomRemotingCommandHandlerMap().put(
+                BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG,
+                botLogUploadService::botUploadLogRCHandler
         );
-        // 2.2 bot上传日志命令的处理器
-        getCustomRemotingCommandHandlerMap().put(BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG,
-                botLogUploadService::botUploadLogRCHandler);
     }
 
     /**
@@ -106,17 +139,18 @@ public class BotPlatformControlServer extends BotControlServer {
 
         // Step 2 发送启动命令
         RemotingCommand command = newRemotingCommand(BotRemotingCommandFlagConstants.START_BOT_JOB, true);
-
+        command.addExtField(BotExtFieldConstants.JOB_NAME, jobName);
         return sendCommandToServiceInstance(
                 key,
                 command
-        ).thenApplyAsync(response->{
+        ).thenApplyAsync(response -> {
+            BotACJobResult result = response.getObjBodY(BotACJobResult.class);
             if (response.isSuccess()) {
-                log.error("[{}] start job[{}] success", key, jobName);
-                return Result.ok();
+                log.info("[{}] start job[{}] success", key, jobName);
+                return Result.ok(result.getData());
             } else {
                 log.error("[{}] start job[{}] fail, {}", key, jobName, response.getPayLoad());
-                return Result.fail(String.valueOf(response.getPayLoad()));
+                return Result.fail(result.getErrorMsg());
             }
         }).exceptionally(throwable -> {
             log.error("[{}] start job[{}] error", key, jobName, throwable);

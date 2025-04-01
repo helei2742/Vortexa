@@ -5,11 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class BotACJobResult {
+public class BotACJobResult implements Serializable {
+    @Serial
+    private static final long serialVersionUID = -894375743645678459L;
 
     private Integer botId;
 

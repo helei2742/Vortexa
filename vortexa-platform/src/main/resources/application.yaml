@@ -5,7 +5,7 @@ spring:
 
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     cache-enabled: true
     map-underscore-to-camel-case: false
   global-config:

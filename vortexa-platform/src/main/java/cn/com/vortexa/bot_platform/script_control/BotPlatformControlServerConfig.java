@@ -1,8 +1,8 @@
 package cn.com.vortexa.bot_platform.script_control;
 
+import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;
 import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.control.config.ControlServerConfig;
-import cn.com.vortexa.control.BotControlServer;
 import cn.com.vortexa.control.service.IConnectionService;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.service.impl.FileRegistryService;
@@ -34,6 +34,9 @@ public class BotPlatformControlServerConfig {
     @Autowired
     private List<RPCServiceInfo<?>> rpcServiceInfos;
 
+    @Autowired
+    private FrontWebSocketServer frontWebSocketServer;
+
     @Bean
     public ControlServerConfig controlServerConfig() throws FileNotFoundException {
         return ControlServerConfig.loadConfig(APPLICATION_FILE_NAME, NAMESERVER_CONFIG_PREFIX);
@@ -60,7 +63,7 @@ public class BotPlatformControlServerConfig {
     public BotPlatformControlServer botControlServer() throws Exception {
         ControlServerConfig controlServerConfig = controlServerConfig();
         log.info("start launch BotPlatFormNameserver[{}]", controlServerConfig.getServiceInstance());
-        BotPlatformControlServer botControlServer = new BotPlatformControlServer(controlServerConfig, rpcServiceInfos);
+        BotPlatformControlServer botControlServer = new BotPlatformControlServer(controlServerConfig, frontWebSocketServer, rpcServiceInfos);
         botControlServer.init(registryService(), connectionService());
         botControlServer.start().get();
         log.info("BotPlatFormNameserver[{}] launch finish", controlServerConfig.getServiceInstance());

@@ -1,5 +1,6 @@
 package cn.com.vortexa.bot_platform.dto;
 
+import cn.com.vortexa.control.constant.WSControlSystemConstants;
 import lombok.Data;
 
 /**
@@ -12,4 +13,12 @@ public class BotJob {
     private String botName;
     private String botKey;
     private String jobName;
+
+    public String getGroup() {
+        if (group == null) {
+            return WSControlSystemConstants.DEFAULT_GROUP;
+        }
+
+        return group;
+    }
 }
