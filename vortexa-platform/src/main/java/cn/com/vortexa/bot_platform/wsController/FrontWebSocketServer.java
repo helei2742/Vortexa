@@ -15,9 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 @Slf4j
@@ -33,12 +35,18 @@ public class FrontWebSocketServer {
 
     private static BiConsumer<FrontWebSocketServer, String> closeHandler;
 
+    public static boolean running = false;
+
     //当前客户端名称
     private String token = "";
 
 
     @OnOpen
-    public void onOpen(Session session, @PathParam("token") String token) {
+    public void onOpen(Session session, @PathParam("token") String token) throws IOException {
+        if (!running) {
+            session.close();
+        }
+
         if (!websocketMap.containsKey(token)) {
             FrontWebSocketServer.onlineCount++;
         }
@@ -129,8 +137,13 @@ public class FrontWebSocketServer {
         synchronized (getSessionLock(token)) {
             SocketDomain socketDomain = websocketMap.get(token);
             if (socketDomain != null) {
-                socketDomain.getSession().getAsyncRemote().sendText(JSONObject.toJSONString(obj));
-            } else {
+                try {
+                    socketDomain.getSession().getAsyncRemote().sendText(JSONObject.toJSONString(obj)).get();
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new FrontWSException("send message to[%s] error".formatted(token), e);
+                }
+            }
+            else {
                 throw new FrontWSException("send message to[%s] error, target session not exist".formatted(token));
             }
         }

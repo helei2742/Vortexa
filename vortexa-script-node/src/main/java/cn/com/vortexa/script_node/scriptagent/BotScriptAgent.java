@@ -17,6 +17,7 @@ import cn.com.vortexa.control.util.RPCMethodUtil;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.hutool.core.util.BooleanUtil;
 import io.netty.channel.Channel;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +43,7 @@ public class BotScriptAgent extends ScriptAgent {
 
     private final BotScriptAgentLogUploadService logUploadService;
     @Setter
+    @Getter
     private AutoLaunchBot<?> bot;
 
     public BotScriptAgent(ScriptAgentConfig clientConfig, List<RPCServiceInfo<?>> rpcServiceInfos) {
@@ -107,9 +109,6 @@ public class BotScriptAgent extends ScriptAgent {
                 BotRemotingCommandFlagConstants.START_BOT_JOB,
                 (channel, remotingCommand) -> startOrParsedBotJob(remotingCommand)
         );
-
-        // Step 3 其它初始化
-        bot.logger.setBeforePrintHandler(logUploadService::pushLog);
     }
 
     private RemotingCommand startOrParsedBotJob(RemotingCommand remotingCommand) {

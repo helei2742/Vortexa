@@ -18,6 +18,7 @@ import cn.com.vortexa.control.service.IConnectionService;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.control.util.RPCMethodUtil;
+import io.netty.channel.ChannelFuture;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,6 +37,13 @@ public class BotPlatformControlServer extends BotControlServer {
     private final BotLogUploadService botLogUploadService;
     @Getter
     private final FrontWebSocketServer frontWebSocketServer;
+
+    @Override
+    public ChannelFuture start() throws ControlServerException {
+        ChannelFuture start = super.start();
+        FrontWebSocketServer.running = true;
+        return start;
+    }
 
     public BotPlatformControlServer(
             ControlServerConfig controlServerConfig,

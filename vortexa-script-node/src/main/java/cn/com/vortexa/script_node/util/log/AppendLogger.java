@@ -1,5 +1,8 @@
 package cn.com.vortexa.script_node.util.log;
 
+import cn.com.vortexa.common.util.DiscardingBlockingQueue;
+import cn.com.vortexa.script_node.config.AutoBotConfig;
+import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -13,6 +16,9 @@ public class AppendLogger {
     private final Logger log;
 
     private final StringBuilder format = new StringBuilder();
+
+    @Getter
+    private final DiscardingBlockingQueue<String> logCache = new DiscardingBlockingQueue<>(AutoBotConfig.LOG_CACHE_COUNT);
 
     @Setter
     private Consumer<String> beforePrintHandler;
@@ -51,6 +57,11 @@ public class AppendLogger {
 
     private @NotNull String getPrefix(Object context) {
         String logContent = format + " - " + context;
+        try {
+            logCache.put(logContent);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         if (beforePrintHandler != null) {
             beforePrintHandler.accept(logContent);
         }

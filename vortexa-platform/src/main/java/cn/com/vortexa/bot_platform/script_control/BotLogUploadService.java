@@ -74,6 +74,8 @@ public class BotLogUploadService {
             return responseBuilder.build();
         }
 
+
+
         // Step 2 发送命令到该Bot，让它开始发
         try {
             RemotingCommand command = platformControlServer.newRemotingCommand(
@@ -83,15 +85,16 @@ public class BotLogUploadService {
             String logUploadTxId = platformControlServer.nextTxId();
             command.addExtField(BotExtFieldConstants.LOG_UPLOAD_TX_ID, logUploadTxId);
 
+            botLogTxIdToFrontTokenMap.put(logUploadTxId, token);
+            botLogTxIdToFrontInstanceKeyMap.put(logUploadTxId, botInstanceKey);
+
             // 发送，并等待结果
             RemotingCommand botStartResponse = platformControlServer.sendCommandToServiceInstance(
                     group, botName, botKey, command
             ).get();
 
             if (botStartResponse.getCode() == RemotingCommandCodeConstants.SUCCESS) {
-                // Step 2.1 成功, 注册监听
-                botLogTxIdToFrontTokenMap.put(logUploadTxId, token);
-                botLogTxIdToFrontInstanceKeyMap.put(logUploadTxId, botInstanceKey);
+                // Step 2.1 成功,
                 responseBuilder.success(true);
 
                 log.info("bot [{}] start upload runtime log", botInstanceKey);
@@ -127,7 +130,7 @@ public class BotLogUploadService {
     public RemotingCommand botUploadLogRCHandler(Channel channel, RemotingCommand command) {
         String logUploadTxId = command.getExtFieldsValue(BotExtFieldConstants.LOG_UPLOAD_TX_ID);
         String token = botLogTxIdToFrontTokenMap.get(logUploadTxId);
-        String botInstanceKey = channel.attr(NettyConstants.CLIENT_NAME).get();
+        String botInstanceKey = botLogTxIdToFrontInstanceKeyMap.get(logUploadTxId);
 
         RemotingCommand response = platformControlServer.newRemotingCommand(BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG_RESPONSE, false);
         response.addExtField(BotExtFieldConstants.LOG_UPLOAD_TX_ID, logUploadTxId);

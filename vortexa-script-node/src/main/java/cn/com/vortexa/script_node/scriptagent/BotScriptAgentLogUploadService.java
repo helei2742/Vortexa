@@ -7,10 +7,13 @@ import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
 import cn.com.vortexa.common.util.DiscardingBlockingQueue;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
+import cn.com.vortexa.script_node.util.log.AppendLogger;
+import cn.hutool.core.util.StrUtil;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -20,12 +23,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class BotScriptAgentLogUploadService {
 
+    public static final int LOG_SEND_MAX_INTERVAL = 30;
+
     private final BotScriptAgent botScriptAgent;
 
     private final DiscardingBlockingQueue<String> logCache = new DiscardingBlockingQueue<>(
             AutoBotConfig.LOG_CACHE_COUNT);
 
     private final AtomicBoolean upload = new AtomicBoolean(false);
+
+    private volatile String bindUploadTXId;
 
     public BotScriptAgentLogUploadService(BotScriptAgent botScriptAgent) {
         this.botScriptAgent = botScriptAgent;
@@ -94,11 +101,42 @@ public class BotScriptAgentLogUploadService {
      * @return boolean
      */
     private boolean startBotLogUploadTask(String logUploadTXID) {
-        if (upload.compareAndSet(false, true)) {
+
+        if (judgeUploadAble(logUploadTXID)) {
+            synchronized (this) {
+                if (judgeUploadAble(logUploadTXID)) {
+                    bindUploadTXId = logUploadTXID;
+                    AppendLogger logger = botScriptAgent.getBot().logger;
+                    logger.setBeforePrintHandler(this::pushLog);
+                    String[] cachedLog = logger.getLogCache().toArray(new String[0]);
+
+                    logCache.clear();
+                    for (String logStr : cachedLog) {
+                        try {
+                            logCache.put(logStr);
+                        } catch (InterruptedException e) {
+                            log.error("put script node log error", e);
+                            upload.set(false);
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    upload.set(true);
+                } else {
+                    return false;
+                }
+            }
+
             botScriptAgent.getCallbackInvoker().execute(() -> {
                 while (upload.get()) {
                     try {
-                        String logContent = logCache.take();
+                        String oriTxId = bindUploadTXId;
+                        String logContent = logCache.poll(LOG_SEND_MAX_INTERVAL, TimeUnit.SECONDS);
+
+                        // 线程醒后需判断当前要发的txId有没有变化
+                        if (!bindUploadTXId.equals(oriTxId) || !upload.get()) {
+                            upload.set(false);
+                            continue;
+                        }
 
                         RemotingCommand command = botScriptAgent.newRequestCommand(
                                 BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG, true);
@@ -115,6 +153,7 @@ public class BotScriptAgentLogUploadService {
                         upload.set(false);
                         log.error("log upload task interrupted");
                     } catch (ExecutionException e) {
+                        upload.set(false);
                         log.error("upload log error", e);
                     }
                 }
@@ -123,5 +162,10 @@ public class BotScriptAgentLogUploadService {
             return true;
         }
         return false;
+    }
+
+    private boolean judgeUploadAble(String logUploadTXID) {
+        return StrUtil.isNotBlank(logUploadTXID) && (!logUploadTXID.equals(bindUploadTXId)
+                || upload.compareAndSet(false, true));
     }
 }

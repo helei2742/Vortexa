@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 
 public class DiscardingBlockingQueue<T> {
@@ -11,7 +12,7 @@ public class DiscardingBlockingQueue<T> {
     private final BlockingQueue<T> queue;
 
     /**
-     *  队列的容量
+     * 队列的容量
      */
     @Getter
     private final int capacity;
@@ -56,6 +57,18 @@ public class DiscardingBlockingQueue<T> {
     }
 
     /**
+     * 带超时时间取出元素
+     *
+     * @param timeout timeout
+     * @param unit    unit
+     * @return T
+     * @throws InterruptedException InterruptedException
+     */
+    public T poll(long timeout, TimeUnit unit) throws InterruptedException {
+        return queue.poll(timeout, unit);
+    }
+
+    /**
      * 获取当前队列的大小
      *
      * @return 当前队列大小
@@ -80,5 +93,13 @@ public class DiscardingBlockingQueue<T> {
      */
     public boolean isFull() {
         return queue.size() == capacity;
+    }
+
+    public void clear() {
+        queue.clear();
+    }
+
+    public T[] toArray(T[] a) {
+        return queue.toArray(a);
     }
 }
