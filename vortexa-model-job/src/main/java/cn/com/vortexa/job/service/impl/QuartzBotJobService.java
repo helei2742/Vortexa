@@ -207,6 +207,8 @@ public class QuartzBotJobService implements BotJobService {
 
         if (BotJobType.ONCE_TASK.equals(jobParam.getJobType())
                 || BotJobType.ACCOUNT_SPLIT_JOB.equals(jobParam.getJobType())
+                || BotJobType.LOGIN.equals(jobParam.getJobType())
+                || BotJobType.REGISTER.equals(jobParam.getJobType())
         ) {
             Map<String, Object> params = jobParam.getParams();
 

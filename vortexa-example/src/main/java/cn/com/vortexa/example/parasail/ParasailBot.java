@@ -99,7 +99,7 @@ public class ParasailBot extends AutoLaunchBot<ParasailBot> {
             For full terms, refer to: https://parasail.network/Parasail_User_Terms.pdf
             """;
         return CompletableFuture.supplyAsync(
-                () -> EthWalletUtil.signatureMessage(primaryKey, message), getExecutorService()
+                () -> EthWalletUtil.signatureMessage2String(primaryKey, message), getExecutorService()
         ).thenApply(signatureData -> {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("", signatureData);

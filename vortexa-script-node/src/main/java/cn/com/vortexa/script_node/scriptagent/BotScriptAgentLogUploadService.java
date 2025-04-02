@@ -1,5 +1,7 @@
 package cn.com.vortexa.script_node.scriptagent;
 
+import com.alibaba.fastjson.JSONObject;
+
 import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.script_node.config.AutoBotConfig;
 import cn.com.vortexa.common.constants.BotExtFieldConstants;
@@ -27,7 +29,7 @@ public class BotScriptAgentLogUploadService {
 
     private final BotScriptAgent botScriptAgent;
 
-    private final DiscardingBlockingQueue<String> logCache = new DiscardingBlockingQueue<>(
+    private final DiscardingBlockingQueue<AppendLogger.LogContent> logCache = new DiscardingBlockingQueue<>(
             AutoBotConfig.LOG_CACHE_COUNT);
 
     private final AtomicBoolean upload = new AtomicBoolean(false);
@@ -38,7 +40,7 @@ public class BotScriptAgentLogUploadService {
         this.botScriptAgent = botScriptAgent;
     }
 
-    public void pushLog(String content) {
+    public void pushLog(AppendLogger.LogContent content) {
         try {
             logCache.put(content);
         } catch (InterruptedException e) {
@@ -108,12 +110,12 @@ public class BotScriptAgentLogUploadService {
                     bindUploadTXId = logUploadTXID;
                     AppendLogger logger = botScriptAgent.getBot().logger;
                     logger.setBeforePrintHandler(this::pushLog);
-                    String[] cachedLog = logger.getLogCache().toArray(new String[0]);
+                    AppendLogger.LogContent[] cachedLog = logger.getLogCache().toArray(new AppendLogger.LogContent[0]);
 
                     logCache.clear();
-                    for (String logStr : cachedLog) {
+                    for (AppendLogger.LogContent logContent : cachedLog) {
                         try {
-                            logCache.put(logStr);
+                            logCache.put(logContent);
                         } catch (InterruptedException e) {
                             log.error("put script node log error", e);
                             upload.set(false);
@@ -130,7 +132,7 @@ public class BotScriptAgentLogUploadService {
                 while (upload.get()) {
                     try {
                         String oriTxId = bindUploadTXId;
-                        String logContent = logCache.poll(LOG_SEND_MAX_INTERVAL, TimeUnit.SECONDS);
+                        AppendLogger.LogContent logContent = logCache.poll(LOG_SEND_MAX_INTERVAL, TimeUnit.SECONDS);
 
                         // 线程醒后需判断当前要发的txId有没有变化
                         if (!bindUploadTXId.equals(oriTxId) || !upload.get()) {
@@ -141,7 +143,7 @@ public class BotScriptAgentLogUploadService {
                         RemotingCommand command = botScriptAgent.newRequestCommand(
                                 BotRemotingCommandFlagConstants.BOT_RUNTIME_LOG, true);
                         command.addExtField(BotExtFieldConstants.LOG_UPLOAD_TX_ID, logUploadTXID);
-                        command.setPayLoad(logContent);
+                        command.setPayLoad(JSONObject.toJSONString(logContent));
 
                         log.debug("upload log, logUploadTXID[{}]", logUploadTXID);
                         RemotingCommand response = botScriptAgent.sendRequest(command).get();

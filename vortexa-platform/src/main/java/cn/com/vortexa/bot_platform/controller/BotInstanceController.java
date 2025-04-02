@@ -9,6 +9,7 @@ import cn.com.vortexa.control.anno.RPCReference;
 import cn.com.vortexa.bot_platform.service.IBotInstanceService;
 import cn.com.vortexa.rpc.api.bot.IScriptAgentRPC;
 
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,8 +38,8 @@ public class BotInstanceController {
     private IScriptAgentRPC scriptAgentRPC;
 
     @PostMapping("/pageQuery")
-    public Result pageQuery(@RequestBody PageQuery query) throws SQLException {
-        return Result.ok(botInstanceService.conditionPageQuery(
+    public Result pageQuery(@RequestBody PageQuery query) throws SQLException, SchedulerException {
+        return Result.ok(botInstanceService.conditionPageQueryAllInfo(
                 query.getPage(),
                 query.getLimit(),
                 query.getFilterMap()

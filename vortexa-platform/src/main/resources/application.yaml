@@ -2,7 +2,9 @@ spring:
   datasource:
 #    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/plantfrom.db"
     url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/test_plantfrom.db"
-
+    driver-class-name: org.sqlite.JDBC
+    username:
+    password:
 mybatis-plus:
   configuration:
 #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

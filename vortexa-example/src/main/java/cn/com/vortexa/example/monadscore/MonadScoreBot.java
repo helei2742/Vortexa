@@ -134,7 +134,7 @@ public class MonadScoreBot extends AutoLaunchBot<MonadScoreBot> {
         List<String> list = new ArrayList<>(List.of(args));
 
         list.add("--vortexa.botKey=monad_score_google");
-        list.add("--vortexa.customConfig.invite_code=KMDiFtp9");
+
         list.add("--vortexa.accountConfig.configFilePath=monad_score_google.xlsx");
         list.add("--add-opens java.base/java.lang=ALL-UNNAMED");
 

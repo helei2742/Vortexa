@@ -2,14 +2,17 @@ package cn.com.vortexa.script_node.util.log;
 
 import cn.com.vortexa.common.util.DiscardingBlockingQueue;
 import cn.com.vortexa.script_node.config.AutoBotConfig;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.Consumer;
-
 
 public class AppendLogger {
 
@@ -18,17 +21,20 @@ public class AppendLogger {
     private final StringBuilder format = new StringBuilder();
 
     @Getter
-    private final DiscardingBlockingQueue<String> logCache = new DiscardingBlockingQueue<>(AutoBotConfig.LOG_CACHE_COUNT);
+    private final DiscardingBlockingQueue<LogContent> logCache = new DiscardingBlockingQueue<>(
+            AutoBotConfig.LOG_CACHE_COUNT);
 
     @Setter
-    private Consumer<String> beforePrintHandler;
+    private Consumer<LogContent> beforePrintHandler;
 
     public AppendLogger(Class<?> clazz) {
         log = LoggerFactory.getLogger(clazz);
     }
 
     public AppendLogger append(Object context) {
-        if (!format.isEmpty()) format.append(" ");
+        if (!format.isEmpty()) {
+            format.append(" ");
+        }
 
         format.append(context);
 
@@ -36,27 +42,29 @@ public class AppendLogger {
     }
 
     public void info(Object context) {
-        log.info("\033[32m" + getPrefix(context) + "\033[0m");
+        log.info("\033[32m" + getPrefix(LogType.INFO, context) + "\033[0m");
     }
 
     public void debug(Object context) {
-        log.info("\033[90m" + getPrefix(context) + "\033[0m");
+        log.info("\033[90m" + getPrefix(LogType.DEBUG, context) + "\033[0m");
     }
 
     public void warn(Object context) {
-        log.warn("\033[33m" + getPrefix(context) + "\033[0m");
+        log.warn("\033[33m" + getPrefix(LogType.WARNING, context) + "\033[0m");
     }
 
     public void error(Object context) {
-        log.error("\033[31m" + getPrefix(context) + "\033[0m");
+        log.error("\033[31m" + getPrefix(LogType.ERROR, context) + "\033[0m");
     }
 
     public void error(Object context, Throwable e) {
-        log.error("\033[31m" + getPrefix(context) + "\033[0m", e);
+        log.error("\033[31m" + getPrefix(LogType.ERROR, context) + "\033[0m", e);
     }
 
-    private @NotNull String getPrefix(Object context) {
-        String logContent = format + " - " + context;
+    private @NotNull String getPrefix(LogType type, Object context) {
+        String logStr = format + " - " + context;
+        LogContent logContent = new LogContent(System.currentTimeMillis(), type, logStr);
+
         try {
             logCache.put(logContent);
         } catch (InterruptedException e) {
@@ -65,6 +73,25 @@ public class AppendLogger {
         if (beforePrintHandler != null) {
             beforePrintHandler.accept(logContent);
         }
-        return logContent;
+        return logStr;
+    }
+
+    public enum LogType {
+        DEBUG,
+        SUCCESS,
+        INFO,
+        ERROR,
+        WARNING
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class LogContent {
+        private long datetime;
+
+        private LogType type;
+
+        private String content;
     }
 }

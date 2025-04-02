@@ -201,11 +201,8 @@ public class RestApiClient {
 
                 requestBody = RequestBody.create(formData.toString(),
                         MediaType.parse("application/x-www-form-urlencoded"));
-            } else {
-                MediaType JSON = MediaType.parse(
-                        "application/" + headers.getOrDefault("Content-Type",
-                        headers.getOrDefault("content-type", "json; charset=utf-8"))
-                );
+            } else if (contentType.startsWith("application/json")) {
+                MediaType JSON = MediaType.parse(contentType);
 
                 requestBody = RequestBody.create(body.toJSONString(), JSON);
             }

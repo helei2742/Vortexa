@@ -2,6 +2,7 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.bot_platform.dto.BotJob;
 import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
+import cn.com.vortexa.common.vo.BotInstanceVO;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.exception.BotStartException;
@@ -14,11 +15,16 @@ import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.bot_platform.mapper.BotInstanceMapper;
 import cn.com.vortexa.bot_platform.service.IBotInstanceService;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
 import lombok.extern.slf4j.Slf4j;
 
+import org.quartz.JobExecutionContext;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -28,7 +34,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -52,6 +57,9 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
     @Autowired
     private BotPlatformControlServer botControlServer;
 
+    @Autowired
+    private Scheduler scheduler;
+
     public BotInstanceServiceImpl() {
         super(botInstance -> {
             botInstance.setInsertDatetime(LocalDateTime.now());
@@ -60,9 +68,10 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
         });
     }
 
+
     @Override
-    public PageResult<BotInstance> conditionPageQuery(int page, int limit, Map<String, Object> filterMap)
-            throws SQLException {
+    public PageResult<BotInstanceVO> conditionPageQueryAllInfo(Integer page, Integer limit,
+                                                               Map<String, Object> filterMap) throws SQLException, SchedulerException {
 
         PageResult<BotInstance> result = super.conditionPageQuery(page, limit, filterMap);
 
@@ -71,15 +80,33 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
         Map<Integer, BotInfo> idMapBotInfo = botInfoMapper.selectBatchIds(botIds)
                 .stream().collect(Collectors.toMap(BotInfo::getId, botInfo -> botInfo));
 
+
+        // 查询运行中的任务
+        Map<String, List<Trigger>> groupByBotKey = scheduler.getCurrentlyExecutingJobs()
+                .stream()
+                .map(JobExecutionContext::getTrigger)
+                .collect(Collectors.groupingBy(trigger -> trigger.getJobKey().getGroup()));
+
+        ArrayList<BotInstanceVO> voList = new ArrayList<>();
         for (BotInstance instance : result.getList()) {
-            instance.setBotInfo(idMapBotInfo.get(instance.getBotId()));
+            BotInstanceVO vo = new BotInstanceVO();
+
+            vo.setBotInstance(instance);
+            vo.setBotInfo(idMapBotInfo.get(instance.getBotId()));
+            vo.setRunningJob(JSONObject.toJSONString(groupByBotKey.get(instance.getBotKey())));
 
             instance.addParam(BotInstance.BOT_INSTANCE_STATUS_KEY, botControlServer.getBotInstanceStatus(
                     WSControlSystemConstants.DEFAULT_GROUP, instance.getBotName(), instance.getBotKey()
             ));
         }
 
-        return result;
+        return new PageResult<>(
+                result.getTotal(),
+                voList,
+                result.getPages(),
+                result.getPageNum(),
+                result.getPageSize()
+        );
     }
 
     @Override

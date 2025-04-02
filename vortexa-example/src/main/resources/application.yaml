@@ -1,12 +1,4 @@
 spring:
-  datasource:
-    quartz:
-      url: jdbc:mysql://localhost:3306/job_store
-      username: root
-      password: 123456
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      type: com.zaxxer.hikari.HikariDataSource
-
   quartz:
     job-store-type: jdbc
     jdbc:

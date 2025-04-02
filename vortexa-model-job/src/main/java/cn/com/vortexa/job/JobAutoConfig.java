@@ -17,16 +17,16 @@ import javax.sql.DataSource;
 @ComponentScan(basePackages = "cn.com.vortexa.job.service.impl")
 public class JobAutoConfig {
 
-    @Value("${spring.datasource.quartz.url}")
+    @Value("${spring.quartz.jdbc.url}")
     private String quartzUrl;
 
-    @Value("${spring.datasource.quartz.username}")
+    @Value("${spring.quartz.jdbc.user}")
     private String username;
 
-    @Value("${spring.datasource.quartz.password}")
+    @Value("${spring.quartz.jdbc.password}")
     private String password;
 
-    @Value("${spring.datasource.quartz.driver-class-name}")
+    @Value("${spring.quartz.jdbc.driver-class}")
     private String driverClassName;
 
     @Bean

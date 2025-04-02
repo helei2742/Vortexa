@@ -2,6 +2,7 @@ package cn.com.vortexa.db_layer.service;
 
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.ConditionBuildUtil;
+import cn.com.vortexa.common.vo.BotInstanceVO;
 import cn.com.vortexa.db_layer.mapper.IBaseMapper;
 import cn.com.vortexa.db_layer.util.ConditionQueryUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -67,8 +68,8 @@ public abstract class AbstractBaseService<M extends IBaseMapper<T>, T> extends S
     /**
      * 条件分页查询
      *
-     * @param page      page
-     * @param limit     limit
+     * @param page page
+     * @param limit limit
      * @param filterMap filterMap
      * @return PageInfo<T>
      * @throws SQLException SQLException

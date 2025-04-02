@@ -3,7 +3,10 @@ package cn.com.vortexa.db_layer.config;
 import cn.com.vortexa.common.util.typehandler.JsonTypeHandler;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
 import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
+import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -34,22 +37,4 @@ public class MybatisConfig implements MetaObjectHandler {
         this.setFieldValByName("updateDatetime", LocalDateTime.now(), metaObject);
     }
 
-
-    @Bean
-    @ConditionalOnMissingBean
-    public JsonTypeHandler jsonTypeHandler() {
-        return new JsonTypeHandler();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public MapTextTypeHandler mapTextTypeHandler() {
-        return new MapTextTypeHandler();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public LocalDateTimeTypeHandler localDateTimeTypeHandler() {
-        return new LocalDateTimeTypeHandler();
-    }
 }
