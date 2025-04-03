@@ -379,7 +379,7 @@ public abstract class AbstractAutoBot {
                 if (requestStart != null) {
                     str = requestStart.get();
                 }
-                logger.info("同步器允许发送请求 - " + str);
+                logger.debug("同步器允许发送请求 - " + str);
 
                 return request.get();
             } catch (Exception e) {

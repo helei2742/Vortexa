@@ -1,6 +1,6 @@
 package cn.com.vortexa.example.depin_3_dos;
 
-import cn.com.vortexa.script_node.ScriptNodeLauncher;
+import cn.com.vortexa.script_node.ScriptAppLauncher;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.anno.BotMethod;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
@@ -123,6 +123,6 @@ public class ThreeDosBot extends AutoLaunchBot<ThreeDosBot> {
         list.add("--bot.accountConfig.configFilePath=3dos/3dos_google.xlsx");
         list.add("--add-opens java.base/java.lang=ALL-UNNAMED");
 
-        ScriptNodeLauncher.launch(ThreeDosBot.class, list.toArray(new String[0]));
+        ScriptAppLauncher.launch(ThreeDosBot.class, list.toArray(new String[0]));
     }
 }

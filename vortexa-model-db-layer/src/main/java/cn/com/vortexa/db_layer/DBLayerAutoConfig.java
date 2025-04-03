@@ -4,11 +4,12 @@ import cn.com.vortexa.common.util.typehandler.JsonTypeHandler;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
 import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import cn.com.vortexa.db_layer.config.MybatisConfig;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.mybatis.spring.SqlSessionFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -60,6 +61,17 @@ public class DBLayerAutoConfig {
                 jsonTypeHandler(), mapTextTypeHandler(), localDateTimeTypeHandler()
         );
         factoryBean.setTypeAliasesPackage("cn.com.vortexa.entity");
+        MybatisConfiguration configuration = new MybatisConfiguration();
+        factoryBean.setConfiguration(configuration);
+        configuration.setMapUnderscoreToCamelCase(true);
+
+        GlobalConfig globalConfig = new GlobalConfig();
+        GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
+        dbConfig.setLogicDeleteField("isValid");
+        dbConfig.setLogicDeleteValue("0");
+        dbConfig.setLogicNotDeleteValue("1");
+        globalConfig.setDbConfig(dbConfig);
+        factoryBean.setGlobalConfig(globalConfig);
         return factoryBean.getObject();
     }
 

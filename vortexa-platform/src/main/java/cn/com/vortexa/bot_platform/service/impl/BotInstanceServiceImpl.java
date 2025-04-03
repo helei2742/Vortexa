@@ -95,6 +95,8 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
             vo.setBotInfo(idMapBotInfo.get(instance.getBotId()));
             vo.setRunningJob(JSONObject.toJSONString(groupByBotKey.get(instance.getBotKey())));
 
+            voList.add(vo);
+
             instance.addParam(BotInstance.BOT_INSTANCE_STATUS_KEY, botControlServer.getBotInstanceStatus(
                     WSControlSystemConstants.DEFAULT_GROUP, instance.getBotName(), instance.getBotKey()
             ));

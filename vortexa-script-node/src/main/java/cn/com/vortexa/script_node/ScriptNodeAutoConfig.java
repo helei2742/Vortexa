@@ -50,8 +50,8 @@ public class ScriptNodeAutoConfig {
     private AutoBotConfig botConfig;
 
 
-    @Bean("jobDataSource")
-    public DataSource jobDataSource() {
+    @Bean("vortexaDataSource")
+    public DataSource vortexaDataSource() {
         String botKey = botConfig.getBotKey();
         if (StrUtil.isBlank(botKey)) {
             throw new IllegalArgumentException("botKey is empty");
@@ -72,7 +72,7 @@ public class ScriptNodeAutoConfig {
     public SqlSessionFactory sqlSessionFactory() throws Exception {
         SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
 
-        factoryBean.setDataSource(jobDataSource());
+        factoryBean.setDataSource(vortexaDataSource());
         factoryBean.setMapperLocations(new PathMatchingResourcePatternResolver()
                 .getResources("classpath:/mapper/*.xml"));
 
@@ -85,7 +85,7 @@ public class ScriptNodeAutoConfig {
     // 配置事务管理器
     @Bean(name = "transactionManager")
     public PlatformTransactionManager transactionManager() {
-        return new DataSourceTransactionManager(jobDataSource());
+        return new DataSourceTransactionManager(vortexaDataSource());
     }
 
     @Bean

@@ -1,7 +1,6 @@
 package cn.com.vortexa.script_node;
 
 import cn.com.vortexa.control.config.ScriptAgentConfig;
-import cn.com.vortexa.control.dto.RPCServiceInfo;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.script_node.config.AutoBotConfig;
@@ -28,12 +27,11 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 @SpringBootApplication(exclude = ServletWebServerFactoryAutoConfiguration.class)
 @ImportAutoConfiguration({ScriptNodeAutoConfig.class})
-public class ScriptNodeLauncher {
+public class ScriptAppLauncher {
 
     private static final String BOT_KEY_PARAM_KEY = "--vortexa.botKey=";
 
@@ -70,7 +68,7 @@ public class ScriptNodeLauncher {
         AutoBotConfig.BOT_NAME = botName;
 
         // Step 1 创建容器
-        ConfigurableApplicationContext applicationContext = SpringApplication.run(ScriptNodeLauncher.class, args);
+        ConfigurableApplicationContext applicationContext = SpringApplication.run(ScriptAppLauncher.class, args);
 
         // Step 2 获取配置Bean
         AutoBotConfig botConfig = applicationContext.getBean(AutoBotConfig.class);

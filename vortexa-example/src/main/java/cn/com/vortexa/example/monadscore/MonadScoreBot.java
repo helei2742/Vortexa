@@ -3,7 +3,7 @@ package cn.com.vortexa.example.monadscore;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.common.util.http.RestApiClient;
-import cn.com.vortexa.script_node.ScriptNodeLauncher;
+import cn.com.vortexa.script_node.ScriptAppLauncher;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.anno.BotMethod;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
@@ -138,6 +138,6 @@ public class MonadScoreBot extends AutoLaunchBot<MonadScoreBot> {
         list.add("--vortexa.accountConfig.configFilePath=monad_score_google.xlsx");
         list.add("--add-opens java.base/java.lang=ALL-UNNAMED");
 
-        ScriptNodeLauncher.launch(MonadScoreBot.class, list.toArray(new String[0]));
+        ScriptAppLauncher.launch(MonadScoreBot.class, list.toArray(new String[0]));
     }
 }

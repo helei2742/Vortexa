@@ -10,6 +10,15 @@ logging:
         zookeeper: WARN
 
 vortexa:
+  script-node:
+    node-id: test1
+    service-instance:
+      host: localhost
+      port: 20001
+      group: test1
+      serviceId: client
+      instanceId: client-1
+
   botKey: ''
   filePathConfig:
     proxyFileBotConfigPath: "proxy.xlsx"

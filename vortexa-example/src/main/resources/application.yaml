@@ -1,4 +1,9 @@
 spring:
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url:
+    username:
+    password:
   quartz:
     job-store-type: jdbc
     jdbc:
