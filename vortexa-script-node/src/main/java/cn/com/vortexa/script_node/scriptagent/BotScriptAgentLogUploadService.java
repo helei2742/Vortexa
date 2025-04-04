@@ -1,9 +1,10 @@
 package cn.com.vortexa.script_node.scriptagent;
 
+import cn.com.vortexa.control.util.ControlServerUtil;
 import com.alibaba.fastjson.JSONObject;
 
 import cn.com.vortexa.control.constant.ExtFieldsConstants;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.constants.BotExtFieldConstants;
 import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
 import cn.com.vortexa.common.util.DiscardingBlockingQueue;
@@ -58,6 +59,11 @@ public class BotScriptAgentLogUploadService {
     public RemotingCommand startUploadLogRCHandler(Channel channel, RemotingCommand command) {
         // 开始上传日志
         String logUploadTXID = command.getExtFieldsValue(BotExtFieldConstants.LOG_UPLOAD_TX_ID);
+        String group = command.getExtFieldsValue(BotExtFieldConstants.TARGET_GROUP_KEY);
+        String botName = command.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_NAME_KEY);
+        String botKey = command.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
+
+        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(group, botName, botKey);
 
         log.info("start upload log, logUploadTXID[{}]", logUploadTXID);
         RemotingCommand response = new RemotingCommand();
@@ -66,7 +72,7 @@ public class BotScriptAgentLogUploadService {
         response.setFlag(BotRemotingCommandFlagConstants.START_UP_BOT_LOG_RESPONSE);
 
         // 开启日志上传任务
-        if (startBotLogUploadTask(logUploadTXID)) {
+        if (startBotLogUploadTask(botInstanceKey, logUploadTXID)) {
             response.setCode(RemotingCommandCodeConstants.SUCCESS);
             log.info("start log upload task success, logUploadTXID[{}]", logUploadTXID);
         } else {
@@ -99,16 +105,16 @@ public class BotScriptAgentLogUploadService {
     /**
      * 开启bot日志上传任务
      *
-     * @param logUploadTXID logUploadTXID
+     * @param logUploadTXID  logUploadTXID
+     * @param botInstanceKey botInstanceKey
      * @return boolean
      */
-    private boolean startBotLogUploadTask(String logUploadTXID) {
-
+    private boolean startBotLogUploadTask(String botInstanceKey, String logUploadTXID) {
         if (judgeUploadAble(logUploadTXID)) {
             synchronized (this) {
                 if (judgeUploadAble(logUploadTXID)) {
                     bindUploadTXId = logUploadTXID;
-                    AppendLogger logger = botScriptAgent.getBot().logger;
+                    AppendLogger logger = botScriptAgent.getBotMetaInfo(botInstanceKey).getBot().logger;
                     logger.setBeforePrintHandler(this::pushLog);
                     AppendLogger.LogContent[] cachedLog = logger.getLogCache().toArray(new AppendLogger.LogContent[0]);
 

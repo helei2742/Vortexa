@@ -11,7 +11,7 @@ import cn.com.vortexa.common.constants.HttpMethod;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.script_node.util.log.AppendLogger;
 import cn.com.vortexa.common.dto.AutoBotRuntimeInfo;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.entity.BotInfo;
 import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.common.entity.ProxyInfo;
@@ -133,7 +133,6 @@ public abstract class AbstractAutoBot {
                 // 保存成还需查询botId
                 Integer id = botApi.getBotInfoRPC().conditionQueryRPC(query).getFirst().getId();
                 botInfo.setId(id);
-                AutoBotConfig.BOT_ID = id;
                 logger.info("save bot info success, id:" + botInfo.getId());
             }
         } catch (SQLException e) {
@@ -437,7 +436,7 @@ public abstract class AbstractAutoBot {
                 case STARTING -> newStatus.equals(BotStatus.RUNNING);
                 //RUNNING，新状态只能为 SHUTDOWN
                 case RUNNING -> false;
-                case SHUTDOWN -> false;
+                case SHUTDOWN -> newStatus.equals(BotStatus.INIT);
             };
         }
 

@@ -2,9 +2,8 @@ package cn.com.vortexa.script_node.scriptagent;
 
 import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.config.ScriptAgentConfig;
-import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.dto.RPCServiceInfo;
-import cn.com.vortexa.script_node.service.BotApi;
+import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +27,9 @@ public class BotScriptAgentConfig {
 
     private static final String NAMESERVER_CONFIG_PREFIX = "vortexa.scriptAgent";
 
+    @Autowired
+    private ScriptNodeConfiguration scriptNodeConfiguration;
+
     @Autowired(required = false)
     private List<RPCServiceInfo<?>> rpcServiceInfos;
 
@@ -37,8 +39,10 @@ public class BotScriptAgentConfig {
     }
 
     @Bean
-    public BotScriptAgent scriptAgent() throws FileNotFoundException, CustomCommandException {
+    public BotScriptAgent scriptAgent() throws FileNotFoundException {
         ScriptAgentConfig scriptAgentConfig = scriptAgentClientConfig();
-        return new BotScriptAgent(scriptAgentConfig, rpcServiceInfos);
+        BotScriptAgent botScriptAgent = new BotScriptAgent(scriptAgentConfig, scriptNodeConfiguration, rpcServiceInfos);
+        botScriptAgent.connect();
+        return botScriptAgent;
     }
 }

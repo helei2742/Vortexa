@@ -1,5 +1,6 @@
 package cn.com.vortexa.control.service;
 
+import cn.com.vortexa.common.dto.ScriptNodeRegisterInfo;
 import cn.com.vortexa.control.constant.RegistryState;
 import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
@@ -20,7 +21,7 @@ public interface IRegistryService {
      * @param serviceInstance serviceInstance
      * @return 注册状态
      */
-    RegistryState registryService(ServiceInstance serviceInstance, Map<Object, Object> props);
+    RegistryState registryService(ServiceInstance serviceInstance, ScriptNodeRegisterInfo scriptNodeRegisterInfo);
 
     /**
      * 保存注册信息

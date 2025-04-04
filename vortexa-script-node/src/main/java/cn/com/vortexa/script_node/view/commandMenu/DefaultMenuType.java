@@ -5,7 +5,8 @@ public enum DefaultMenuType {
     REGISTER,
     VERIFIER,
     LOGIN,
-    START_ACCOUNT_CLAIM,
+
+    START_BOT_TASK,
 
     ACCOUNT_LIST,
     PROXY_LIST,

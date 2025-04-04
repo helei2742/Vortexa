@@ -1,11 +1,10 @@
 package cn.com.vortexa.example.haha_wallet;
 
 
-import cn.com.vortexa.script_node.ScriptAppLauncher;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.anno.BotMethod;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.common.constants.BotJobType;
 import cn.com.vortexa.common.entity.AccountContext;
@@ -62,7 +61,7 @@ public class HaHaWalletBot extends AutoLaunchBot<HaHaWalletBot> {
         list.add("--bot.accountConfig.configFilePath=haha_wallet_google.xlsx");
         list.add("--add-opens java.base/java.lang=ALL-UNNAMED");
 
-        ScriptAppLauncher.launch(HaHaWalletBot.class, list.toArray(new String[0]));
+//        ScriptAppLauncher.launch(HaHaWalletBot.class, list.toArray(new String[0]));
     }
 }
 

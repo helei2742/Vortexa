@@ -18,10 +18,13 @@ import java.util.Map;
  * @author com.helei
  * @since 2025-02-05
  */
-public interface IBotAccountContextService extends IService<AccountContext>, IBaseService<AccountContext>, ImportService {
+public interface IBotAccountContextService extends IService<AccountContext>, IBaseService<AccountContext> {
 
     Result saveBotAccountContext(Integer botId, String botKey, List<Map<String, Object>> acKVMap);
 
     Boolean checkAndCreateShardedTable(Integer botId, String botKey, boolean existUpdate) throws SQLException;
 
+    Integer importFromExcel(Integer botId, String botKey, String fileBotConfigPath) throws SQLException;
+
+    Integer importFromRaw(Integer botId, String botKey, List<Map<String, Object>> rawLines) throws SQLException;
 }

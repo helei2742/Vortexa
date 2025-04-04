@@ -35,7 +35,7 @@ public class ServiceDiscoverProcessor {
     public RemotingCommand handlerDiscoverService(Channel channel, RemotingCommand remotingCommand) {
         String group = remotingCommand.getGroup();
         String serviceId = remotingCommand.getServiceId();
-        String clientId = remotingCommand.getClientId();
+        String clientId = remotingCommand.getInstanceId();
 
 
         List<RegisteredService> services = discoverServiceList(group, clientId, serviceId);

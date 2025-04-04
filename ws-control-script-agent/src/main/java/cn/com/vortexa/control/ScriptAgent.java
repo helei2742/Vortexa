@@ -25,6 +25,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -47,7 +48,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
     private final Map<Integer, BiFunction<Channel, RemotingCommand, RemotingCommand>> customRemotingCommandHandlerMap = new HashMap<>();
 
     @Setter
-    private Supplier<Object> registryBodySetter = null; // 注册时的body
+    private Supplier<Serializable> registryBodySetter = null; // 注册时的body
     @Setter
     private Consumer<RemotingCommand> afterRegistryHandler = null;  // 注册成功后回调
 
@@ -102,7 +103,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
 
         message.setGroup(serviceInstance.getGroup());
         message.setServiceId(serviceInstance.getServiceId());
-        message.setClientId(serviceInstance.getInstanceId());
+        message.setInstanceId(serviceInstance.getInstanceId());
 
         Channel channel;
         if ((channel = getChannel()) != null) {
@@ -117,11 +118,11 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
      */
     public void sendRegistryCommand() {
         RemotingCommand remotingCommand = newRequestCommand(RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE);
-        Object body = null;
+        Serializable body = null;
         if (registryBodySetter != null) {
             body = registryBodySetter.get();
         }
-        remotingCommand.setBodyFromObject(body);
+        remotingCommand.setObjBody(body);
 
         sendRequest(remotingCommand).whenComplete((response, throwable) -> {
             if (throwable != null) {
@@ -206,7 +207,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
         RemotingCommand command = new RemotingCommand();
         command.setGroup(serviceInstance.getGroup());
         command.setServiceId(serviceInstance.getServiceId());
-        command.setClientId(serviceInstance.getInstanceId());
+        command.setInstanceId(serviceInstance.getInstanceId());
         command.setTransactionId(needTxId ? nextTxId() : null);
 
         command.setFlag(commandFlag);

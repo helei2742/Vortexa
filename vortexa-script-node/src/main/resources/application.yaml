@@ -1,34 +1,16 @@
-mybatis-plus:
-  mapper-locations: classpath:/mapper/*.xml
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-logging:
-  level:
-    org:
-      apache:
-        dubbo: WARN
-        zookeeper: WARN
+spring:
+  main:
+    banner-mode: OFF
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url:
+    username:
+    password:
+
 
 vortexa:
   script-node:
-    node-id: test1
-    service-instance:
-      host: localhost
-      port: 20001
-      group: test1
-      serviceId: client
-      instanceId: client-1
-
-  botKey: ''
-  filePathConfig:
-    proxyFileBotConfigPath: "proxy.xlsx"
-    browserEnvFileBotConfigPath: "browser_env.xlsx"
-    twitterFileBotConfigPath: "twitter_account.xlsx"
-    discordFileBotConfigPathL: "discord_account.xlsx"
-    telegramFileBotConfigPath: "telegram_account.xlsx"
-    baseAccountFileBotConfigPath: "base_account.xlsx"
-  accountConfig:
-    configFilePath: ""
+    bot-group: test1
   script-agent:
     registryCenterUrl: ws://localhost:18848
     nio-thread-count: 1
@@ -40,6 +22,3 @@ vortexa:
       serviceId: client
       instanceId: client-1
 
-spring:
-  main:
-    banner-mode: OFF

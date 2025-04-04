@@ -303,7 +303,7 @@ public class BotControlServer {
         ServiceInstance serviceInstance = controlServerConfig.getServiceInstance();
         remotingCommand.setGroup(serviceInstance.getGroup());
         remotingCommand.setServiceId(serviceInstance.getServiceId());
-        remotingCommand.setClientId(serviceInstance.getInstanceId());
+        remotingCommand.setInstanceId(serviceInstance.getInstanceId());
         remotingCommand.setTransactionId(needId ? nextTxId() : null);
         return remotingCommand;
     }

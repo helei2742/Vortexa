@@ -3,11 +3,10 @@ package cn.com.vortexa.example.monadscore;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.common.util.http.RestApiClient;
-import cn.com.vortexa.script_node.ScriptAppLauncher;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.anno.BotMethod;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.script_node.constants.MapConfigKey;
 import cn.com.vortexa.script_node.service.BotApi;
 import com.alibaba.fastjson.JSONObject;
@@ -47,11 +46,6 @@ public class MonadScoreBot extends AutoLaunchBot<MonadScoreBot> {
 
     @BotMethod(jobType = BotJobType.REGISTER, concurrentCount = 25)
     public Result register(AccountContext uniqueAC, List<AccountContext> sameBIdACList, String inviteCode) {
-//        if (uniqueAC.getId() != 5) {
-//            logger.debug(uniqueAC.getSimpleInfo() + " test pass");
-//            return Result.fail("test pass");
-//        }
-
         String simpleInfo = uniqueAC.getSimpleInfo();
 
         if (StrUtil.isBlank(inviteCode)) {
@@ -138,6 +132,6 @@ public class MonadScoreBot extends AutoLaunchBot<MonadScoreBot> {
         list.add("--vortexa.accountConfig.configFilePath=monad_score_google.xlsx");
         list.add("--add-opens java.base/java.lang=ALL-UNNAMED");
 
-        ScriptAppLauncher.launch(MonadScoreBot.class, list.toArray(new String[0]));
+//        ScriptAppLauncher.launch(MonadScoreBot.class, list.toArray(new String[0]));
     }
 }

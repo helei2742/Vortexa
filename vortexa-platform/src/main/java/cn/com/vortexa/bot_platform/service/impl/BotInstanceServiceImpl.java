@@ -121,13 +121,6 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
         List<RegisteredService> res = new ArrayList<>();
         List<String> keys = botControlServer.getConnectionService().queryOnlineInstanceKey();
         keys.forEach(key -> res.addAll(botControlServer.getRegistryService().queryServiceInstance(key)));
-        res.forEach(service -> {
-            BotInstanceMapper mapper = getBaseMapper();
-            BotInstance botInstance = mapper.selectOne(
-                    new QueryWrapper<>(BotInstance.builder().botKey(service.getAddress().getInstanceId()).build())
-            );
-            service.addProps("bot_info", botInstance);
-        });
         return res;
     }
 

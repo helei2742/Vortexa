@@ -1,10 +1,8 @@
 package cn.com.vortexa.script_node.view;
 
 import cn.com.vortexa.script_node.bot.JobInvokeAutoBot;
-import cn.com.vortexa.script_node.constants.BotStatus;
 import cn.com.vortexa.script_node.view.commandMenu.CommandMenuNode;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
-import cn.com.vortexa.common.exception.BotStartException;
+import cn.com.vortexa.script_node.view.commandMenu.MenuNodeMethod;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,8 +13,12 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -24,30 +26,68 @@ import java.util.concurrent.CountDownLatch;
  */
 @Slf4j
 @Getter
-public abstract class CommandLineAutoBot {
+public abstract class CommandLineMenu {
 
-    private final AutoBotConfig botConfig;
-
-    private final JobInvokeAutoBot bot;
+    private final Map<String, JobInvokeAutoBot> botKeyMap = new ConcurrentHashMap<>();
 
     private final CommandMenuNode mainManu;
 
-    public CommandLineAutoBot(JobInvokeAutoBot bot) {
-        this.bot = bot;
-        this.botConfig = bot.getAutoBotConfig();
+    private JobInvokeAutoBot bot;
 
+    public CommandLineMenu() {
         this.mainManu = new CommandMenuNode(
                 "主菜单",
-                String.format("欢迎使用[%s][%s]-bot",
-                        getBot().getBotInstance().getBotName(), getBot().getBotInstance().getBotKey()),
-                this::printBanner
+                "当前可用的Bot",
+                null
         );
     }
 
     /**
      * 构建command菜单
      */
-    protected abstract void buildMenuNode(CommandMenuNode mainManu);
+    protected void buildMenuNode(CommandMenuNode mainManu) {
+        botKeyMap.forEach((k, v) -> {
+            CommandMenuNode botMenu = new CommandMenuNode(
+                    k,
+                    String.format("欢迎使用[%s]-bot", k),
+                    () -> {
+                        bot = v;
+                        return "current use: " + bot.getBotInstance().getBotKey();
+                    }
+            );
+
+            buildBotMenuNode(botMenu, v);
+
+            // 解析MenuNodeMethod注解添加菜单节点
+            for (Method method : v.getClass().getDeclaredMethods()) {
+                method.setAccessible(true);
+
+                if (method.isAnnotationPresent(MenuNodeMethod.class)) {
+                    if (method.getParameterCount() > 0) {
+                        throw new IllegalArgumentException("菜单方法参数数量必须为0");
+                    }
+
+                    MenuNodeMethod anno = method.getAnnotation(MenuNodeMethod.class);
+                    String title = anno.title();
+                    String description = anno.description();
+
+                    CommandMenuNode menuNode = new CommandMenuNode(title, description, () -> {
+                        try {
+                            return method.invoke(v).toString();
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+
+                    botMenu.addSubMenu(menuNode);
+                }
+            }
+
+            mainManu.addSubMenu(botMenu);
+        });
+    }
+
+    protected abstract void buildBotMenuNode(CommandMenuNode botMenu, JobInvokeAutoBot v);
 
     /**
      * 异步启动
@@ -69,24 +109,16 @@ public abstract class CommandLineAutoBot {
     /**
      * 启动bot
      *
-     * @throws BotStartException DepinBotStartException
      */
-    public void start() throws BotStartException {
-        bot.updateState(BotStatus.STARTING);
-        log.info("{} 正在启动", bot.runtimeBotName());
+    public void start() {
         try {
-
             CountDownLatch startLatch = new CountDownLatch(1);
             //启动命令行交互的线程
             asyncExecute(startLatch);
 
-            log.info("{} 启动完毕", bot.runtimeBotName());
-
-            bot.updateState(BotStatus.RUNNING);
             startLatch.await();
         } catch (Exception e) {
-            bot.updateState(BotStatus.SHUTDOWN);
-            throw new BotStartException("启动 %s 发生错误".formatted(bot.runtimeBotName()), e);
+            throw new RuntimeException("command menu start error", e);
         }
     }
 

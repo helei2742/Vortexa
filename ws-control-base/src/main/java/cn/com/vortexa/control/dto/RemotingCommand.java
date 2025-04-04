@@ -1,5 +1,6 @@
 package cn.com.vortexa.control.dto;
 
+import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.LanguageCode;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
@@ -8,8 +9,6 @@ import cn.com.vortexa.control.util.DistributeIdMaker;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import org.apache.commons.compress.archivers.sevenz.CLI;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -26,7 +25,7 @@ public class RemotingCommand {
     public static final String TRANSACTION_ID_KEY = "transaction_id";
     public static final String GROUP_KEY = "group";
     public static final String SERVICE_ID_KEY = "service_id";
-    public static final String CLIENT_ID_KEY = "client_id";
+    public static final String INSTANCE_ID_KEY = "instance_id";
 
     static {
         TIME_OUT_COMMAND = new RemotingCommand();
@@ -88,12 +87,20 @@ public class RemotingCommand {
         addExtField(SERVICE_ID_KEY, serviceId);
     }
 
-    public String getClientId() {
-        return getExtFieldsValue(CLIENT_ID_KEY);
+    public String getInstanceId() {
+        return getExtFieldsValue(INSTANCE_ID_KEY);
     }
 
-    public void setClientId(String clientId) {
-        addExtField(CLIENT_ID_KEY, clientId);
+    public void setInstanceId(String clientId) {
+        addExtField(INSTANCE_ID_KEY, clientId);
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        addExtField(ExtFieldsConstants.REQUEST_ERROR_MSG, errorMessage);
+    }
+
+    public String getErrorMessage() {
+        return getExtFieldsValue(ExtFieldsConstants.REQUEST_ERROR_MSG);
     }
 
     public String getExtFieldsValue(String extFieldsKey) {
@@ -118,11 +125,6 @@ public class RemotingCommand {
             this.extFields = new HashMap<>();
         }
         this.extFields.put(key, value);
-    }
-
-    public void setBodyFromObject(Object body) {
-        if (body == null) this.body = null;
-        else this.body = Serializer.Algorithm.Protostuff.serialize(body);
     }
 
     public boolean isSuccess() {

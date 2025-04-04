@@ -1,5 +1,6 @@
 package cn.com.vortexa.bot_platform.script_control;
 
+import cn.com.vortexa.bot_platform.script_control.service.BotLogUploadService;
 import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;
 import cn.com.vortexa.bot_platform.wsController.UIWSMessage;
 import cn.com.vortexa.common.constants.BotExtFieldConstants;
@@ -10,6 +11,7 @@ import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.control.BotControlServer;
 import cn.com.vortexa.control.config.ControlServerConfig;
+import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.*;
 import cn.com.vortexa.control.exception.ControlServerException;
 import cn.com.vortexa.control.exception.CustomCommandInvokeException;
@@ -18,13 +20,18 @@ import cn.com.vortexa.control.service.IConnectionService;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.control.util.RPCMethodUtil;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author helei
@@ -32,6 +39,8 @@ import java.util.concurrent.CompletableFuture;
  */
 @Slf4j
 public class BotPlatformControlServer extends BotControlServer {
+    private final ConcurrentMap<String, Set<String>> scriptNodeKey2BotInstanceKeyMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> botInstanceKey2ScriptNodeKeyMap = new ConcurrentHashMap<>();
 
     private final List<RPCServiceInfo<?>> rpcServiceInfos;
     private final BotLogUploadService botLogUploadService;
@@ -93,8 +102,21 @@ public class BotPlatformControlServer extends BotControlServer {
             }
         }
 
+        // 1 expose bot 注册
+        initScriptNodeExposeBotHandler();
+
         // 2 日志上传
         initScriptNodeUploadLogHandler();
+    }
+
+    /**
+     * 初始化script暴露bot命令
+     */
+    private void initScriptNodeExposeBotHandler() {
+        getCustomRemotingCommandHandlerMap().put(
+                BotRemotingCommandFlagConstants.SCRIPT_BOT_ON_LINE,
+                this::exposeBotHandler
+        );
     }
 
     /**
@@ -180,14 +202,49 @@ public class BotPlatformControlServer extends BotControlServer {
     }
 
     /**
-     * 获取bot实例状态
+     * 获取bot实例所在的Script Node状态
      *
-     * @param instanceKey instanceKey
+     * @param botInstanceKey botInstanceKey
      * @return BotInstanceStatus
      */
-    public BotInstanceStatus getBotInstanceStatus(String instanceKey) {
-        ConnectEntry connectEntry = getConnectionService().getServiceInstanceChannel(instanceKey);
+    public BotInstanceStatus getBotInstanceStatus(String botInstanceKey) {
+        String scriptNodeKey = botInstanceKey2ScriptNodeKeyMap.get(botInstanceKey);
+
+        ConnectEntry connectEntry = getConnectionService().getServiceInstanceChannel(scriptNodeKey);
         return connectEntry == null ? BotInstanceStatus.STOPPED :
                 (connectEntry.isUsable() ? BotInstanceStatus.RUNNING : BotInstanceStatus.UN_USABLE);
+    }
+
+
+    public RemotingCommand exposeBotHandler(Channel channel, RemotingCommand remotingCommand) {
+        String group = remotingCommand.getGroup();
+        String serviceId = remotingCommand.getServiceId();
+        String instanceId = remotingCommand.getInstanceId();
+
+        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(group, serviceId, instanceId);
+
+        String botGroup = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_GROUP_KEY);
+        String botName = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_NAME_KEY);
+        String botKey = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
+
+        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(botGroup, botName, botKey);
+
+        scriptNodeKey2BotInstanceKeyMap.compute(scriptNodeKey, (k, v)->{
+            if (v == null) {
+                v = new HashSet<>();
+            }
+            v.add(botInstanceKey);
+            return v;
+        });
+        botInstanceKey2ScriptNodeKeyMap.put(botInstanceKey, scriptNodeKey);
+
+        log.info("script node[{}] add bot instance[{}]", scriptNodeKey, instanceId);
+
+        RemotingCommand response = new RemotingCommand();
+        response.setFlag(BotRemotingCommandFlagConstants.SCRIPT_BOT_ON_LINE_RESPONSE);
+        response.setCode(RemotingCommandCodeConstants.SUCCESS);
+        response.setTransactionId(remotingCommand.getTransactionId());
+
+        return response;
     }
 }

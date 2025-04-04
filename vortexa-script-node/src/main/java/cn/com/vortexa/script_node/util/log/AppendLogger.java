@@ -1,7 +1,7 @@
 package cn.com.vortexa.script_node.util.log;
 
 import cn.com.vortexa.common.util.DiscardingBlockingQueue;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;

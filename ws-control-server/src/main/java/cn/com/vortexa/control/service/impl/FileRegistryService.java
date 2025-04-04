@@ -1,5 +1,6 @@
 package cn.com.vortexa.control.service.impl;
 
+import cn.com.vortexa.common.dto.ScriptNodeRegisterInfo;
 import cn.com.vortexa.control.constant.RegistryState;
 import cn.com.vortexa.common.dto.control.RegisteredService;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
@@ -33,7 +34,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class FileRegistryService implements IRegistryService {
 
-    private static final String FILE_NAME = "nameserver-registry.dat";
+    private static final String FILE_NAME = "nameserver-registry.json";
     private final ConcurrentHashMap<String, RegisteredService> registryServiceMap = new ConcurrentHashMap<>();
     private final AtomicBoolean updated = new AtomicBoolean(false);
     @Setter
@@ -58,7 +59,7 @@ public class FileRegistryService implements IRegistryService {
     }
 
     @Override
-    public RegistryState registryService(ServiceInstance serviceInstance, Map<Object, Object> props) {
+    public RegistryState registryService(ServiceInstance serviceInstance, ScriptNodeRegisterInfo scriptNodeRegisterInfo) {
         String group = serviceInstance.getGroup();
         String serviceId = serviceInstance.getServiceId();
         String clientId = serviceInstance.getInstanceId();
@@ -71,7 +72,7 @@ public class FileRegistryService implements IRegistryService {
             String key = ControlServerUtil.generateServiceInstanceKey(group, serviceId, clientId);
 
             // 存内存
-            registryServiceMap.put(key, new RegisteredService(serviceInstance, props));
+            registryServiceMap.put(key, new RegisteredService(serviceInstance, scriptNodeRegisterInfo));
             updated.set(true);
 
             // 存磁盘

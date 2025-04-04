@@ -1,12 +1,10 @@
 package cn.com.vortexa.script_node.view;
 
-
-import cn.com.vortexa.script_node.bot.AnnoDriveAutoBot;
+import cn.com.vortexa.script_node.bot.JobInvokeAutoBot;
 import cn.com.vortexa.script_node.util.AccountInfoPrinter;
 import cn.com.vortexa.script_node.view.commandMenu.CommandMenuNode;
 import cn.com.vortexa.script_node.view.commandMenu.DefaultMenuType;
-import cn.com.vortexa.script_node.view.commandMenu.MenuNodeMethod;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.script_node.view.commandMenu.PageMenuNode;
 import cn.com.vortexa.common.dto.ACListOptResult;
 import cn.com.vortexa.common.dto.PageResult;
@@ -20,8 +18,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.SchedulerException;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -32,79 +28,43 @@ import static cn.com.vortexa.script_node.constants.MapConfigKey.*;
 
 
 @Slf4j
-public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAutoBot {
+public class ScriptNodeCMDLineMenu extends CommandLineMenu {
     /**
      * 刷新节点
      */
     public static final CommandMenuNode REFRESH_NODE = new CommandMenuNode(true, "刷新", "当前数据已刷新", null);
-
 
     private final List<DefaultMenuType> defaultMenuTypes;
 
     @Setter
     private Consumer<CommandMenuNode> addCustomMenuNode;
 
-    public MenuCMDLineAutoBot(AnnoDriveAutoBot<?> bot, List<DefaultMenuType> defaultMenuTypes) {
-        super(bot);
+    public ScriptNodeCMDLineMenu(List<DefaultMenuType> defaultMenuTypes) {
+        super();
         this.defaultMenuTypes = new ArrayList<>(defaultMenuTypes);
 
         this.defaultMenuTypes.add(DefaultMenuType.IMPORT);
         this.defaultMenuTypes.add(DefaultMenuType.ACCOUNT_LIST);
         this.defaultMenuTypes.add(DefaultMenuType.PROXY_LIST);
         this.defaultMenuTypes.add(DefaultMenuType.BROWSER_ENV_LIST);
-
-        if (bot.getRegisterMethod() != null) {
-            this.defaultMenuTypes.add(DefaultMenuType.REGISTER);
-        }
-        if (bot.getLoginMethod() != null) {
-            this.defaultMenuTypes.add(DefaultMenuType.LOGIN);
-        }
-        if (bot.botJobNameList() != null) {
-            this.defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
-        }
-
-        // 解析MenuNodeMethod注解添加菜单节点
-        for (Method method : bot.getClass().getDeclaredMethods()) {
-            method.setAccessible(true);
-
-            if (method.isAnnotationPresent(MenuNodeMethod.class)) {
-                if (method.getParameterCount() > 0) {
-                    throw new IllegalArgumentException("菜单方法参数数量必须为0");
-                }
-
-                MenuNodeMethod anno = method.getAnnotation(MenuNodeMethod.class);
-                String title = anno.title();
-                String description = anno.description();
-
-                CommandMenuNode menuNode = new CommandMenuNode(title, description, () -> {
-                    try {
-                        return method.invoke(bot).toString();
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-
-                getMainManu().addSubMenu(menuNode);
-            }
-        }
     }
 
 
     @Override
-    public final void buildMenuNode(CommandMenuNode mainManu) {
+    public final void buildBotMenuNode(CommandMenuNode botMenuNode, JobInvokeAutoBot bot) {
         if (addCustomMenuNode != null) {
-            addCustomMenuNode.accept(mainManu);
+            addCustomMenuNode.accept(botMenuNode);
         }
 
         for (DefaultMenuType menuType : defaultMenuTypes) {
-            mainManu.addSubMenu(switch (menuType) {
+            botMenuNode.addSubMenu(switch (menuType) {
                 case REGISTER -> buildRegisterMenuNode();
                 case VERIFIER -> buildVerifierMenuNode();
                 case LOGIN -> buildQueryTokenMenuNode();
                 case ACCOUNT_LIST -> buildAccountListMenuNode();
                 case PROXY_LIST -> buildProxyListMenuNode();
                 case BROWSER_ENV_LIST -> buildBrowserListMenuNode();
-                case START_ACCOUNT_CLAIM -> buildStartAccountConnectMenuNode();
+                case START_BOT_TASK -> buildStartBotTaskMenuNode(bot);
                 case IMPORT -> buildImportMenuNode();
             });
         }
@@ -126,8 +86,9 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
                 this::printCurrentRegisterConfig
         );
         interInvite.setResolveInput(input -> {
-            log.info("邀请码修改[{}]->[{}]", getBotConfig().getConfig(INVITE_CODE_KEY), input);
-            getBotConfig().setConfig(INVITE_CODE_KEY, input);
+            AutoBotConfig autoBotConfig = getBot().getAutoBotConfig();
+            log.info("邀请码修改[{}]->[{}]", autoBotConfig.getConfig(INVITE_CODE_KEY), input);
+            autoBotConfig.setConfig(INVITE_CODE_KEY, input);
         });
 
         return registerMenu
@@ -149,7 +110,7 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
     private CommandMenuNode buildVerifierMenuNode() {
 
         return new CommandMenuNode("验证邮箱", "请选择验证的账户类型",
-                () -> "当前的邮箱类型：" + getBotConfig().getConfig(EMAIL_VERIFIER_TYPE));
+                () -> "当前的邮箱类型：" + getBot().getAutoBotConfig().getConfig(EMAIL_VERIFIER_TYPE));
     }
 
 
@@ -269,24 +230,24 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
      *
      * @return 连接账户菜单节点
      */
-    private CommandMenuNode buildStartAccountConnectMenuNode() {
+    private CommandMenuNode buildStartBotTaskMenuNode(JobInvokeAutoBot bot) {
         CommandMenuNode menuNode = new CommandMenuNode(
                 "启动任务",
                 "选择任务类型",
                 null
         );
 
-        Set<String> jobNameSet = getBot().botJobNameList();
+        Set<String> jobNameSet = bot.botJobNameList();
         for (String jobName : jobNameSet) {
 
             CommandMenuNode typeInput = new CommandMenuNode(true, null, "type",
-                    () -> JSON.toJSONString(getBot().startBotJob(jobName))
+                    () -> JSON.toJSONString(bot.startBotJob(jobName))
             );
 
             typeInput.setTittleBuilder(() -> {
                 JobStatus status = null;
                 try {
-                    status = getBot().getBotApi().getBotJobService().queryJobStatus(getBotConfig().getBotKey(), jobName);
+                    status = getBot().getBotApi().getBotJobService().queryJobStatus(getBot().getAutoBotConfig().getBotKey(), jobName);
                     return "%s 任务 (%s)".formatted(jobName, status);
                 } catch (SchedulerException e) {
                     throw new RuntimeException(e);
@@ -439,7 +400,9 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
 
             try {
                 Integer i = getBot().getBotApi().getBotAccountService().importFromExcel(
-                        getBotConfig().getAccountConfig().getConfigFilePath()
+                        getBot().getBotInfo().getId(),
+                        getBot().getBotInstance().getBotKey(),
+                        getBot().getAutoBotConfig().getAccountConfig().getConfigFilePath()
                 );
                 return "bot运行账号导入完成," + i;
             } catch (SQLException e) {
@@ -455,8 +418,8 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
      * @return 邀请码
      */
     private String printCurrentRegisterConfig() {
-        String inviteCode = (String) getBotConfig().getCustomConfig().get(INVITE_CODE_KEY);
-        String registerType = (String) getBotConfig().getCustomConfig().get(REGISTER_TYPE_KEY);
+        String inviteCode = (String) getBot().getAutoBotConfig().getCustomConfig().get(INVITE_CODE_KEY);
+        String registerType = (String) getBot().getAutoBotConfig().getCustomConfig().get(REGISTER_TYPE_KEY);
 
         return "(当前邀请码为:" + inviteCode + ")\n"
                 + "(当前注册类型为:" + registerType + ")\n";

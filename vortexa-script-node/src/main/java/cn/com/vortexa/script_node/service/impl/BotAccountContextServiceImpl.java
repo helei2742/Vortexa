@@ -1,6 +1,5 @@
 package cn.com.vortexa.script_node.service.impl;
 
-import cn.com.vortexa.script_node.config.AutoBotConfig;
 import cn.com.vortexa.script_node.mapper.BotAccountContextMapper;
 import cn.com.vortexa.script_node.service.IBotAccountContextService;
 import cn.com.vortexa.common.config.SystemConfig;
@@ -41,9 +40,6 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
     public static final String BOT_ACCOUNT_CONTEXT_TABLE_PREFIX = "t_bot_account_context";
 
     @Autowired
-    private AutoBotConfig botConfig;
-
-    @Autowired
     private ITableShardStrategy tableShardStrategy;
 
     @RPCReference
@@ -68,7 +64,7 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
         }
 
         try {
-            importFromRaw(rawLines);
+            importFromRaw(botId, botKey, rawLines);
 
             return Result.ok();
         } catch (Exception e) {
@@ -94,13 +90,13 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
     }
 
     @Override
-    public Integer importFromExcel(String fileBotConfigPath) throws SQLException {
+    public Integer importFromExcel(Integer botId, String botKey, String fileBotConfigPath) throws SQLException {
         String proxyFilePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, fileBotConfigPath);
 
         try {
             List<Map<String, Object>> rawLines = ExcelReadUtil.readExcelToMap(proxyFilePath);
 
-            return importFromRaw(rawLines);
+            return importFromRaw(botId, botKey, rawLines);
         } catch (Exception e) {
             log.error("读取twitter account 文件[{}]发生异常", proxyFilePath, e);
             return 0;
@@ -108,10 +104,10 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
     }
 
     @Override
-    public Integer importFromRaw(List<Map<String, Object>> rawLines) throws SQLException {
+    public Integer importFromRaw(Integer botId, String botKey, List<Map<String, Object>> rawLines) throws SQLException {
         List<AccountContext> accountContexts = rawLines.stream().map(map -> AccountContext.builder()
-                .botId(AutoBotConfig.BOT_ID)
-                .botKey(botConfig.getBotKey())
+                .botId(botId)
+                .botKey(botKey)
                 .accountBaseInfoId(toInteger(map.remove("account_base_info_id")))
                 .twitterId(toInteger(map.remove("twitter_id")))
                 .discordId(toInteger(map.remove("discord_id")))

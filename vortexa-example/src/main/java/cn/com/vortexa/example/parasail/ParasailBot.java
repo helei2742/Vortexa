@@ -3,7 +3,7 @@ package cn.com.vortexa.example.parasail;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.anno.BotMethod;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.script_node.constants.MapConfigKey;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.web3.EthWalletUtil;

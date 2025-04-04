@@ -1,11 +1,10 @@
 package cn.com.vortexa.example.optimai;
 
-import cn.com.vortexa.script_node.ScriptAppLauncher;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.anno.BotMethod;
 import cn.com.vortexa.script_node.anno.BotWSMethodConfig;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.common.constants.BotJobType;
 import cn.com.vortexa.common.dto.Result;
@@ -79,6 +78,6 @@ public class OptimAIBot extends AutoLaunchBot<OptimAIBot> {
         list.add("--vortexa.accountConfig.configFilePath=optimai_google.xlsx");
         list.add("--add-opens java.base/java.lang=ALL-UNNAMED");
 
-        ScriptAppLauncher.launch(OptimAIBot.class, list.toArray(new String[0]));
+//        ScriptAppLauncher.launch(OptimAIBot.class, list.toArray(new String[0]));
     }
 }

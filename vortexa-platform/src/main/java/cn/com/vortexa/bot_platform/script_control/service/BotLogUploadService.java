@@ -1,5 +1,6 @@
-package cn.com.vortexa.bot_platform.script_control;
+package cn.com.vortexa.bot_platform.script_control.service;
 
+import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
 import cn.com.vortexa.bot_platform.wsController.FrontWSException;
 import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;
 import cn.com.vortexa.bot_platform.wsController.UIWSMessage;
@@ -10,7 +11,6 @@ import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.util.ControlServerUtil;
-import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import cn.hutool.core.util.StrUtil;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +73,6 @@ public class BotLogUploadService {
             responseBuilder.errorMsg("browser instance status is " + status);
             return responseBuilder.build();
         }
-
 
 
         // Step 2 发送命令到该Bot，让它开始发

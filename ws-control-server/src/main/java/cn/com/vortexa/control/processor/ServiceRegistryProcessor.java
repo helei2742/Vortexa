@@ -1,5 +1,6 @@
 package cn.com.vortexa.control.processor;
 
+import cn.com.vortexa.common.dto.ScriptNodeRegisterInfo;
 import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.RegistryState;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
@@ -10,8 +11,6 @@ import cn.com.vortexa.control.service.IRegistryService;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author helei
@@ -40,7 +39,7 @@ public class ServiceRegistryProcessor {
         // Step 1 解析获取参数
         String group = remotingCommand.getGroup();
         String serviceId = remotingCommand.getServiceId();
-        String clientId = remotingCommand.getClientId();
+        String clientId = remotingCommand.getInstanceId();
 
         String[] serviceAddress = channel.remoteAddress().toString().split(":");
 
@@ -52,10 +51,10 @@ public class ServiceRegistryProcessor {
                 .port(Integer.parseInt(serviceAddress[1]))
                 .build();
 
-        Map<Object, Object> serviceProps = null;
+        ScriptNodeRegisterInfo scriptNodeRegisterInfo = null;
         if (remotingCommand.getBody() != null && remotingCommand.getBody().length > 0) {
             try {
-                serviceProps = remotingCommand.getObjBodY(HashMap.class);
+                scriptNodeRegisterInfo = remotingCommand.getObjBodY(ScriptNodeRegisterInfo.class);
             } catch (Exception e) {
                 log.warn("get service props from remoting command error, {}", e.getMessage());
             }
@@ -68,7 +67,7 @@ public class ServiceRegistryProcessor {
         RegistryState registryState;
 
         try {
-            registryState = registryService.registryService(serviceInstance, serviceProps);
+            registryState = registryService.registryService(serviceInstance, scriptNodeRegisterInfo);
 
             if (registryState == RegistryState.OK) {
                 response.setCode(RemotingCommandCodeConstants.SUCCESS);

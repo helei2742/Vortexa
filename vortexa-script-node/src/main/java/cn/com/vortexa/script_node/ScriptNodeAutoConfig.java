@@ -1,6 +1,5 @@
 package cn.com.vortexa.script_node;
 
-import cn.com.vortexa.script_node.config.AutoBotConfig;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.typehandler.JsonTypeHandler;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
@@ -10,6 +9,7 @@ import cn.com.vortexa.db_layer.plugn.table_shard.TableShardInterceptor;
 import cn.com.vortexa.db_layer.plugn.table_shard.strategy.BotIdBasedTableShardStrategy;
 import cn.com.vortexa.db_layer.plugn.table_shard.strategy.ITableShardStrategy;
 import cn.com.vortexa.job.JobAutoConfig;
+import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
 import cn.hutool.core.util.StrUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.ibatis.plugin.Interceptor;
@@ -47,23 +47,22 @@ public class ScriptNodeAutoConfig {
     private LocalDateTimeTypeHandler localDateTimeTypeHandler;
 
     @Autowired
-    private AutoBotConfig botConfig;
-
+    private ScriptNodeConfiguration scriptNodeConfiguration;
 
     @Bean("vortexaDataSource")
     public DataSource vortexaDataSource() {
-        String botKey = botConfig.getBotKey();
-        if (StrUtil.isBlank(botKey)) {
-            throw new IllegalArgumentException("botKey is empty");
+        String botGroup = scriptNodeConfiguration.getBotGroup();
+        if (StrUtil.isBlank(botGroup)) {
+            throw new IllegalArgumentException("botGroup is empty");
         }
 
         try {
-            String path = tryCreateDBFile(botKey);
+            String path = tryCreateDBFile(botGroup);
             HikariDataSource dataSource = new HikariDataSource();
             dataSource.setJdbcUrl("jdbc:sqlite:/" + path);
             return dataSource;
         } catch (IOException e) {
-            throw new RuntimeException("create Bot[%s]DB file error".formatted(botKey), e);
+            throw new RuntimeException("create Bot[%s]DB file error".formatted(botGroup), e);
         }
     }
 
@@ -102,13 +101,17 @@ public class ScriptNodeAutoConfig {
     /**
      * 尝试创建DB File
      *
-     * @param botKey botKey
+     * @param scriptNodeGroup scriptNodeGroup
      * @return db file absolutePath
      * @throws IOException IOException
      */
-    private static String tryCreateDBFile(String botKey) throws IOException {
+    private static String tryCreateDBFile(String scriptNodeGroup) throws IOException {
         // 创建BotKey对应的数据库文件
-        Path absolutePath = Paths.get(FileUtil.getBotAppConfigPath(), botKey, "bot_" + botKey + ".db");
+        Path absolutePath = Paths.get(
+                FileUtil.getBotAppConfigPath(),
+                scriptNodeGroup,
+                "script_node_" + scriptNodeGroup + ".db"
+        );
 
         if (Files.notExists(absolutePath)) {
             if (Files.notExists(absolutePath.getParent())) {

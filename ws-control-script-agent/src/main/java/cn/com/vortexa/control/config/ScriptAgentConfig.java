@@ -56,8 +56,6 @@ public class ScriptAgentConfig {
 
     private int metricUploadIntervalSeconds = 15 * 60;  //  指标上报间隔（秒）
 
-    private List<RPCServiceInfo<?>> rpcServiceInfos;
-
     private static String toCamelCase(String name) {
         String[] parts = name.split("-");
         StringBuilder camelCase = new StringBuilder(parts[0]);

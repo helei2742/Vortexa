@@ -66,7 +66,7 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
                             // 给channel设置名字
                             String group = remotingCommand.getGroup();
                             String serviceId = remotingCommand.getServiceId();
-                            String clientId = remotingCommand.getClientId();
+                            String clientId = remotingCommand.getInstanceId();
                             String newKey = ControlServerUtil.generateServiceInstanceKey(group, serviceId, clientId);
 
                             channel.attr(NettyConstants.CLIENT_NAME).set(newKey);

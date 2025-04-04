@@ -25,6 +25,7 @@
         <module>ws-control-server</module>
         <module>ws-control-script-agent</module>
         <module>common</module>
+        <module>vortexa-script-bot</module>
     </modules>
 
     <properties>

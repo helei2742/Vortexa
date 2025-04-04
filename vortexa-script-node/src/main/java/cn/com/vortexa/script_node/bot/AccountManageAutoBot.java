@@ -101,7 +101,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
     protected void accountsLoadedHandler(List<AccountContext> accountContexts) {
     }
 
-    public CompletableFuture<ACListOptResult> uniqueAsyncForACList(
+    protected CompletableFuture<ACListOptResult> uniqueAsyncForACList(
             BiFunction<AccountContext, List<AccountContext>, CompletableFuture<Result>> buildResultFuture,
             BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
             String jobName
@@ -115,7 +115,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         );
     }
 
-    public CompletableFuture<ACListOptResult> uniqueSyncForACList(
+    protected CompletableFuture<ACListOptResult> uniqueSyncForACList(
             BiFunction<AccountContext, List<AccountContext>, CompletableFuture<Result>> buildResultFuture,
             BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
             String jobName
@@ -136,7 +136,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      * @param resultHandler     resultHandler   处理结果的方法
      * @return CompletableFuture<ACListOptResult>
      */
-    public CompletableFuture<ACListOptResult> syncForACList(
+    protected CompletableFuture<ACListOptResult> syncForACList(
             Function<AccountContext, CompletableFuture<Result>> buildResultFuture,
             BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
             String jobName
@@ -151,7 +151,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      * @param resultHandler     resultHandler   处理结果的方法
      * @return CompletableFuture<ACListOptResult>
      */
-    public CompletableFuture<ACListOptResult> asyncForACList(
+    protected CompletableFuture<ACListOptResult> asyncForACList(
             Function<AccountContext, CompletableFuture<Result>> buildResultFuture,
             BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
             String jobName
@@ -166,7 +166,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      * @param resultHandler     resultHandler   处理结果的方法
      * @return CompletableFuture<ACListOptResult>
      */
-    public CompletableFuture<ACListOptResult> syncForACList(
+    protected CompletableFuture<ACListOptResult> syncForACList(
             List<AccountContext> accountContexts,
             Function<AccountContext, CompletableFuture<Result>> buildResultFuture,
             BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
@@ -218,7 +218,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      * @param resultHandler     resultHandler   处理结果的方法
      * @return CompletableFuture<ACListOptResult>
      */
-    public CompletableFuture<ACListOptResult> asyncForACList(
+    protected CompletableFuture<ACListOptResult> asyncForACList(
             List<AccountContext> accountContexts,
             Function<AccountContext, CompletableFuture<Result>> buildResultFuture,
             BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
@@ -314,7 +314,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      * @param accountContext accountContext
      * @return boolean
      */
-    private boolean checkAccountContainsParams(AccountContext accountContext) {
+    protected boolean checkAccountContainsParams(AccountContext accountContext) {
         // 过滤掉没有账户需要参数的
         Object o = getBotInstance().getParams().get(ACCOUNT_PARAMS_KEY);
         // 使用的json序列化进db，反序列化得到的是JsonArray
@@ -332,7 +332,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
     /**
      * 初始化账号方法
      */
-    private void initAccounts() throws BotInitException {
+    protected void initAccounts() throws BotInitException {
         Integer botId = getBotInstance().getBotId();
 
         try {

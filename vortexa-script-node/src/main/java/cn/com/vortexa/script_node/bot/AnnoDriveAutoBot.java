@@ -9,7 +9,7 @@ import cn.com.vortexa.common.constants.BotJobType;
 import cn.com.vortexa.script_node.constants.MapConfigKey;
 import cn.com.vortexa.common.dto.ACListOptResult;
 import cn.com.vortexa.common.dto.Result;
-import cn.com.vortexa.script_node.config.AutoBotConfig;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.entity.BotInfo;
 import cn.com.vortexa.common.exception.BotMethodFormatException;
