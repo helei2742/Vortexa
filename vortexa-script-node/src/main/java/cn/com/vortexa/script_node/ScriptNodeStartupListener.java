@@ -1,5 +1,6 @@
 package cn.com.vortexa.script_node;
 
+import cn.com.vortexa.common.dto.config.ClassInfo;
 import cn.com.vortexa.common.util.DynamicJavaLoader;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
@@ -14,6 +15,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -40,23 +42,27 @@ public class ScriptNodeStartupListener implements ApplicationListener<Applicatio
             AutoBotConfig botConfig = entry.getValue();
 
             log.info("[{}] start launch...", botKey);
-
-            // 1 不是class，编译位class
-            String classFilePath = botConfig.getClassFilePath();
-            if (classFilePath.endsWith(".java") && !DynamicJavaLoader.compileJavaFile(classFilePath)) {
-                throw new RuntimeException(classFilePath + " compile to class error");
-            }
-            classFilePath = classFilePath.replace(".java", ".class");
-
-            // 2 加载class
             try {
-                Class<?> aClass = DynamicJavaLoader.loadClassFromFile(classFilePath, botConfig.getClassName());
+                // 加载extra class
+                List<ClassInfo> extraClass = botConfig.getExtraClass();
+                if (extraClass != null && !extraClass.isEmpty()) {
+                    for (ClassInfo classInfo : extraClass) {
+                        loadScriptNodeResourceClass(classInfo.getClassFilePath(), classInfo.getClassName());
+                    }
+                }
+
+                // 1 不是class，编译位class
+                String classFilePath = botConfig.getClassFilePath();
+
+                // 2 加载class
+                Class<?> aClass = loadScriptNodeResourceClass(classFilePath, botConfig.getClassName());
 
                 if (AutoLaunchBot.class.equals(aClass.getSuperclass())) {
                     log.info("[{}] class load success ", botKey);
 
                     Class<AutoLaunchBot<?>> botClass = (Class<AutoLaunchBot<?>>) aClass;
 
+                    // Step 3 启动bot
                     AutoLaunchBot<?> launch = ScriptBotLauncher.launch(botClass, botConfig, botApi, bot -> {
                         bot.setBotStatusChangeHandler((oldStatus, newStatus) -> {
                             if (newStatus == BotStatus.RUNNING) {
@@ -81,4 +87,13 @@ public class ScriptNodeStartupListener implements ApplicationListener<Applicatio
         ScriptBotLauncher.startCommandLineMenu();
     }
 
+
+    private Class<?> loadScriptNodeResourceClass(String classFilePath, String className) throws Exception {
+        if (classFilePath.endsWith(".java") && !DynamicJavaLoader.compileJavaFile(classFilePath)) {
+            throw new RuntimeException(classFilePath + " compile to class error");
+        }
+        classFilePath = classFilePath.replace(".java", ".class");
+
+        return DynamicJavaLoader.loadClassFromFile(classFilePath, className);
+    }
 }

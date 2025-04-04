@@ -6,6 +6,7 @@ import lombok.ToString;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -36,16 +37,19 @@ public class AutoBotConfig implements Serializable {
      * 类名
      */
     private String className;
-
     /**
      * class 文件名
      */
     private String classFileName;
-
     /**
      * class 文件绝对路径
      */
     private String classFilePath;
+
+    /**
+     * 其它class文件
+     */
+    private List<ClassInfo> extraClass;
 
     /**
      * 账户配置

@@ -1,0 +1,3 @@
+01:44:50.818 [31mWARN [0;39m [nioEventLoopGroup-2-3] [36mc.c.v.w.n.h.AbstractWebSocketClientHandler[0;39m - WebSocket Client [[test1][client][client-1]-[localhost:20001]] disconnected!
+01:44:50.820 [31mWARN [0;39m [nioEventLoopGroup-2-3] [36mc.c.v.w.n.base.AutoConnectWSService[0;39m - web socket client [[test1][client][client-1]-[localhost:20001]] closed
+01:44:50.820 [31mWARN [0;39m [nioEventLoopGroup-2-3] [36mc.c.v.w.n.h.AbstractWebSocketClientHandler[0;39m - WebSocket Client [[test1][client][client-1]-[localhost:20001]] unregistered!

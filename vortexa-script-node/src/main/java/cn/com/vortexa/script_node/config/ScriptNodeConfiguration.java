@@ -1,6 +1,7 @@
 package cn.com.vortexa.script_node.config;
 
 
+import cn.com.vortexa.common.dto.config.ClassInfo;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.YamlConfigLoadUtil;
@@ -72,12 +73,14 @@ public class ScriptNodeConfiguration implements InitializingBean {
 
         if (botInstanceLocations.startsWith(REACTIVE_PATH_PREFIX)) {
             resolvedInstanceLocations = botInstanceLocations.replaceFirst(REACTIVE_PATH_PREFIX, scriptNodeBasePath);
+        } else {
+            resolvedInstanceLocations = botInstanceLocations;
         }
 
         // 解析文件夹
         log.info("start resolve bot instance config from dir[{}]", resolvedInstanceLocations);
         Path botInstanceDirsPath = Paths.get(resolvedInstanceLocations);
-        try (Stream<Path> walk = Files.walk(botInstanceDirsPath, 1)) {
+        try (Stream<Path> walk = Files.walk(botInstanceDirsPath, 3)) {
             walk.filter(Files::isDirectory).forEach(dir -> {
                 Path configFilePath = dir.resolve(BOT_INSTANCE_CONFIG_FILE_NAME);
                 if (Files.exists(configFilePath)) {
@@ -91,6 +94,15 @@ public class ScriptNodeConfiguration implements InitializingBean {
                     }
                     if (StrUtil.isBlank(config.getClassFilePath())) {
                         config.setClassFilePath(dir + File.separator + config.getClassFileName());
+                    }
+
+                    List<ClassInfo> extraClass = config.getExtraClass();
+                    if (extraClass != null && !extraClass.isEmpty()) {
+                        for (ClassInfo classInfo : extraClass) {
+                            if (classInfo.getClassFilePath() == null) {
+                                classInfo.setClassFilePath(dir + File.separator + classInfo.getClassFileName());
+                            }
+                        }
                     }
 
                     config.setResourceDir(dir.toString());

@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -91,7 +92,12 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
 
     @Override
     public Integer importFromExcel(Integer botId, String botKey, String fileBotConfigPath) throws SQLException {
-        String proxyFilePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, fileBotConfigPath);
+        String proxyFilePath = null;
+        if (Paths.get(fileBotConfigPath).isAbsolute()) {
+            proxyFilePath = fileBotConfigPath;
+        } else {
+            proxyFilePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, fileBotConfigPath);
+        }
 
         try {
             List<Map<String, Object>> rawLines = ExcelReadUtil.readExcelToMap(proxyFilePath);

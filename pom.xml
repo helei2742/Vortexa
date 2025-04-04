@@ -12,7 +12,8 @@
     <modules>
         <module>vortexa-platform</module>
         <module>vortexa-script-node</module>
-        <module>vortexa-example</module>
+        <module>vortexa-script-bot</module>
+
         <module>vortexa-model-db-layer</module>
         <module>vortexa-model-rpc-api</module>
         <module>vortexa-model-job</module>
@@ -25,7 +26,6 @@
         <module>ws-control-server</module>
         <module>ws-control-script-agent</module>
         <module>common</module>
-        <module>vortexa-script-bot</module>
     </modules>
 
     <properties>

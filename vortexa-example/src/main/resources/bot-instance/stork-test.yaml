@@ -1,6 +1,0 @@
-vortexa:
-  bot-instance:
-    botKey: 'stoke_test'
-    classFileName: 'StorkBot.java'
-    accountConfig:
-      configFilePath: "stork_google.xlsx"

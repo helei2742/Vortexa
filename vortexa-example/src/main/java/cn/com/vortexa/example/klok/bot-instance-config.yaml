@@ -1,6 +1,0 @@
-vortexa:
-  bot-instance:
-    botKey: 'klok_test'
-    classFilePath: 'instancePath:KlokBot.java'
-    accountConfig:
-      configFilePath: "/Users/helei/develop/ideaworkspace/BotFramework/botData/config/app/klok_google.xlsx"

@@ -1,0 +1,3 @@
+[submodule "vortexa-script-bot"]
+	path = vortexa-script-bot
+	url = git@github.com:helei2742/vortexa-script-bot.git

@@ -99,9 +99,10 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
                         "开始注册所有账号...",
                         () -> {
                             try {
+
                                 return getBot().registerAccount().get().toString();
-                            } catch (InterruptedException | ExecutionException e) {
-                                throw new RuntimeException(e);
+                            } catch (Exception e) {
+                                return "registry error, " + e.getMessage();
                             }
                         }
                 ));
@@ -404,9 +405,10 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
                         getBot().getBotInstance().getBotKey(),
                         getBot().getAutoBotConfig().getAccountConfig().getConfigFilePath()
                 );
+                getBot().initAccounts();
                 return "bot运行账号导入完成," + i;
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                return "import bot account context error," + e.getMessage();
             }
         });
     }

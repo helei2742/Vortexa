@@ -52,7 +52,10 @@ public abstract class CommandLineMenu {
                     String.format("欢迎使用[%s]-bot", k),
                     () -> {
                         bot = v;
-                        return "current use: " + bot.getBotInstance().getBotKey();
+                        return "current use: [%s], status:[%s]".formatted(
+                                bot.getBotInstance().getBotKey(),
+                                bot.getStatus()
+                        );
                     }
             );
 

@@ -59,8 +59,13 @@ public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoD
 
         instance.updateState(BotStatus.STARTING);
         if (BooleanUtil.isTrue(initHandler.apply(this))) {
-            botInitialized(botConfig, botApi);
-            instance.updateState(BotStatus.RUNNING);
+            try {
+                botInitialized(botConfig, botApi);
+                instance.updateState(BotStatus.RUNNING);
+            } catch (Exception e) {
+                log.error("bot init error", e);
+                instance.updateState(BotStatus.SHUTDOWN);
+            }
         } else {
             logger.error("bot start cancel by init");
             instance.updateState(BotStatus.SHUTDOWN);

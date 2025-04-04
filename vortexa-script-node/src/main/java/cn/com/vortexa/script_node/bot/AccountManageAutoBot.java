@@ -332,10 +332,12 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
     /**
      * 初始化账号方法
      */
-    protected void initAccounts() throws BotInitException {
+    public void initAccounts() throws BotInitException {
         Integer botId = getBotInstance().getBotId();
 
         try {
+            this.accountContexts.clear();
+
             logger.info("开始加载账户数据");
             // Step 1 获取持久化的
             List<AccountContext> accountContexts = persistenceManager

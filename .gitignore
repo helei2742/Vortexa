@@ -47,3 +47,6 @@ selenium_data/
 A_back/
 
 **/.db
+
+/logs/
+/ws-control-server/logs/
