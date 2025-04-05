@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -57,6 +58,11 @@ public class BotInfoServiceImpl extends AbstractBaseService<BotInfoMapper, BotIn
         return Result.ok(bindAccountBaseInfoList);
     }
 
+
+    @Override
+    public List<BotInfo> batchQueryByIdsRPC(List<Serializable> ids) {
+        return super.batchQueryByIds(ids);
+    }
 
     @Override
     public Integer insertOrUpdateRPC(BotInfo botInfo) throws SQLException {

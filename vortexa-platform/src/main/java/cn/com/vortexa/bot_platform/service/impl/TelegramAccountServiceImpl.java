@@ -87,6 +87,11 @@ public class TelegramAccountServiceImpl extends AbstractBaseService<TelegramAcco
     }
 
     @Override
+    public List<TelegramAccount> batchQueryByIdsRPC(List<Serializable> ids) {
+        return super.batchQueryByIds(ids);
+    }
+
+    @Override
     public TelegramAccount queryByIdRPC(Serializable id) {
         return queryById(id);
     }

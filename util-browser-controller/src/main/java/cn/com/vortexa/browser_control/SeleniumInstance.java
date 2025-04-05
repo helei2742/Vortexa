@@ -1,22 +1,23 @@
 package cn.com.vortexa.browser_control;
 
+import cn.com.vortexa.browser_control.dto.SeleniumParams;
 import cn.com.vortexa.browser_control.dto.SeleniumProxy;
 import cn.com.vortexa.browser_control.execute.ExecuteGroup;
 import cn.com.vortexa.browser_control.execute.ExecuteLogic;
 import cn.com.vortexa.browser_control.util.SeleniumUtil;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
+import cn.hutool.core.lang.Pair;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-        import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -25,15 +26,7 @@ import java.util.function.Consumer;
 @Getter
 public abstract class SeleniumInstance {
 
-    public static final String EXTENSIONS_PATH_LIST = "extension_path_list";
-
-    public static final String DRIVER_PATH = "driver_path";
-
-    public static final String OPTION_LIST = "option_list";
-
-    public static final String TARGET_WEB_SITE = "target_web_site";
-
-    private final JSONObject params;
+    private final SeleniumParams params;
 
     private final ChromeOptions chromeOptions;
 
@@ -45,15 +38,25 @@ public abstract class SeleniumInstance {
 
     private final String instanceId;
 
-    private ChromeDriver webDriver;
+    private WebDriver webDriver;
+
+    @Setter
+    private boolean autoClose = true;
 
     @Setter
     private Consumer<Long> finishHandler;
 
     public SeleniumInstance(
             String instanceId,
+            SeleniumParams params
+    ) throws IOException {
+        this(instanceId, null, params);
+    }
+
+    public SeleniumInstance(
+            String instanceId,
             SeleniumProxy proxy,
-            JSONObject params
+            SeleniumParams params
     ) throws IOException {
         this.instanceId = instanceId;
         if (instanceId == null || instanceId.isEmpty()) throw new IllegalArgumentException("instanceId is empty");
@@ -109,7 +112,7 @@ public abstract class SeleniumInstance {
         long start = System.currentTimeMillis();
         try {
             // Step 1 设置driver
-            String driverPath = params.getString(DRIVER_PATH);
+            String driverPath = params.getDriverPath();
             if (driverPath != null && !driverPath.isEmpty()) {
                 System.setProperty("webdriver.chrome.driver", driverPath);
             }
@@ -126,7 +129,9 @@ public abstract class SeleniumInstance {
             if (finishHandler != null) {
                 finishHandler.accept(System.currentTimeMillis() - start);
             }
-            webDriver.close();
+            if (autoClose) {
+                webDriver.close();
+            }
         }
     }
 
@@ -187,24 +192,35 @@ public abstract class SeleniumInstance {
     }
 
     /**
-     * 启动浏览器
+     * 创建web driver
      *
-     * @throws IOException IOException
+     * @param chromeOptions chromeOptions
+     * @return WebDriver
      */
-    private void launchBrowser() throws IOException {
-        log.info("starting chrome browser [{}}", instanceId);
-        this.webDriver = new ChromeDriver(chromeOptions);
+    protected WebDriver createWebDriver(ChromeOptions chromeOptions) {
+        ChromeDriver chromeDriver = new ChromeDriver(chromeOptions);
         log.info("chrome browser started, start execute chain");
         try {
             TimeUnit.SECONDS.sleep(5);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        return chromeDriver;
+    }
+
+    /**
+     * 启动浏览器
+     *
+     * @throws IOException IOException
+     */
+    private void launchBrowser() throws IOException {
+        log.info("starting chrome browser [{}}", instanceId);
+        this.webDriver = createWebDriver(chromeOptions);
 
         ((JavascriptExecutor) webDriver).executeScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
 
         // Step 2.1 进入目标页面
-        String targetWebSite = (String) params.get(TARGET_WEB_SITE);
+        String targetWebSite = params.getTargetWebSite();
         if (targetWebSite != null && !targetWebSite.isEmpty()) {
             webDriver.get(targetWebSite);
         }
@@ -237,8 +253,25 @@ public abstract class SeleniumInstance {
      * @return ChromeOptions
      * @throws IOException IOException
      */
-    private ChromeOptions initChromeOption(SeleniumProxy proxy, JSONObject params) throws IOException {
+    private ChromeOptions initChromeOption(SeleniumProxy proxy, SeleniumParams params) throws IOException {
         final ChromeOptions chromeOptions = new ChromeOptions();
+        addDefaultChromeOptions(chromeOptions);
+
+        if (params.getChromeOptions() != null) {
+            params.getChromeOptions().forEach(chromeOptions::addArguments);
+        }
+        if (params.getExperimentalOptions() != null) {
+            for (Pair<String, String> pair : params.getExperimentalOptions()) {
+                chromeOptions.setExperimentalOption(pair.getKey(), pair.getValue());
+            }
+        }
+        if (params.getExtensionPaths() != null) {
+            chromeOptions.addExtensions(params.getExtensionPaths().stream().map(File::new).toList());
+        }
+        return chromeOptions;
+    }
+
+    protected void addDefaultChromeOptions(ChromeOptions chromeOptions) {
         // 设置用户数据目录
         chromeOptions.addArguments("user-data-dir=" + SeleniumUtil.getUserDataDir(instanceId));
         // 设置代理
@@ -254,24 +287,5 @@ public abstract class SeleniumInstance {
         chromeOptions.addArguments("--start-maximized");
         chromeOptions.setExperimentalOption("useAutomationExtension", false);
         chromeOptions.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
-
-        JSONArray options = params.getJSONArray(OPTION_LIST);
-        if (options != null && !options.isEmpty()) {
-            for (int i = 0; i < options.size(); i++) {
-                chromeOptions.addArguments(options.getString(i));
-            }
-        }
-
-        JSONArray extensionsPathList = params.getJSONArray(EXTENSIONS_PATH_LIST);
-        if (extensionsPathList != null && !extensionsPathList.isEmpty()) {
-            List<File> files = new ArrayList<>(extensionsPathList.size());
-            for (int i = 0; i < extensionsPathList.size(); i++) {
-                String path = extensionsPathList.getString(i);
-                files.add(new File(path));
-            }
-            chromeOptions.addExtensions(files);
-        }
-
-        return chromeOptions;
     }
 }

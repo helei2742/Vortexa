@@ -107,6 +107,11 @@ public class ProxyInfoServiceImpl extends AbstractBaseService<ProxyInfoMapper, P
     }
 
     @Override
+    public List<ProxyInfo> batchQueryByIdsRPC(List<Serializable> ids) {
+        return super.batchQueryByIds(ids);
+    }
+
+    @Override
     public ProxyInfo queryByIdRPC(Serializable id) {
         return super.queryById(id);
     }

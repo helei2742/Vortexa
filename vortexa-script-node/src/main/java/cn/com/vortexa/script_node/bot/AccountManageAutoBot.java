@@ -47,7 +47,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
     @Override
     protected void doInit() throws BotInitException {
         // Step 1 初始化保存的线程
-        this.persistenceManager = new DBAccountPersistenceManager(getBotApi());
+        this.persistenceManager = new DBAccountPersistenceManager(getBotApi(), getExecutorService());
 
         this.persistenceManager.init();
 

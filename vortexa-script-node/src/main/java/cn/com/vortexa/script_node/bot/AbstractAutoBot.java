@@ -166,12 +166,12 @@ public abstract class AbstractAutoBot {
 
             BotInstance dbInstance = getBotApi().getBotInstanceRPC().selectOneRPC(botInstance);
 
-            // 数据库存在bot instance实例信息，用数据库的。 否则用BotInfo信息生成BotInstance信息写入库
-            if (dbInstance != null) {
+            // 数据库存在bot instance实例信息并且job信息没变化，用数据库的。 否则用BotInfo信息生成BotInstance信息写入库
+            if (dbInstance != null && dbInstance.getJobParams().keySet().equals(botInfo.getJobParams().keySet())) {
                 this.botInstance = dbInstance;
                 logger.info("exist botInstance, use exist instance config");
             } else {
-                logger.info("no instance, create it...");
+                logger.info("no instance or instance job update, create it...");
 
                 String tableName = getBotApi().getTableShardStrategy().generateTableName(
                         BOT_ACCOUNT_CONTEXT_TABLE_PREFIX,

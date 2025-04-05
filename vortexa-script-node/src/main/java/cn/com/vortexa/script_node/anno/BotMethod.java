@@ -51,7 +51,7 @@ public @interface BotMethod {
      *
      * @return int
      */
-    int concurrentCount() default 20;
+    int concurrentCount() default 3;
 
     /**
      * 是否区分账户

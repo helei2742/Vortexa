@@ -5,6 +5,7 @@ import cn.com.vortexa.common.entity.DiscordAccount;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,6 +13,7 @@ import java.util.Map;
  * @since 2025/3/21 16:47
  */
 public interface IDiscordAccountRPC {
+    List<DiscordAccount> batchQueryByIdsRPC(List<Serializable> ids);
 
     DiscordAccount queryByIdRPC(Serializable id);
 

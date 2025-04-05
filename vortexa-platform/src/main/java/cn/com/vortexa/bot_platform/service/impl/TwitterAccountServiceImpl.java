@@ -42,6 +42,11 @@ public class TwitterAccountServiceImpl extends AbstractBaseService<TwitterAccoun
     }
 
     @Override
+    public List<TwitterAccount> batchQueryByIdsRPC(List<Serializable> ids) {
+        return super.batchQueryByIds(ids);
+    }
+
+    @Override
     public TwitterAccount queryByIdRPC(Serializable id) {
         return super.queryById(id);
     }

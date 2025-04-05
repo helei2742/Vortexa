@@ -21,6 +21,8 @@ public interface IBaseService<T> {
 
     List<T> conditionQuery(String params, Map<String, Object> filterMap) throws SQLException;
 
+    List<T> batchQueryByIds(List<Serializable> ids);
+
     T queryById(Serializable id);
 
     Boolean delete(List<Integer> ids);

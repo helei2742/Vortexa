@@ -1,7 +1,7 @@
 package cn.com.vortexa.browser_control;
 
+import cn.com.vortexa.browser_control.dto.SeleniumParams;
 import cn.com.vortexa.browser_control.dto.SeleniumProxy;
-import com.alibaba.fastjson.JSONObject;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -22,7 +22,11 @@ public class OptSeleniumInstance extends SeleniumInstance {
 
     private WebDriverWait normalDriverWaiter;
 
-    public OptSeleniumInstance(String instanceId, SeleniumProxy proxy, JSONObject params) throws IOException {
+    public OptSeleniumInstance(String instanceId, SeleniumParams params) throws IOException {
+        super(instanceId, null, params);
+    }
+
+    public OptSeleniumInstance(String instanceId, SeleniumProxy proxy, SeleniumParams params) throws IOException {
         super(instanceId, proxy, params);
     }
 
@@ -73,8 +77,6 @@ public class OptSeleniumInstance extends SeleniumInstance {
             return false;
         }
     }
-
-
 
     public List<WebElement> xPathFindElements(String xPath) {
         return getWebDriver().findElements(By.xpath(xPath));

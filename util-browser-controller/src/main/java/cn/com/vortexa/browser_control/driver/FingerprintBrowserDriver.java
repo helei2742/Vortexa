@@ -26,7 +26,6 @@ public abstract class FingerprintBrowserDriver {
 
     /**
      * 检查健康状态
-     *
      */
     public JSON health() {
         try {
@@ -355,12 +354,15 @@ public abstract class FingerprintBrowserDriver {
     protected abstract QueryEntity<JSON> displayListQueryBody();
 
     protected CompletableFuture<String> request(QueryEntity<JSON> queryEntity) {
+        if (queryEntity.getMethod() == null) {
+            queryEntity.setMethod(HttpMethod.POST);
+        }
         return RestApiClientFactory.getClient(null).request(
                 connectUrl + queryEntity.getContentPath(),
-                queryEntity.getMethod() == null ? HttpMethod.POST : queryEntity.getMethod(),
+                queryEntity.getMethod(),
                 new HashMap<>(),
                 queryEntity.getMethod() == HttpMethod.POST ? null : queryEntity.getBody(),
-                queryEntity.getMethod() == HttpMethod.POST ? queryEntity.getBody() : new JSONObject()
+                queryEntity.getMethod() == HttpMethod.POST ? (queryEntity.getBody() != null ? queryEntity.getBody() : new JSONObject()) : new JSONObject()
         );
     }
 }

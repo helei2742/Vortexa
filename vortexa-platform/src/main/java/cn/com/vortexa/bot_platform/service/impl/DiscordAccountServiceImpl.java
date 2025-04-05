@@ -84,6 +84,11 @@ public class DiscordAccountServiceImpl extends AbstractBaseService<DiscordAccoun
     }
 
     @Override
+    public List<DiscordAccount> batchQueryByIdsRPC(List<Serializable> ids) {
+        return super.batchQueryByIds(ids);
+    }
+
+    @Override
     public DiscordAccount queryByIdRPC(Serializable id) {
         return super.queryById(id);
     }

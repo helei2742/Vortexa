@@ -1,31 +1,29 @@
 package cn.com.vortexa.script_node.util.persistence.impl;
 
+import cn.com.vortexa.common.entity.*;
 import cn.com.vortexa.script_node.service.BotApi;
+import cn.com.vortexa.script_node.service.IRewordInfoService;
 import cn.com.vortexa.script_node.util.persistence.AbstractPersistenceManager;
-import cn.com.vortexa.common.entity.AccountContext;
-import cn.com.vortexa.common.entity.RewordInfo;
-import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.common.util.propertylisten.PropertyChangeInvocation;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class DBAccountPersistenceManager extends AbstractPersistenceManager {
 
-    private final ExecutorService executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory("database-"));
+    private final ExecutorService executorService;
 
     private final BotApi botApi;
 
-    public DBAccountPersistenceManager(BotApi botApi) {
+    public DBAccountPersistenceManager(BotApi botApi, ExecutorService executorService) {
         this.botApi = botApi;
+        this.executorService = executorService;
     }
 
     @Override
@@ -58,22 +56,15 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
             throw new RuntimeException("query bot[%s][%s] account list error".formatted(botId, botKey), e);
         }
 
-        // Step 2 遍历账号，补充对象
-        CompletableFuture<?>[] futures = accountContexts.stream()
-                .map(accountContext -> CompletableFuture.runAsync(
-                        () -> fillAccountInfo(accountContext), executorService))
-                .toArray(CompletableFuture[]::new);
 
-        // Step 3 等待所有任务完成
-        for (int i = 0; i < futures.length; i++) {
-            try {
-                futures[i].get();
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("{} fill account context info error", i, e);
-            }
+        // Step 2 遍历账号，补充对象
+        try {
+            fillAccountInfos(accountContexts);
+        } catch (Exception e) {
+            throw new RuntimeException("fill account info error", e);
         }
 
-        // Step 4 按类型分类账号
+        // Step 4
         return accountContexts;
     }
 
@@ -91,48 +82,99 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
         }
     }
 
-
-    /**
-     * 查询填充账户信息
-     *
-     * @param accountContext accountContext
-     */
     @Override
-    public void fillAccountInfo(AccountContext accountContext) {
-//        if (accountContext.getId() != 48) return;
+    public void fillAccountInfos(List<AccountContext> accountContexts) throws ExecutionException, InterruptedException {
+        Set<Integer> baseAccountIds = new HashSet<>();
+        Set<Integer> twitterIds = new HashSet<>();
+        Set<Integer> discordIds = new HashSet<>();
+        Set<Integer> proxyIds = new HashSet<>();
+        Set<Integer> browserIds = new HashSet<>();
+        Set<Integer> telegramIds = new HashSet<>();
+        Set<Integer> rewordInfoIds = new HashSet<>();
 
-        // Step 2.1 绑定基础账号信息
-        if (accountContext.getAccountBaseInfoId() != null) {
-            accountContext.setAccountBaseInfo(botApi.getAccountBaseInfoRPC().queryByIdRPC(accountContext.getAccountBaseInfoId()));
-        }
-        // Step 2,2 绑定推特
-        if (accountContext.getTwitterId() != null) {
-            accountContext.setTwitter(botApi.getTwitterAccountRPC().queryByIdRPC(accountContext.getTwitterId()));
-        }
-        // Step 2,3 绑定 discord
-        if (accountContext.getDiscordId() != null) {
-            accountContext.setDiscord(botApi.getDiscordAccountRPC().queryByIdRPC(accountContext.getDiscordId()));
-        }
-        // Step 2.4 绑定代理
-        if (accountContext.getProxyId() != null) {
-            accountContext.setProxy(botApi.getProxyInfoRPC().queryByIdRPC(accountContext.getProxyId()));
-        }
-        // Step 2.5 绑定浏览器环境
-        if (accountContext.getBrowserEnvId() != null) {
-            accountContext.setBrowserEnv(botApi.getBrowserEnvRPC().queryByIdRPC(accountContext.getBrowserEnvId()));
-        }
-        // Step 2.6 绑定tg
-        if (accountContext.getTelegramId() != null) {
-            accountContext.setTelegram(botApi.getTelegramAccountRPC().queryByIdRPC(accountContext.getBrowserEnvId()));
-        }
-        // Step 2.7 绑定钱包
-        if (accountContext.getWalletId() != null) {
-            // TODO 钱包模块
-        }
-        // Step 2.8 绑定奖励信息
-        if (accountContext.getRewardId() != null) {
-            RewordInfo rewordInfo = botApi.getRewordInfoService().queryById(accountContext.getRewardId());
-            accountContext.setRewordInfo(rewordInfo);
-        }
+        accountContexts.forEach(accountContext -> {
+            baseAccountIds.add(accountContext.getAccountBaseInfoId());
+            twitterIds.add(accountContext.getTwitterId());
+            discordIds.add(accountContext.getDiscordId());
+            proxyIds.add(accountContext.getProxyId());
+            browserIds.add(accountContext.getBrowserEnvId());
+            telegramIds.add(accountContext.getTelegramId());
+            rewordInfoIds.add(accountContext.getId());
+        });
+
+        CompletableFuture<Map<Integer, AccountBaseInfo>> accountBaseInfoMapFuture = CompletableFuture.supplyAsync(() -> {
+            baseAccountIds.remove(null);
+            return botApi.getAccountBaseInfoRPC()
+                    .batchQueryByIdsRPC(new ArrayList<>(baseAccountIds))
+                    .stream()
+                    .collect(Collectors.toMap(AccountBaseInfo::getId, accountBaseInfo -> accountBaseInfo));
+        }, executorService);
+
+        CompletableFuture<Map<Integer, TwitterAccount>> twitterAccountMapFuture = CompletableFuture.supplyAsync(() -> {
+            twitterIds.remove(null);
+            return botApi.getTwitterAccountRPC()
+                    .batchQueryByIdsRPC(new ArrayList<>(twitterIds))
+                    .stream()
+                    .collect(Collectors.toMap(TwitterAccount::getId, twitterAccount -> twitterAccount));
+        }, executorService);
+
+        CompletableFuture<Map<Integer, DiscordAccount>> discordAccountMapFuture = CompletableFuture.supplyAsync(() -> {
+            discordIds.remove(null);
+            return botApi.getDiscordAccountRPC()
+                    .batchQueryByIdsRPC(new ArrayList<>(discordIds))
+                    .stream()
+                    .collect(Collectors.toMap(DiscordAccount::getId, discordAccount -> discordAccount));
+        }, executorService);
+
+        CompletableFuture<Map<Integer, ProxyInfo>> proxyInfoMapFuture = CompletableFuture.supplyAsync(() -> {
+            proxyIds.remove(null);
+            return botApi.getProxyInfoRPC()
+                    .batchQueryByIdsRPC(new ArrayList<>(proxyIds))
+                    .stream()
+                    .collect(Collectors.toMap(ProxyInfo::getId, proxyInfo -> proxyInfo));
+        }, executorService);
+
+        CompletableFuture<Map<Integer, BrowserEnv>> browserEnvMapFuture = CompletableFuture.supplyAsync(() -> {
+            browserIds.remove(null);
+            return botApi.getBrowserEnvRPC()
+                    .batchQueryByIdsRPC(new ArrayList<>(browserIds))
+                    .stream()
+                    .collect(Collectors.toMap(BrowserEnv::getId, browserEnv -> browserEnv));
+        }, executorService);
+
+        CompletableFuture<Map<Integer, TelegramAccount>> telegramAccountMapFuture = CompletableFuture.supplyAsync(() -> {
+            telegramIds.remove(null);
+            return botApi.getTelegramAccountRPC()
+                    .batchQueryByIdsRPC(new ArrayList<>(telegramIds))
+                    .stream()
+                    .collect(Collectors.toMap(TelegramAccount::getId, account -> account));
+        }, executorService);
+
+//        CompletableFuture<Map<Integer, RewordInfo>> rewordInfoMapFuture = CompletableFuture.supplyAsync(() -> {
+//            rewordInfoIds.remove(null);
+//            IRewordInfoService rewordInfoService = botApi.getRewordInfoService();
+//            return rewordInfoService
+//                    .batchQueryByIds(new ArrayList<>(rewordInfoIds))
+//                    .stream()
+//                    .collect(Collectors.toMap(RewordInfo::getProjectAccountId, account -> account));
+//        }, executorService);
+
+        Map<Integer, AccountBaseInfo> accountBaseInfoMap = accountBaseInfoMapFuture.get();
+        Map<Integer, TwitterAccount> twitterAccountMap = twitterAccountMapFuture.get();
+        Map<Integer, DiscordAccount> discordAccountMap = discordAccountMapFuture.get();
+        Map<Integer, ProxyInfo> proxyInfoMap = proxyInfoMapFuture.get();
+        Map<Integer, BrowserEnv> browserEnvMap = browserEnvMapFuture.get();
+        Map<Integer, TelegramAccount> telegramAccountMap = telegramAccountMapFuture.get();
+//        Map<Integer, RewordInfo> rewordInfoMap = rewordInfoMapFuture.get();
+
+        accountContexts.forEach(accountContext -> {
+            accountContext.setAccountBaseInfo(accountBaseInfoMap.get(accountContext.getAccountBaseInfoId()));
+            accountContext.setTwitter(twitterAccountMap.get(accountContext.getTwitterId()));
+            accountContext.setDiscord(discordAccountMap.get(accountContext.getDiscordId()));
+            accountContext.setProxy(proxyInfoMap.get(accountContext.getProxyId()));
+            accountContext.setBrowserEnv(browserEnvMap.get(accountContext.getBrowserEnvId()));
+            accountContext.setTelegram(telegramAccountMap.get(accountContext.getTelegramId()));
+//            accountContext.setRewordInfo(rewordInfoMap.get(accountContext.getId()));
+        });
     }
 }

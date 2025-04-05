@@ -48,6 +48,11 @@ public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseI
     }
 
     @Override
+    public List<AccountBaseInfo> batchQueryByIdsRPC(List<Serializable> ids) {
+        return super.batchQueryByIds(ids);
+    }
+
+    @Override
     public AccountBaseInfo queryByIdRPC(Serializable id) {
         return super.queryById(id);
     }

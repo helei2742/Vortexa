@@ -1,21 +1,18 @@
 package cn.com.vortexa.web3;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
+import cn.com.vortexa.web3.dto.WalletInfo;
+import org.bitcoinj.crypto.*;
 import org.web3j.crypto.*;
-import org.web3j.protocol.http.HttpService;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.EthGetTransactionCount;
+import org.web3j.protocol.http.HttpService;
 import org.web3j.utils.Numeric;
-import org.web3j.crypto.Keys;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author helei
@@ -25,6 +22,48 @@ public class EthWalletUtil {
 
     private static final SecureRandom secureRandom = new SecureRandom();
 
+    public static WalletInfo generateEthWallet() {
+        // 1. 生成助记词
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] entropy = new byte[16]; // 128 bits entropy
+        secureRandom.nextBytes(entropy);
+
+        // 使用 bitcoinj 生成助记词
+        var mnemonicCode = MnemonicCode.INSTANCE;
+        List<String> mnemonicWords = null;
+        try {
+            mnemonicWords = mnemonicCode.toMnemonic(entropy);
+        } catch (MnemonicException.MnemonicLengthException e) {
+            throw new RuntimeException(e);
+        }
+        String mnemonic = String.join(" ", mnemonicWords);
+        // 2. 生成 seed
+        byte[] seed = MnemonicUtils.generateSeed(mnemonic, ""); // passphrase 可设置
+
+        // 3. 创建 HD 钱包根节点 (BIP32 Root Key)
+        DeterministicKey rootPrivateKey = HDKeyDerivation.createMasterPrivateKey(seed);
+
+        // 4. 分步派生 BIP44 路径 m/44'/60'/0'/0/0
+        DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(rootPrivateKey, new ChildNumber(44, true));
+        DeterministicKey coinTypeKey = HDKeyDerivation.deriveChildKey(purposeKey, new ChildNumber(60, true));
+        DeterministicKey accountKey = HDKeyDerivation.deriveChildKey(coinTypeKey, new ChildNumber(0, true));
+        DeterministicKey externalKey = HDKeyDerivation.deriveChildKey(accountKey, ChildNumber.ZERO); // change = 0
+        DeterministicKey addressKey = HDKeyDerivation.deriveChildKey(externalKey, ChildNumber.ZERO); // address index = 0
+
+        byte[] privateKeyBytes = addressKey.getPrivKeyBytes();
+
+        // 转为 web3j 的 ECKeyPair
+        ECKeyPair keyPair = ECKeyPair.create(privateKeyBytes);
+        Credentials credentials = Credentials.create(keyPair);
+
+        // 6. 输出钱包信息
+        return WalletInfo.builder()
+                .mnemonic(mnemonic)
+                .privateKey(keyPair.getPrivateKey().toString(16))
+                .publicKey(keyPair.getPublicKey().toString(16))
+                .address(credentials.getAddress())
+                .build();
+    }
 
     public static Sign.SignatureData signatureMessage2Data(String privateKey, String message) {
         byte[] contentHashBytes = message.getBytes();
@@ -87,34 +126,8 @@ public class EthWalletUtil {
         return hexString.toString();
     }
 
-//0x729224010a08baa5e51f7faa1a7d5a221c30c8c24789c9b7291db3f23110b866594e9436826af7035b071c582bb6c1226c27476362f08b460ee2ff7032a9c0d41c
-public static void main(String[] args) {
-    try {
-        // 要签名的消息
-        String message = "klokapp.ai wants you to sign in with your Ethereum account:\n0x2dB603E747E2db72747E5b972006f19B2D0d73a1\n\n\nURI: https://klokapp.ai/\nVersion: 1\nChain ID: 1\nNonce: b1bafc14190f3b2083f3cc02dec3c33fb56dd5021b9cc9eef59d4d896d2267127cd3a4ba8983cd0f0158b841fab2434b\nIssued At: 2025-04-02T14:27:46.541Z";
-
-;
- String target = "0xe0d8facfd1052646c98feb0aca7a703fc4d0b8699d2405bf074a40222ca69caa7c45f6f17274c7afd7a59b962cd66a3b89eeae207d33947350719b86636c45f21c";
-        // 使用私钥创建 ECKeyPair
-        String privateKey = "6f31cabe993df1c6e377a3c8e9fd42f92c587a3925a4a8fa1f7be4aee6eff6e6";  // 替换为你的私钥
-//        byte[] contentHashBytes = message.getBytes();
-//        // 根据私钥获取凭证对象
-//        Credentials credentials = Credentials.create(privateKey);
-//        //
-//        Sign.SignatureData signMessage = Sign.signPrefixedMessage(contentHashBytes, credentials.getEcKeyPair());
-//
-//        byte[] r = signMessage.getR();
-//        byte[] s = signMessage.getS();
-//        byte[] v = signMessage.getV();
-//
-//        byte[] signByte = Arrays.copyOf(r, v.length + r.length + s.length);
-//        System.arraycopy(s, 0, signByte, r.length, s.length);
-//        System.arraycopy(v, 0, signByte, r.length + s.length, v.length);
-//        Numeric.toHexString(signByte)
-
-        System.out.println("签名后的消息: " + signatureMessage2String(privateKey, message));
-    } catch (Exception e) {
-        e.printStackTrace();
+    public static void main(String[] args) throws MnemonicException.MnemonicLengthException {
+        System.out.println(generateEthWallet());
     }
-}
+
 }

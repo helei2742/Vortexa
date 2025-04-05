@@ -181,10 +181,9 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
                 filter.put("botKey", getBot().getAutoBotConfig().getBotKey());
 
                 PageResult<AccountContext> pageResult = getBot().getBotApi().getBotAccountService().conditionPageQuery(pageNum, pageSize, filter);
-                pageResult.getList().forEach(getBot().getPersistenceManager()::fillAccountInfo);
-
+                getBot().getPersistenceManager().fillAccountInfos(pageResult.getList());
                 return pageResult;
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 getBot().logger.error("查询账号列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
                 return null;
             }

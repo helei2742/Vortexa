@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -137,6 +138,11 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
             log.error("[{}] start job error", botJob, e);
             return Result.fail(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
         }
+    }
+
+    @Override
+    public List<BotInstance> batchQueryByIdsRPC(List<Serializable> ids) {
+        return super.batchQueryByIds(ids);
     }
 
     @Override

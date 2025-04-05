@@ -84,6 +84,11 @@ public abstract class AbstractBaseService<M extends IBaseMapper<T>, T> extends S
     }
 
 
+    @Override
+    public List<T> batchQueryByIds(List<Serializable> ids) {
+        return getBaseMapper().selectBatchIds(ids);
+    }
+
     /**
      * 条件分页查询
      *

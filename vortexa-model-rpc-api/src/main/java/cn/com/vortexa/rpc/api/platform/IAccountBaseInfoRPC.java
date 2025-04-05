@@ -5,6 +5,7 @@ import cn.com.vortexa.common.entity.AccountBaseInfo;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,6 +13,8 @@ import java.util.Map;
  * @since 2025/3/21 16:44
  */
 public interface IAccountBaseInfoRPC {
+
+    List<AccountBaseInfo> batchQueryByIdsRPC(List<Serializable> ids) ;
 
     AccountBaseInfo queryByIdRPC(Serializable id);
 

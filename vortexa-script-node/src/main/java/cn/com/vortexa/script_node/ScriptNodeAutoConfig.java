@@ -11,12 +11,16 @@ import cn.com.vortexa.db_layer.plugn.table_shard.strategy.ITableShardStrategy;
 import cn.com.vortexa.job.JobAutoConfig;
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.config.GlobalConfig;
+import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -68,17 +72,28 @@ public class ScriptNodeAutoConfig {
 
 
     @Bean
-    public SqlSessionFactory sqlSessionFactory() throws Exception {
-        SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
+    public SqlSessionFactory sqlSessionFactory(@Qualifier("vortexaDataSource") DataSource dataSource) throws Exception {
+        MybatisSqlSessionFactoryBean factoryBean = new MybatisSqlSessionFactoryBean();
+        factoryBean.setDataSource(dataSource);
+        factoryBean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/*.xml"));
+        factoryBean.setTypeHandlers(
+                jsonTypeHandler, mapTextTypeHandler, localDateTimeTypeHandler
+        );
+        factoryBean.setTypeAliasesPackage("cn.com.vortexa.entity");
+        MybatisConfiguration configuration = new MybatisConfiguration();
+        factoryBean.setConfiguration(configuration);
+        configuration.setMapUnderscoreToCamelCase(true);
 
-        factoryBean.setDataSource(vortexaDataSource());
-        factoryBean.setMapperLocations(new PathMatchingResourcePatternResolver()
-                .getResources("classpath:/mapper/*.xml"));
-
-        factoryBean.addTypeHandlers(jsonTypeHandler, mapTextTypeHandler, localDateTimeTypeHandler);
-        factoryBean.addPlugins(tableShardInterceptor());
-
+        GlobalConfig globalConfig = new GlobalConfig();
+        GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
+        dbConfig.setLogicDeleteField("isValid");
+        dbConfig.setLogicDeleteValue("0");
+        dbConfig.setLogicNotDeleteValue("1");
+        globalConfig.setDbConfig(dbConfig);
+        factoryBean.setGlobalConfig(globalConfig);
+        factoryBean.setPlugins(tableShardInterceptor());
         return factoryBean.getObject();
+
     }
 
     // 配置事务管理器

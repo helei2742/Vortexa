@@ -5,6 +5,7 @@ import cn.com.vortexa.common.entity.TelegramAccount;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,6 +13,7 @@ import java.util.Map;
  * @since 2025/3/21 16:46
  */
 public interface ITelegramAccountRPC {
+    List<TelegramAccount> batchQueryByIdsRPC(List<Serializable> ids);
 
     TelegramAccount queryByIdRPC(Serializable id);
 

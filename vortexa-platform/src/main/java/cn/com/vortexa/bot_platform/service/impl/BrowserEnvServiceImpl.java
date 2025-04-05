@@ -103,6 +103,11 @@ public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper,
     }
 
     @Override
+    public List<BrowserEnv> batchQueryByIdsRPC(List<Serializable> ids) {
+        return super.batchQueryByIds(ids);
+    }
+
+    @Override
     public BrowserEnv queryByIdRPC(Serializable id) {
         return super.queryById(id);
     }

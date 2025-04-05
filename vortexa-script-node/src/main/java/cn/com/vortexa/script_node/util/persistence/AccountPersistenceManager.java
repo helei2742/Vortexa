@@ -4,6 +4,7 @@ package cn.com.vortexa.script_node.util.persistence;
 import cn.com.vortexa.common.entity.AccountContext;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public interface AccountPersistenceManager {
 
@@ -15,5 +16,5 @@ public interface AccountPersistenceManager {
 
     void registerPersistenceListener(List<AccountContext> targetList);
 
-    public void fillAccountInfo(AccountContext accountContext);
+    void fillAccountInfos(List<AccountContext> accountContexts) throws ExecutionException, InterruptedException;
 }
