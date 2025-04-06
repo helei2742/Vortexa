@@ -6,16 +6,20 @@ import cn.com.vortexa.browser_control.execute.ExecuteGroup;
 import cn.com.vortexa.browser_control.execute.ExecuteLogic;
 import cn.com.vortexa.browser_control.util.SeleniumUtil;
 import cn.hutool.core.lang.Pair;
+import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
+import org.openqa.selenium.WindowType;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +43,8 @@ public abstract class SeleniumInstance {
     private final String instanceId;
 
     private WebDriver webDriver;
+
+    private String targetHandle;
 
     @Setter
     private boolean autoClose = true;
@@ -129,6 +135,10 @@ public abstract class SeleniumInstance {
             if (finishHandler != null) {
                 finishHandler.accept(System.currentTimeMillis() - start);
             }
+            if (StrUtil.isNotBlank(targetHandle)) {
+                webDriver.switchTo().window(targetHandle);
+                webDriver.close();
+            }
             if (autoClose) {
                 webDriver.close();
             }
@@ -216,27 +226,30 @@ public abstract class SeleniumInstance {
     private void launchBrowser() throws IOException {
         log.info("starting chrome browser [{}}", instanceId);
         this.webDriver = createWebDriver(chromeOptions);
-
-        ((JavascriptExecutor) webDriver).executeScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
-
-        // Step 2.1 进入目标页面
-        String targetWebSite = params.getTargetWebSite();
-        if (targetWebSite != null && !targetWebSite.isEmpty()) {
-            webDriver.get(targetWebSite);
-        }
+        this.webDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(1));
 
         // Step 2.2 设置代理
         setProxyAuth();
 
-        // Step 2.3 加载用户数据
-
-
-        // Step 2.4 关闭多余标签页
-        String mainWindow = webDriver.getWindowHandles().iterator().next();
-        for (String handle : webDriver.getWindowHandles()) {
-            if (!handle.equals(mainWindow)) {
-                webDriver.switchTo().window(handle);
+        // Step 2.3 进入目标页面
+        // 打开初始页面
+        Set<String> windowHandles = webDriver.getWindowHandles();
+        for (String windowHandle : windowHandles) {
+            webDriver.switchTo().window(windowHandle);
+            String title = null;
+            try {
+                // 打开新的标签页并自动切换到这个 tab
+                webDriver.switchTo().newWindow(WindowType.TAB);
+                title = webDriver.getTitle();
+                // 跳转到目标网址
+                webDriver.get(params.getTargetWebSite());
+                targetHandle = webDriver.getWindowHandle();
+                TimeUnit.SECONDS.sleep(5);
+                break;
+            } catch (WebDriverException e) {
                 webDriver.close();
+            } catch (Exception e) {
+                log.warn("{} cannot open tab, try next", title);
             }
         }
     }

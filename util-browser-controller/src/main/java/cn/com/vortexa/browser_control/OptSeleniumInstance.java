@@ -10,6 +10,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class OptSeleniumInstance extends SeleniumInstance {
@@ -80,6 +81,12 @@ public class OptSeleniumInstance extends SeleniumInstance {
 
     public List<WebElement> xPathFindElements(String xPath) {
         return getWebDriver().findElements(By.xpath(xPath));
+    }
+
+    public void randomWait(int i) {
+        for (int j = 0; j < Math.max(1, i); j++) {
+            randomWait();
+        }
     }
 
     public void randomWait() {
