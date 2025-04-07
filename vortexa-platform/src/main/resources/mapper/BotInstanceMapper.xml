@@ -11,48 +11,53 @@
         <result column="params" property="params"/>
         <result column="insert_datetime" property="insertDatetime"/>
         <result column="update_datetime" property="updateDatetime"/>
-        <result column="is_valid" property="isValid"/>
+        <result column="valid" property="valid"/>
     </resultMap>
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.BotInstance">
         INSERT INTO t_bot_instance
-        (bot_id, bot_name, bot_key, account_table_name, job_params, params, insert_datetime, update_datetime, is_valid)
+        (bot_id, bot_name, bot_key, account_table_name, job_params, params, update_datetime, valid)
         VALUES (
-        #{botId}, #{botName}, #{botKey}, #{accountTableName}, #{jobParams}, #{params}, #{insertDatetime},
-        #{updateDatetime}, #{isValid}
+        #{botId}, #{botName}, #{botKey}, #{accountTableName}, #{jobParams}, #{params}, current_timestamp, 1
         )
         ON DUPLICATE KEY UPDATE
-        <if test="botId != null">
-            bot_id = values (bot_id),
-        </if>
-        <if test="accountTableName != null">
-            account_table_name = values (account_table_name),
-        </if>
-        <if test="jobParams != null">
-            job_params =values (job_params),
-        </if>
-        <if test="params != null">
-            params = values (params),
-        </if>
-        <if test="updateDatetime != null">
-            update_datetime = values (updateDatetime),
-        </if>
+        <trim suffixOverrides=",">
+            <if test="botId != null">
+                bot_id = values (bot_id),
+            </if>
+            <if test="accountTableName != null">
+                account_table_name = values (account_table_name),
+            </if>
+            <if test="jobParams != null">
+                job_params =values (job_params),
+            </if>
+            <if test="params != null">
+                params = values (params),
+            </if>
+            <if test="updateDatetime != null">
+                update_datetime = values (update_datetime),
+            </if>
+            <if test="valid != null">
+                valid = values(valid),
+            </if>
+        </trim>
     </insert>
 
     <insert id="insertOrUpdateBatch" parameterType="java.util.List">
         INSERT INTO t_bot_instance
-        (bot_id, bot_name, bot_key, account_table_name, job_params, params, insert_datetime, update_datetime, is_valid)
+        (bot_id, bot_name, bot_key, account_table_name, job_params, params, update_datetime, valid)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.botId}, #{item.botName}, #{item.botKey}, #{item.accountTableName}, #{item.jobParams},
-            #{item.params}, #{item.insertDatetime},#{item.updateDatetime}, #{item.isValid})
+            #{item.params}, current_timestamp, 1)
         </foreach>
         ON DUPLICATE KEY UPDATE
         bot_id = values(bot_id),
         account_table_name = values(account_table_name),
         job_params = values(job_params),
         params = values(params),
-        update_datetime = values(updateDatetime)
+        update_datetime = values(updateDatetime),
+        valid =values (valid)
     </insert>
 
 
@@ -69,11 +74,11 @@
         t.params,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,
-        t.is_valid as isValid
+        t.valid as valid
         from
         t_bot_instance t
         <where>
-            is_valid = 1
+            valid = 1
             <if test="botId != null">
                 and t.bot_id = #{botId}
             </if>

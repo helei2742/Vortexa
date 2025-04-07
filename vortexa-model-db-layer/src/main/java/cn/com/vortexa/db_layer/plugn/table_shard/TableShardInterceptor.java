@@ -96,6 +96,10 @@ public class TableShardInterceptor implements Interceptor {
             return paramMap.get(value);
         }
 
+        if (paramMap.containsKey(value)) {
+            return paramMap.get(value);
+        }
+
         for (ParameterMapping parameterMapping : boundSql.getParameterMappings()) {
             String property = parameterMapping.getProperty();
             if (property.endsWith("." + value)) {

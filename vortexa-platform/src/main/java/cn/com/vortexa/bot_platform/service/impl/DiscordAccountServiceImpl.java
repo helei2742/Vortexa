@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -32,15 +31,6 @@ import java.util.Map;
 public class DiscordAccountServiceImpl extends AbstractBaseService<DiscordAccountMapper, DiscordAccount> implements
         IDiscordAccountRPC, IDiscordAccountService {
 
-    public DiscordAccountServiceImpl() {
-        super(discordAccount -> {
-            discordAccount.setInsertDatetime(LocalDateTime.now());
-            discordAccount.setUpdateDatetime(LocalDateTime.now());
-            discordAccount.setIsValid(1);
-        });
-    }
-
-
     public Result saveDiscordAccounts(List<Map<String, Object>> rawLines) {
         if (rawLines == null || rawLines.isEmpty()) {
             return Result.fail("导入数据不能为空");
@@ -50,6 +40,7 @@ public class DiscordAccountServiceImpl extends AbstractBaseService<DiscordAccoun
             importFromRaw(rawLines);
             return Result.ok();
         } catch (Exception e) {
+            log.error("save discord account error", e);
             return Result.fail("导入discord账号失败," + e.getMessage());
         }
     }

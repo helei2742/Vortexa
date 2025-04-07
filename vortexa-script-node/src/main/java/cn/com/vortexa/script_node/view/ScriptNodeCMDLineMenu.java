@@ -1,6 +1,3 @@
-
-
-
 package cn.com.vortexa.script_node.view;
 
 import cn.com.vortexa.common.exception.BotInitException;
@@ -29,9 +26,8 @@ import org.quartz.SchedulerException;
 
 import java.sql.SQLException;
 import java.util.*;
-        import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static cn.com.vortexa.script_node.constants.MapConfigKey.*;
@@ -94,7 +90,7 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
                         bot.getStatus()
                 ));
 
-        return commandMenuNode.addSubMenu(new CommandMenuNode(true, "启动", null, ()->{
+        return commandMenuNode.addSubMenu(new CommandMenuNode(true, "启动", null, () -> {
             try {
                 ScriptBotLauncher.launchResolvedScriptBot(botKey);
                 return botKey + " launch finish...Current status: " + bot.getStatus();
@@ -227,7 +223,7 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
                     } catch (Exception e) {
                         getBot().logger.error(
                                 "查询账号列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
-                        return null;
+                        return new PageResult<>();
                     }
                 }, AccountContext.class);
 
@@ -279,7 +275,7 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
         CommandMenuNode menuNode = new CommandMenuNode(
                 "启动任务",
                 "选择任务类型",
-                node ->{
+                node -> {
                     for (String jobName : bot.botJobNameList()) {
 
                         CommandMenuNode typeInput = new CommandMenuNode(true, null, "type",
@@ -312,128 +308,9 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
      * @return CommandMenuNode
      */
     private CommandMenuNode buildImportMenuNode() {
-
         return new CommandMenuNode("导入", "请选择要导入的数据")
-                .addSubMenu(buildImportBotAccountContextMenuNode())
-                // .addSubMenu(buildImportBaseAccountMenuNode())
-                // .addSubMenu(buildImportProxyMenuNode())
-                // .addSubMenu(buildImportBrowserEnvMenuNode())
-                // .addSubMenu(buildImportTwitterMenuNode())
-                // .addSubMenu(buildImportDiscordMenuNode())
-                // .addSubMenu(buildImportTelegramMenuNode())
-                ;
+                .addSubMenu(buildImportBotAccountContextMenuNode());
     }
-
-    // /**
-    //  * 导入浏览器环境菜单节点
-    //  *
-    //  * @return CommandMenuNode
-    //  */
-    // private CommandMenuNode buildImportBrowserEnvMenuNode() {
-    //
-    //     return new CommandMenuNode(true, "导入浏览器环境", null, () -> {
-    //         String filePath = getBotConfig().getFilePathConfig().getBrowserEnvFileBotConfigPath();
-    //
-    //         try {
-    //             getBot().getBotApi().getBrowserEnvRPC().importFromExcel(filePath);
-    //         } catch (SQLException e) {
-    //             throw new RuntimeException(e);
-    //         }
-    //
-    //         return "浏览器环境导入完成";
-    //     });
-    // }
-    //
-    // /**
-    //  * 导入代理信息
-    //  *
-    //  * @return CommandMenuNode
-    //  */
-    // private CommandMenuNode buildImportProxyMenuNode() {
-    //     return new CommandMenuNode(true, "导入代理", null, () -> {
-    //
-    //         try {
-    //             getBot().getBotApi().getProxyInfoRPC()
-    //                     .importFromExcel(getBotConfig().getFilePathConfig().getProxyFileBotConfigPath());
-    //         } catch (SQLException e) {
-    //             throw new RuntimeException(e);
-    //         }
-    //
-    //         return "代理导入完成";
-    //     });
-    // }
-    //
-    // /**
-    //  * 导入账号基本信息
-    //  *
-    //  * @return CommandMenuNode
-    //  */
-    // private CommandMenuNode buildImportBaseAccountMenuNode() {
-    //     return new CommandMenuNode(true, "导入账号基本信息", null, () -> {
-    //
-    //         try {
-    //             Integer integer = getBot().getBotApi().getAccountBaseInfoRPC()
-    //                     .importFromExcel(getBotConfig().getFilePathConfig().getBaseAccountFileBotConfigPath());
-    //             return "账号基本信息导入完成，" + integer;
-    //         } catch (SQLException e) {
-    //             throw new RuntimeException(e);
-    //         }
-    //     });
-    // }
-    //
-    //
-    // /**
-    //  * 导入twitter账号基本信息
-    //  *
-    //  * @return CommandMenuNode
-    //  */
-    // private CommandMenuNode buildImportTwitterMenuNode() {
-    //     return new CommandMenuNode(true, "导入twitter账号", null, () -> {
-    //         try {
-    //             Integer i = getBot().getBotApi().getTwitterAccountRPC()
-    //                     .importFromExcel(getBotConfig().getFilePathConfig().getTwitterFileBotConfigPath());
-    //             return "twitter导入完成, " + i;
-    //         } catch (SQLException e) {
-    //             throw new RuntimeException(e);
-    //         }
-    //     });
-    // }
-    //
-    //
-    // /**
-    //  * 导入discord账号基本信息
-    //  *
-    //  * @return CommandMenuNode
-    //  */
-    // private CommandMenuNode buildImportDiscordMenuNode() {
-    //     return new CommandMenuNode(true, "导入discord账号", null, () -> {
-    //
-    //         try {
-    //             Integer i = getBot().getBotApi().getDiscordAccountRPC().importFromExcel(getBotConfig().getFilePathConfig().getDiscordFileBotConfigPath());
-    //             return "discord导入完成," + i;
-    //         } catch (SQLException e) {
-    //             throw new RuntimeException(e);
-    //         }
-    //     });
-    // }
-    //
-    // /**
-    //  * 导入Telegram账号基本信息
-    //  *
-    //  * @return CommandMenuNode
-    //  */
-    // private CommandMenuNode buildImportTelegramMenuNode() {
-    //     return new CommandMenuNode(true, "导入Telegram账号", null, () -> {
-    //
-    //         try {
-    //             Integer i = getBot().getBotApi().getTelegramAccountRPC().importFromExcel(getBotConfig().getFilePathConfig().getTelegramFileBotConfigPath());
-    //
-    //             return "Telegram导入完成" + i;
-    //         } catch (SQLException e) {
-    //             throw new RuntimeException(e);
-    //         }
-    //     });
-    // }
 
     /**
      * 导入bot使用的账号菜单节点

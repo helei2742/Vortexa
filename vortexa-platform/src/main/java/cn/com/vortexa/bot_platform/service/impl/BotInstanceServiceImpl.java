@@ -31,7 +31,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -61,14 +60,6 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
 
     @Autowired
     private Scheduler scheduler;
-
-    public BotInstanceServiceImpl() {
-        super(botInstance -> {
-            botInstance.setInsertDatetime(LocalDateTime.now());
-            botInstance.setUpdateDatetime(LocalDateTime.now());
-            botInstance.setIsValid(1);
-        });
-    }
 
     @Override
     public PageResult<BotInstanceVO> conditionPageQueryAllInfo(Integer page, Integer limit,

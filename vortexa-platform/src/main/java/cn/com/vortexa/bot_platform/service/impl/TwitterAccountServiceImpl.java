@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -32,14 +31,6 @@ import java.util.Map;
 @Service
 public class TwitterAccountServiceImpl extends AbstractBaseService<TwitterAccountMapper, TwitterAccount>
         implements ITwitterAccountRPC, ITwitterAccountService {
-
-    public TwitterAccountServiceImpl() {
-        super(twitterAccount -> {
-            twitterAccount.setInsertDatetime(LocalDateTime.now());
-            twitterAccount.setUpdateDatetime(LocalDateTime.now());
-            twitterAccount.setIsValid(1);
-        });
-    }
 
     @Override
     public List<TwitterAccount> batchQueryByIdsRPC(List<Serializable> ids) {
@@ -67,6 +58,7 @@ public class TwitterAccountServiceImpl extends AbstractBaseService<TwitterAccoun
             importFromRaw(rawLines);
             return Result.ok();
         } catch (Exception e) {
+            log.error("save twitter account error", e);
             return Result.fail("导入twitter 账号失败," + e.getMessage());
         }
     }

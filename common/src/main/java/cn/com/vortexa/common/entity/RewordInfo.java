@@ -57,9 +57,9 @@ public class RewordInfo implements Serializable {
     @TableField(value = "update_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateDatetime;
 
-    @TableField(value = "is_valid", fill = FieldFill.INSERT)
+    @TableField(value = "valid", fill = FieldFill.INSERT)
     @TableLogic
-    private Integer isValid;
+    private Boolean valid;
 
 
     public RewordInfo newInstance() {
@@ -70,7 +70,7 @@ public class RewordInfo implements Serializable {
         rewordInfo.dailyPoints = this.dailyPoints;
         rewordInfo.insertDatetime = this.insertDatetime;
         rewordInfo.updateDatetime = this.updateDatetime;
-        rewordInfo.isValid = this.isValid;
+        rewordInfo.valid = this.valid;
 
         return rewordInfo;
     }

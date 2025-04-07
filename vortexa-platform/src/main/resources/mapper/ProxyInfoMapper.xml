@@ -15,16 +15,16 @@
         <result column="params" property="params"/>
         <result column="insert_datetime" property="insertDatetime"/>
         <result column="update_datetime" property="updateDatetime"/>
-        <result column="is_valid" property="isValid"/>
+        <result column="valid" property="valid"/>
     </resultMap>
 
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.ProxyInfo">
         INSERT INTO t_proxy_info
-        (proxy_type, proxy_protocol, host, port, username, password, usable, params, insert_datetime, update_datetime,
-        is_valid)
+        (proxy_type, proxy_protocol, host, port, username, password, usable, params, update_datetime,
+        valid)
         VALUES (#{proxyType}, #{proxyProtocol}, #{host}, #{port}, #{username}, #{password}, #{usable}, #{params},
-        #{insertDatetime}, #{updateDatetime}, #{isValid}) ON DUPLICATE KEY
+        current_timestamp, 1) ON DUPLICATE KEY
         UPDATE
         <trim suffixOverrides=",">
             <if test="proxyType != null">
@@ -48,17 +48,20 @@
             <if test="updateDatetime != null">
                 update_datetime = values(update_datetime),
             </if>
+            <if test="valid != null">
+                valid = values(valid),
+            </if>
         </trim>
     </insert>
 
     <insert id="insertOrUpdateBatch" parameterType="java.util.List">
         INSERT INTO t_proxy_info
-        (proxy_type, proxy_protocol, host, port, username, password, usable, params, insert_datetime, update_datetime,
-        is_valid)
+        (proxy_type, proxy_protocol, host, port, username, password, usable, params, update_datetime,
+        valid)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{proxyType}, #{proxyProtocol}, #{host}, #{port}, #{username}, #{password}, #{usable}, #{params},
-            #{insertDatetime}, #{updateDatetime}, #{isValid})
+            (#{item.proxyType}, #{item.proxyProtocol}, #{item.host}, #{item.port}, #{item.username},
+             #{item.password}, #{item.usable}, #{item.params}, current_timestamp, 1)
         </foreach>
         ON DUPLICATE KEY UPDATE
         proxy_type = values(proxy_type),
@@ -68,6 +71,7 @@
         usable = values(usable),
         params = values(params),
         update_datetime = values(update_datetime),
+        valid =values (valid)
     </insert>
     <select id="multipleConditionQuery"
             parameterType="cn.com.vortexa.common.entity.ProxyInfo"
@@ -80,11 +84,11 @@
         t.password, t.usable, t.params,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,
-        t.is_valid as isValid
+        t.valid as valid
         from
         t_proxy_info as t
         <where>
-            is_valid = 1
+            valid = 1
             <if test="id != null">
                 and t.id = #{id}
             </if>

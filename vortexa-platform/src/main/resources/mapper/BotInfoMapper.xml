@@ -13,44 +13,48 @@
         <result column="params" property="params"/>
         <result column="insert_datetime" property="insertDatetime"/>
         <result column="update_datetime" property="updateDatetime"/>
-        <result column="is_valid" property="isValid"/>
+        <result column="valid" property="valid"/>
     </resultMap>
 
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.BotInfo">
         INSERT INTO t_bot_info
-        (name, description, limit_project_ids, image, job_params, params, insert_datetime, update_datetime, is_valid)
-        VALUES (#{name}, #{description}, #{limitProjectIds}, #{image}, #{jobParams}, #{params}, #{insertDatetime},
-        #{updateDatetime},
-        #{isValid})
+        (name, description, limit_project_ids, image, job_params, params, update_datetime, valid)
+        VALUES (
+        #{name}, #{description}, #{limitProjectIds}, #{image}, #{jobParams}, #{params}, current_timestamp, 1 )
         ON DUPLICATE KEY UPDATE
-        <if test="description != null">
-            description = values (description),
-        </if>
-        <if test="limitProjectIds != null">
-            limit_project_ids = values (limit_project_ids),
-        </if>
-        <if test="image != null">
-            image = values (image),
-        </if>
-        <if test="jobParams != null">
-            job_params =values (job_params),
-        </if>
-        <if test="params != null">
-            params = values (params),
-        </if>
-        <if test="updateDatetime != null">
-            update_datetime =values (update_datetime),
-        </if>
+        <trim suffixOverrides=",">
+            <if test="description != null">
+                description = values (description),
+            </if>
+            <if test="limitProjectIds != null">
+                limit_project_ids = values (limit_project_ids),
+            </if>
+            <if test="image != null">
+                image = values (image),
+            </if>
+            <if test="jobParams != null">
+                job_params =values (job_params),
+            </if>
+            <if test="params != null">
+                params = values (params),
+            </if>
+            <if test="updateDatetime != null">
+                update_datetime =values (update_datetime),
+            </if>
+            <if test="valid != null">
+                valid = values(valid),
+            </if>
+        </trim>
     </insert>
 
     <insert id="insertOrUpdateBatch" parameterType="java.util.List">
         INSERT INTO t_bot_info
-        (name, description, limit_project_ids, image, job_params, params, insert_datetime, update_datetime, is_valid)
+        (name, description, limit_project_ids, image, job_params, params, update_datetime, valid)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.name}, #{item.description}, #{item.limitProjectIds}, #{item.image}, #{item.jobParams},
-            #{item.params}, #{item.insertDatetime}, #{item.updateDatetime},#{item.isValid})
+            #{item.params}, current_timestamp, 1)
         </foreach>
         ON DUPLICATE KEY UPDATE
         description = values(description),
@@ -58,7 +62,8 @@
         image = values(image),
         job_params = values(job_params),
         params = values(params),
-        update_datetime = values(update_datetime)
+        update_datetime = values(update_datetime),
+        valid =values (valid)
     </insert>
 
     <select id="multipleConditionQuery"
@@ -73,11 +78,11 @@
         t.params,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,
-        t.is_valid as isValid
+        t.valid as valid
         from
         t_bot_info as t
         <where>
-            is_valid = 1
+            valid = 1
             <if test="name != null">
                 and t.name = #{name}
             </if>

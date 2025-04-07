@@ -6,8 +6,6 @@ import cn.com.vortexa.common.entity.RewordInfo;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
 /**
  * <p>
  *  服务实现类
@@ -19,11 +17,5 @@ import java.time.LocalDateTime;
 @Service
 public class RewordInfoServiceImpl extends AbstractBaseService<RewordInfoMapper, RewordInfo> implements IRewordInfoService {
 
-    public RewordInfoServiceImpl() {
-        super(rewordInfo -> {
-            rewordInfo.setInsertDatetime(LocalDateTime.now());
-            rewordInfo.setUpdateDatetime(LocalDateTime.now());
-            rewordInfo.setIsValid(1);
-        });
-    }
+
 }

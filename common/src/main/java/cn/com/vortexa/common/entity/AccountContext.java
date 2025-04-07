@@ -106,9 +106,9 @@ public class AccountContext implements Serializable {
     @TableField(value = "update_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateDatetime;
 
-    @TableField(value = "is_valid", fill = FieldFill.INSERT)
+    @TableField(value = "valid", fill = FieldFill.INSERT)
     @TableLogic
-    private Integer isValid;
+    private Boolean valid;
 
 
     @TableField(exist = false)

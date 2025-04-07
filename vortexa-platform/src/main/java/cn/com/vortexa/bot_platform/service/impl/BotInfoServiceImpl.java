@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -29,14 +28,6 @@ import java.util.Map;
 @Service
 public class BotInfoServiceImpl extends AbstractBaseService<BotInfoMapper, BotInfo> implements IBotInfoService, IBotInfoRPC {
 
-
-    public BotInfoServiceImpl() {
-        super(botInfo -> {
-            botInfo.setInsertDatetime(LocalDateTime.now());
-            botInfo.setUpdateDatetime(LocalDateTime.now());
-            botInfo.setIsValid(1);
-        });
-    }
 
     @Override
     public Result bindBotAccountBaseInfo(Integer botId, String botKey, List<Integer> bindAccountBaseInfoList) {

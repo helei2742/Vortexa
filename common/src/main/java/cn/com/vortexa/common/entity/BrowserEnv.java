@@ -33,7 +33,7 @@ public class BrowserEnv implements Serializable {
     @Serial
     private static final long serialVersionUID = 949819741465456514L;
 
-    public static final String USER_AGENT_KEY = "User-Agent";
+    public static final String USER_AGENT_KEY = "userAgent";
 
     @TableId(value = "id", type = IdType.AUTO)
     @CommandTableField
@@ -55,9 +55,9 @@ public class BrowserEnv implements Serializable {
     @TableField(value = "update_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateDatetime;
 
-    @TableField(value = "is_valid", fill = FieldFill.INSERT)
+    @TableField(value = "valid", fill = FieldFill.INSERT)
     @TableLogic
-    private Integer isValid;
+    private Integer valid;
 
 
     public Map<String, String> generateHeaders() {

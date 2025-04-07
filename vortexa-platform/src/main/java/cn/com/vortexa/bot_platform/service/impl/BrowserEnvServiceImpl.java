@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,16 +38,6 @@ public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper,
 
     private IdMarkPool<BrowserEnv> pool;
 
-    public BrowserEnvServiceImpl() {
-        super(browserEnv -> {
-            browserEnv.setInsertDatetime(LocalDateTime.now());
-            browserEnv.setUpdateDatetime(LocalDateTime.now());
-            browserEnv.setIsValid(1);
-        });
-    }
-
-
-
     @Override
     public Result saveBrowserEnvs(List<Map<String, Object>> rawLines) {
         if (rawLines == null || rawLines.isEmpty()) {
@@ -59,6 +48,7 @@ public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper,
             importFromRaw(rawLines);
             return Result.ok();
         } catch (Exception e) {
+            log.error("save browser env error", e);
             return Result.fail("导入浏览器环境失败," + e.getMessage());
         }
     }

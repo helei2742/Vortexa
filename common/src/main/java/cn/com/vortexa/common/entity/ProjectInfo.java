@@ -35,9 +35,9 @@ public class ProjectInfo implements Serializable {
     @CommandTableField
     private String name;
 
-    @TableField("describe")
+    @TableField("description")
     @CommandTableField
-    private String describe;
+    private String description;
 
     @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
     private LocalDateTime insertDatetime;

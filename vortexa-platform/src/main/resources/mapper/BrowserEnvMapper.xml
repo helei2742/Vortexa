@@ -11,32 +11,38 @@
 
         <result column="insert_datetime" property="insertDatetime"/>
         <result column="update_datetime" property="updateDatetime"/>
-        <result column="is_valid" property="isValid"/>
+        <result column="valid" property="valid"/>
     </resultMap>
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.BrowserEnv">
-        INSERT INTO t_browser_env (user_agent, other_header, insert_datetime, update_datetime, is_valid)
+        INSERT INTO t_browser_env (user_agent, other_header, update_datetime, valid)
         VALUES (
-        #{userAgent}, #{otherHeader}, #{insertDatetime}, #{updateDatetime}, #{isValid}
+        #{userAgent}, #{otherHeader}, current_timestamp, 1
         )
         ON DUPLICATE KEY UPDATE
-        <if test="otherHeader != null">
-            other_header = values(other_header),
-        </if>
-        <if test="updateDatetime != null">
-            update_datetime =values(update_datetime),
-        </if>
+        <trim suffixOverrides=",">
+            <if test="otherHeader != null">
+                other_header = values(other_header),
+            </if>
+            <if test="updateDatetime != null">
+                update_datetime =values(update_datetime),
+            </if>
+            <if test="valid != null">
+                valid = values(valid),
+            </if>
+        </trim>
     </insert>
 
     <insert id="insertOrUpdateBatch" parameterType="java.util.List">
-        INSERT INTO t_browser_env (user_agent, other_header, insert_datetime, update_datetime, is_valid)
+        INSERT INTO t_browser_env (user_agent, other_header, update_datetime, valid)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{userAgent}, #{otherHeader}, #{insertDatetime}, #{updateDatetime},#{isValid})
+            (#{item.userAgent}, #{item.otherHeader}, current_timestamp, 1)
         </foreach>
         ON DUPLICATE KEY UPDATE
         other_header = values(other_header),
-        update_datetime = values(update_datetime)
+        update_datetime = values(update_datetime),
+        valid = values (valid)
     </insert>
 
     <select id="multipleConditionQuery"
@@ -47,21 +53,21 @@
         t.user_agent as userAgent, t.other_header as otherHeader,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,
-        t.is_valid as isValid
+        t.valid as valid
         from
         t_browser_env as t
         <where>
-            is_valid = 1
+            valid = 1
             <if test="id != null">
                 and t.id = #{id}
             </if>
             <if test="userAgent != null">
                 and t.user_agent = #{userAgent}
             </if>
-            <if test="params != null and !params.isEmpty()">
+            <if test="otherHeader != null and !params.isEmpty()">
                 AND JSON_CONTAINS(
                 t.other_header,
-                <foreach collection="params" item='value' index='key' separator=',' open="JSON_OBJECT(" close=")">
+                <foreach collection="otherHeader" item='value' index='key' separator=',' open="JSON_OBJECT(" close=")">
                     #{key}, #{value}
                 </foreach>
                 )

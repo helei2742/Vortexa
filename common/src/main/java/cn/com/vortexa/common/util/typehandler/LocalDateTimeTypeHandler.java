@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
 
 public class LocalDateTimeTypeHandler extends BaseTypeHandler<LocalDateTime> {
 
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, LocalDateTime parameter, JdbcType jdbcType) throws SQLException {

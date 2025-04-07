@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,14 +37,6 @@ public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseI
         implements IAccountBaseInfoRPC, IAccountBaseInfoService {
 
     public static final String DEFAULT_ACCOUNT_TYPE = "default";
-
-    public AccountBaseInfoServiceImpl() {
-        super(accountBaseInfo -> {
-            accountBaseInfo.setInsertDatetime(LocalDateTime.now());
-            accountBaseInfo.setUpdateDatetime(LocalDateTime.now());
-            accountBaseInfo.setIsValid(1);
-        });
-    }
 
     @Override
     public List<AccountBaseInfo> batchQueryByIdsRPC(List<Serializable> ids) {

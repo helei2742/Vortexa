@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -32,17 +31,6 @@ import java.util.Map;
 @Slf4j
 @Service
 public class ProxyInfoServiceImpl extends AbstractBaseService<ProxyInfoMapper, ProxyInfo> implements IProxyInfoRPC, IProxyInfoService {
-
-
-    public ProxyInfoServiceImpl() {
-        super(proxyInfo -> {
-            proxyInfo.setInsertDatetime(LocalDateTime.now());
-            proxyInfo.setUpdateDatetime(LocalDateTime.now());
-            proxyInfo.setIsValid(1);
-        });
-
-    }
-
 
     @Override
     public Result saveProxyInfos(List<Map<String, Object>> rawLines) {

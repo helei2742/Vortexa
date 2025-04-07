@@ -30,5 +30,7 @@ public interface BotAccountContextMapper extends IBaseMapper<AccountContext> {
 
     Integer createIfTableNotExist(@Param("botId") Integer botId, @Param("botKey") String botKey);
 
+    Integer insertOrUpdateBatch(@Param("botId") Integer botId, @Param("botKey") String botKey, @Param("list") List<AccountContext> list);
+
     List<String> queryBotAccountTableNames(@Param("botId") Integer botId);
 }

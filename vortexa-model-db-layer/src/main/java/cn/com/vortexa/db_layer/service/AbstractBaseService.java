@@ -2,7 +2,6 @@ package cn.com.vortexa.db_layer.service;
 
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.ConditionBuildUtil;
-import cn.com.vortexa.common.vo.BotInstanceVO;
 import cn.com.vortexa.db_layer.mapper.IBaseMapper;
 import cn.com.vortexa.db_layer.util.ConditionQueryUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -16,16 +15,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 @Slf4j
 public abstract class AbstractBaseService<M extends IBaseMapper<T>, T> extends ServiceImpl<M, T> implements IBaseService<T> {
 
-    private final Consumer<T> fillFunction;
-
-    protected AbstractBaseService(Consumer<T> fillFunction) {
-        this.fillFunction = fillFunction;
-    }
 
     @Override
     public T queryById(Serializable id) {
@@ -40,7 +33,6 @@ public abstract class AbstractBaseService<M extends IBaseMapper<T>, T> extends S
      */
     @Override
     public Integer insertOrUpdate(T t) throws SQLException {
-        fillFunction.accept(t);
         return getBaseMapper().insertOrUpdate(t);
     }
 
@@ -53,17 +45,7 @@ public abstract class AbstractBaseService<M extends IBaseMapper<T>, T> extends S
      */
     @Override
     public Integer insertOrUpdateBatch(List<T> tList) throws SQLException {
-        int successCount = 0;
-        for (T t : tList) {
-            try {
-                Integer count = insertOrUpdate(t);
-                successCount += count == null ? 0 : count;
-            } catch (Exception e) {
-                throw new SQLException("insert or update error", e);
-            }
-        }
-
-        return successCount;
+        return getBaseMapper().insertOrUpdateBatch(tList);
     }
 
     /**

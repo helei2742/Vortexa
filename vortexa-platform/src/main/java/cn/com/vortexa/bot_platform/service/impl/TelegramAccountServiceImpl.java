@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -32,16 +31,6 @@ import java.util.Map;
 @Service
 public class TelegramAccountServiceImpl extends AbstractBaseService<TelegramAccountMapper, TelegramAccount> implements
         ITelegramAccountRPC, ITelegramAccountService {
-
-
-    public TelegramAccountServiceImpl() {
-        super(telegramAccount -> {
-            telegramAccount.setInsertDatetime(LocalDateTime.now());
-            telegramAccount.setUpdateDatetime(LocalDateTime.now());
-            telegramAccount.setIsValid(1);
-        });
-    }
-
 
     @Override
     public Result saveTelegrams(List<Map<String, Object>> rawLines) {

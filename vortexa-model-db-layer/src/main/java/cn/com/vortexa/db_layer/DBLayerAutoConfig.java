@@ -69,7 +69,7 @@ public class DBLayerAutoConfig {
         configuration.setLogImpl(StdOutImpl.class);
         GlobalConfig globalConfig = new GlobalConfig();
         GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
-        dbConfig.setLogicDeleteField("isValid");
+        dbConfig.setLogicDeleteField("valid");
         dbConfig.setLogicDeleteValue("0");
         dbConfig.setLogicNotDeleteValue("1");
         globalConfig.setDbConfig(dbConfig);

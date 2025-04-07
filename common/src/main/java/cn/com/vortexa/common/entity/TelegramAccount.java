@@ -70,6 +70,6 @@ public class TelegramAccount implements Serializable {
     @TableField("update_datetime")
     private LocalDateTime updateDatetime;
 
-    @TableField("is_valid")
-    private Integer isValid;
+    @TableField("valid")
+    private Integer valid;
 }

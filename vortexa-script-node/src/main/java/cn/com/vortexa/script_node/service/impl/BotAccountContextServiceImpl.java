@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,15 +47,6 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
 
     @RPCReference
     private IBrowserEnvRPC browserEnvRPC;
-
-    public BotAccountContextServiceImpl() {
-        super(accountContext -> {
-            accountContext.setInsertDatetime(LocalDateTime.now());
-            accountContext.setUpdateDatetime(LocalDateTime.now());
-            accountContext.setIsValid(1);
-        });
-    }
-
 
     @Override
     public Result saveBotAccountContext(Integer botId, String botKey, List<Map<String, Object>> rawLines) {
@@ -131,7 +121,7 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
         // 没设置浏览器环境的根据设置填充环境
         tryFillBrowserEnv(accountContexts);
 
-        return insertOrUpdateBatch(accountContexts);
+        return getBaseMapper().insertOrUpdateBatch(botId, botKey, accountContexts);
     }
 
     /**

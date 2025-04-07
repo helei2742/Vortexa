@@ -19,62 +19,31 @@
         <result column="params" property="params"/>
         <result column="insert_datetime" property="insertDatetime"/>
         <result column="update_datetime" property="updateDatetime"/>
-        <result column="is_valid" property="isValid"/>
+        <result column="valid" property="valid"/>
     </resultMap>
 
     <insert id="createIfTableNotExist" parameterType="java.lang.String">
         CREATE TABLE IF NOT EXISTS t_bot_account_context
         (
-            "id"
-            INTEGER
-            PRIMARY
-            KEY
-            AUTOINCREMENT,
-            "bot_id"
-            INTEGER
-            NOT
-            NULL,
-            "bot_key"
-            TEXT
-            NOT
-            NULL,
-            "account_base_info_id"
-            INTEGER,
-            "twitter_id"
-            INtEGER,
-            "discord_id"
-            INTEGER,
-            "proxy_id"
-            INTEGER,
-            "browser_env_id"
-            INTEGER,
-            "telegram_id"
-            INTEGER,
-            "wallet_id"
-            INTEGER,
-            "reward_id"
-            INTEGER,
-            "status"
-            INTEGER,
-            "usable"
-            INTEGER
-        (
-            1
-        ),
-            "params" TEXT,
-            "insert_datetime" TEXT,
-            "update_datetime" TEXT,
-            "is_valid" INTEGER
-        (
-            1
-        ),
-            UNIQUE
-        (
-            bot_key,
-            account_base_info_id,
-            proxy_id
-        )
-            );
+            "id"                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            "bot_id"               INTEGER NOT NULL,
+            "bot_key"              TEXT    NOT NULL,
+            "account_base_info_id" INTEGER,
+            "twitter_id"           INtEGER,
+            "discord_id"           INTEGER,
+            "proxy_id"             INTEGER,
+            "browser_env_id"       INTEGER,
+            "telegram_id"          INTEGER,
+            "wallet_id"            INTEGER,
+            "reward_id"            INTEGER,
+            "status"               INTEGER,
+            "usable"               INTEGER(1),
+            "params"               TEXT,
+            "insert_datetime"      TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now')),
+            "update_datetime"      TEXT,
+            "valid"             INTEGER(1) default 1,
+            UNIQUE (bot_key, account_base_info_id, proxy_id)
+        );
 
     </insert>
 
@@ -82,12 +51,10 @@
 
         INSERT INTO t_bot_account_context
         (bot_id, bot_key, account_base_info_id, twitter_id, discord_id, proxy_id, browser_env_id, telegram_id,
-         wallet_id,
-         reward_id, status, params, insert_datetime, update_datetime, is_valid)
+         wallet_id, reward_id, status, params, update_datetime, valid)
         VALUES (#{botId}, #{botKey}, #{accountBaseInfoId}, #{twitterId}, #{discordId}, #{proxyId}, #{browserEnvId},
-                #{telegramId},
-                #{walletId}, #{rewardId}, #{status}, #{params}, #{insertDatetime}, #{updateDatetime},
-                #{isValid}) ON CONFLICT(bot_key, account_base_info_id, proxy_id) DO
+                #{telegramId},  #{walletId}, #{rewardId}, #{status}, #{params}, strftime('%Y-%m-%d %H:%M:%S', 'now'),  1)
+        ON CONFLICT(bot_key, account_base_info_id, proxy_id) DO
         UPDATE SET
             bot_id = excluded.bot_id,
             twitter_id = excluded.twitter_id,
@@ -99,7 +66,37 @@
             reward_id = excluded.reward_id,
             status = excluded.status,
             params = excluded.params,
-            update_datetime = excluded.update_datetime;
+            update_datetime = excluded.update_datetime,
+            valid = excluded.valid;
+    </insert>
+
+    <insert id="insertOrUpdateBatch" parameterType="java.util.List">
+        INSERT INTO t_bot_account_context
+        (bot_id, bot_key, account_base_info_id, twitter_id, discord_id, proxy_id, browser_env_id, telegram_id,
+         wallet_id,
+         reward_id, status, params, update_datetime, valid)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.botId}, #{item.botKey}, #{item.accountBaseInfoId}, #{item.twitterId}, #{item.discordId},
+             #{item.proxyId}, #{item.browserEnvId}, #{item.telegramId},
+             #{item.walletId}, #{item.rewardId}, #{item.status}, #{item.params},
+                strftime('%Y-%m-%d %H:%M:%S', 'now'), 1
+            )
+        </foreach>
+        ON CONFLICT(bot_key, account_base_info_id, proxy_id) DO
+        UPDATE SET
+            bot_id = excluded.bot_id,
+            twitter_id = excluded.twitter_id,
+            discord_id = excluded.discord_id,
+            proxy_id = excluded.proxy_id,
+            browser_env_id = excluded.browser_env_id,
+            telegram_id = excluded.telegram_id,
+            wallet_id = excluded.wallet_id,
+            reward_id = excluded.reward_id,
+            status = excluded.status,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime,
+            valid = excluded.valid;
     </insert>
 
     <select id="queryBotAccountTableNames" resultType="java.lang.String">
@@ -131,14 +128,14 @@
         t.params,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,
-        t.is_valid as isValid
+        t.valid as valid
         from
         t_bot_account_context as t
         <if test="params != null and !params.isEmpty()">
             left join json_each(t.params) json_each
         </if>
         <where>
-            is_valid = 1
+            valid = 1
             <if test="id != null">
                 and t.id = #{id}
             </if>

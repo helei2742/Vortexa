@@ -11,7 +11,7 @@
         <result column="daily_points" property="dailyPoints" />
         <result column="insert_datetime" property="insertDatetime" />
         <result column="update_datetime" property="updateDatetime" />
-        <result column="is_valid" property="isValid" />
+        <result column="valid" property="valid" />
     </resultMap>
 
 </mapper>

@@ -1,11 +1,9 @@
 
 spring:
   datasource:
-    #    url: "jdbc:sqlite://D://workspace//Vortexa-dev_3.0//vortexa-platform//src//main//resources//plantform.db"
-    #    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/test_plantfrom.db"
-    url: jdbc:mysql://localhost:3306/vortexa_plantform
+    url: jdbc:mysql://localhost:3306/vortexa_platform
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
+    username: helei
     password: 123456
   quartz:
     job-store-type: jdbc
