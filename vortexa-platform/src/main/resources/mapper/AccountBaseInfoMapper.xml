@@ -19,14 +19,39 @@
         INSERT INTO t_account_base_info
         (id, type, name, email, password, params, insert_datetime, update_datetime, is_valid)
         VALUES (NULL, #{type}, #{name}, #{email}, #{password}, #{params}, #{insertDatetime}, #{updateDatetime},
-                #{isValid}) ON CONFLICT(email)
-        DO
-        UPDATE SET
-            type = excluded.type,
-            name = excluded.name,
-            password = excluded.password,
-            params = excluded.params,
-            update_datetime = excluded.update_datetime
+        #{isValid})
+        ON DUPLICATE KEY UPDATE
+        <if test="type != null">
+            type = values(type),
+        </if>
+        <if test="name != null">
+            name = values(name),
+        </if>
+        <if test="password != null">
+            password =values(password),
+        </if>
+        <if test="updateDatetime != null">
+            update_datetime = values(update_datetime),
+        </if>
+        <if test="params != null">
+            params = values(params)
+        </if>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" parameterType="java.util.List">
+        INSERT INTO t_account_base_info
+        (id, type, name, email, password, params, insert_datetime, update_datetime, is_valid)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (NULL, #{item.type}, #{item.name}, #{item.email}, #{item.password}, #{item.params}, #{item.insertDatetime},
+            #{item.updateDatetime},#{item.isValid})
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        type = values(type),
+        name = values(name),
+        password = values(password),
+        update_datetime = values(update_datetime),
+        params = values(params),
     </insert>
 
     <select id="multipleConditionQuery"
@@ -39,32 +64,31 @@
         t.is_valid as isValid
         from
         t_account_base_info as t
-        <if test="params != null and !params.isEmpty()">
-            left join json_each(t.params) json_each
-        </if>
         <where>
-             is_valid = 1
-        <if test="id != null">
-            and t.id = #{id}
-        </if>
-        <if test="type != null">
-            and t.type = #{type}
-        </if>
-        <if test="name != null">
-            and t.name = #{name}
-        </if>
-        <if test="email != null">
-            and t.email = #{email}
-        </if>
-        <if test="password != null">
-            and t.password = #{password}
-        </if>
-        <if test="params != null and !params.isEmpty()">
-            and
-            <foreach collection="params" item='entry' index='key' separator='AND'>
-                json_each.key = #{key} and json_each.value = #{entry}
-            </foreach>
-        </if>
+            is_valid = 1
+            <if test="id != null">
+                and t.id = #{id}
+            </if>
+            <if test="type != null">
+                and t.type = #{type}
+            </if>
+            <if test="name != null">
+                and t.name = #{name}
+            </if>
+            <if test="email != null">
+                and t.email = #{email}
+            </if>
+            <if test="password != null">
+                and t.password = #{password}
+            </if>
+            <if test="params != null and !params.isEmpty()">
+                AND JSON_CONTAINS(
+                t.params,
+                <foreach collection="params" item='value' index='key' separator=',' open="JSON_OBJECT(" close=")">
+                    #{key}, #{value}
+                </foreach>
+                )
+            </if>
         </where>
     </select>
 

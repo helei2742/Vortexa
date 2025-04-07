@@ -33,6 +33,7 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -69,7 +70,6 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
         });
     }
 
-
     @Override
     public PageResult<BotInstanceVO> conditionPageQueryAllInfo(Integer page, Integer limit,
                                                                Map<String, Object> filterMap) throws SQLException, SchedulerException {
@@ -78,9 +78,8 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
 
         // 填充botInfo
         List<Integer> botIds = result.getList().stream().map(BotInstance::getBotId).toList();
-        Map<Integer, BotInfo> idMapBotInfo = botInfoMapper.selectBatchIds(botIds)
+        Map<Integer, BotInfo> idMapBotInfo = botIds.isEmpty() ? new HashMap<>() : botInfoMapper.selectBatchIds(botIds)
                 .stream().collect(Collectors.toMap(BotInfo::getId, botInfo -> botInfo));
-
 
         // 查询运行中的任务
         Map<String, List<Trigger>> groupByBotKey = scheduler.getCurrentlyExecutingJobs()

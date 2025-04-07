@@ -9,6 +9,8 @@ import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+
+import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,19 +60,20 @@ public class DBLayerAutoConfig {
         factoryBean.setDataSource(dataSource);
         factoryBean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/*.xml"));
         factoryBean.setTypeHandlers(
-                jsonTypeHandler(), mapTextTypeHandler(), localDateTimeTypeHandler()
+                jsonTypeHandler(), mapTextTypeHandler()
         );
         factoryBean.setTypeAliasesPackage("cn.com.vortexa.entity");
         MybatisConfiguration configuration = new MybatisConfiguration();
         factoryBean.setConfiguration(configuration);
         configuration.setMapUnderscoreToCamelCase(true);
-
+        configuration.setLogImpl(StdOutImpl.class);
         GlobalConfig globalConfig = new GlobalConfig();
         GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
         dbConfig.setLogicDeleteField("isValid");
         dbConfig.setLogicDeleteValue("0");
         dbConfig.setLogicNotDeleteValue("1");
         globalConfig.setDbConfig(dbConfig);
+        globalConfig.setBanner(false);
         factoryBean.setGlobalConfig(globalConfig);
         return factoryBean.getObject();
     }

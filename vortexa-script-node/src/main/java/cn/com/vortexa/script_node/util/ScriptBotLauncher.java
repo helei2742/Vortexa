@@ -10,19 +10,25 @@ import cn.com.vortexa.common.util.BannerUtil;
 import cn.com.vortexa.script_node.view.ScriptNodeCMDLineMenu;
 import cn.com.vortexa.script_node.view.commandMenu.DefaultMenuType;
 import cn.hutool.core.util.StrUtil;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 @Slf4j
 public class ScriptBotLauncher {
 
     private static final ScriptNodeCMDLineMenu scriptNodeCMDLineMenu = new ScriptNodeCMDLineMenu(List.of(
-            DefaultMenuType.START_BOT_TASK
+            DefaultMenuType.START_BOT_TASK, DefaultMenuType.LAUNCH_SCRIPT
     ));
+
+    private static final ConcurrentHashMap<String, ScriptBotMetaInfo> botMetaInfoMap = new ConcurrentHashMap<>();
 
     /**
      * 启动bot
@@ -30,13 +36,14 @@ public class ScriptBotLauncher {
      * @param botClass botClass
      * @return ApplicationContext
      * @throws BotStartException BotStartException
-     * @throws BotInitException  BotInitException
+     * @throws BotInitException BotInitException
      */
     public static AutoLaunchBot<?> launch(
             Class<? extends AutoLaunchBot<?>> botClass,
             AutoBotConfig botConfig,
             BotApi botApi,
-            Function<AutoLaunchBot<?>, Boolean> initHandler
+            Function<AutoLaunchBot<?>, Boolean> initHandler,
+            boolean launch
     ) throws BotStartException, BotInitException {
         BannerUtil.printBanner("");
 
@@ -65,18 +72,57 @@ public class ScriptBotLauncher {
             throw new BotInitException(e);
         }
 
-        if (botConfig.isCommandMenu()) {
-            scriptNodeCMDLineMenu.getBotKeyMap().put(botKey, bot);
-        }
+        bot.setBotName(botName);
+        bot.setBotKey(botKey);
+        botMetaInfoMap.put(botKey, new ScriptBotMetaInfo(bot, botConfig, botApi, initHandler));
 
-        log.info("bot[{}][{}] start launch", botName, botKey);
-        // Step 3 启动bot
-        bot.launch(botConfig, botApi, initHandler);
+        if (launch) {
+            // Step 3 启动bot
+            launchResolvedScriptBot(botKey);
+        }
 
         return bot;
     }
 
+    /**
+     * 启动命令行菜单
+     */
     public static void startCommandLineMenu() {
         scriptNodeCMDLineMenu.start();
+    }
+
+    /**
+     * 添加Bot到菜单
+     *
+     * @param botKey botKey
+     * @param bot bot
+     */
+    public static void addBotInMenu(String botKey, AutoLaunchBot<?> bot) {
+        scriptNodeCMDLineMenu.getBotKeyMap().put(botKey, bot);
+    }
+
+
+    public static void launchResolvedScriptBot(String botKey) throws BotStartException, BotInitException {
+        ScriptBotMetaInfo scriptBotMetaInfo = botMetaInfoMap.get(botKey);
+        if (scriptBotMetaInfo == null) {
+            throw new BotStartException(botKey + " didn't resolved by ScriptBotLauncher, place invoke ScriptBotLauncher.launch(...) first");
+        }
+
+        log.info("bot[{}] start launch", botKey);
+        scriptBotMetaInfo.getBot().launch(
+                scriptBotMetaInfo.botConfig,
+                scriptBotMetaInfo.botApi,
+                scriptBotMetaInfo.initHandler
+        );
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ScriptBotMetaInfo {
+        private AutoLaunchBot<?> bot;
+        private AutoBotConfig botConfig;
+        private BotApi botApi;
+        Function<AutoLaunchBot<?>, Boolean> initHandler;
     }
 }

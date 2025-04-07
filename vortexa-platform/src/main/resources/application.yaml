@@ -1,21 +1,23 @@
+
 spring:
   datasource:
-    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/plantfrom.db"
-#    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/test_plantfrom.db"
-    driver-class-name: org.sqlite.JDBC
-    username:
-    password:
-mybatis-plus:
-  configuration:
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    cache-enabled: true
-    map-underscore-to-camel-case: false
-  global-config:
-    db-config:
-      logic-delete-field: isValid  # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
-      logic-delete-value: 0    # 设置 1 为未删除
-      logic-not-delete-value: 1 # 设置 0 为已删除
-  mapper-locations: classpath:/mapper/*.xml
+    #    url: "jdbc:sqlite://D://workspace//Vortexa-dev_3.0//vortexa-platform//src//main//resources//plantform.db"
+    #    url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/BotFramework/botData/db/test_plantfrom.db"
+    url: jdbc:mysql://localhost:3306/vortexa_plantform
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 123456
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      table-prefix: QRTZ_
+      driver-class: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/job_store
+      user: root
+      password: 123456
+      scheduler:
+        instance-name: QuartzScheduler
+
 
 logging:
   level:

@@ -90,7 +90,8 @@ public class BotPlatformControlServer extends BotControlServer {
                         RPCArgsWrapper params = Serializer.Algorithm.JDK.deserialize(body, RPCArgsWrapper.class);
 
                         Object invoke = method.invoke(ref, params.getArgs());
-                        log.info("invoke rpc[{}] method[{}] return [{}]", request.getTransactionId(), key, invoke);
+                        log.info("invoke rpc[{}] method[{}] return [{}]",
+                                request.getTransactionId(), key, invoke == null ? "null" : "not null");
                         result.setData(invoke);
                         result.setSuccess(true);
                         return result;
@@ -102,7 +103,7 @@ public class BotPlatformControlServer extends BotControlServer {
             }
         }
 
-        // 1 expose bot 注册
+        // 1 expose bot 注册、下线
         initScriptNodeExposeBotHandler();
 
         // 2 日志上传
@@ -115,7 +116,12 @@ public class BotPlatformControlServer extends BotControlServer {
     private void initScriptNodeExposeBotHandler() {
         getCustomRemotingCommandHandlerMap().put(
                 BotRemotingCommandFlagConstants.SCRIPT_BOT_ON_LINE,
-                this::exposeBotHandler
+                this::scriptBotOnLineHandler
+        );
+
+        getCustomRemotingCommandHandlerMap().put(
+                BotRemotingCommandFlagConstants.SCRIPT_BOT_OFF_LINE,
+                this::scriptBotOffLineHandler
         );
     }
 
@@ -123,7 +129,7 @@ public class BotPlatformControlServer extends BotControlServer {
      * 初始化节点日志上传命令处理器
      */
     protected void initScriptNodeUploadLogHandler() {
-        frontWebSocketServer.setCloseHandler((server, token)->{
+        frontWebSocketServer.setCloseHandler((server, token) -> {
             botLogUploadService.stopFrontLogListener(token);
         });
 
@@ -156,7 +162,8 @@ public class BotPlatformControlServer extends BotControlServer {
      * @param botKey  botKey
      * @return CompletableFuture<Result>
      */
-    public CompletableFuture<Result> startJob(String group, String botName, String botKey, String jobName) throws BotStartException {
+    public CompletableFuture<Result> startJob(String group, String botName, String botKey, String jobName)
+            throws BotStartException {
         // Step 1 判断目标Bot是否在线
         String key = ControlServerUtil.generateServiceInstanceKey(group, botName, botKey);
         BotInstanceStatus status = getBotInstanceStatus(key);
@@ -209,14 +216,20 @@ public class BotPlatformControlServer extends BotControlServer {
      */
     public BotInstanceStatus getBotInstanceStatus(String botInstanceKey) {
         String scriptNodeKey = botInstanceKey2ScriptNodeKeyMap.get(botInstanceKey);
-
+        if (scriptNodeKey == null) return BotInstanceStatus.STOPPED;
         ConnectEntry connectEntry = getConnectionService().getServiceInstanceChannel(scriptNodeKey);
         return connectEntry == null ? BotInstanceStatus.STOPPED :
                 (connectEntry.isUsable() ? BotInstanceStatus.RUNNING : BotInstanceStatus.UN_USABLE);
     }
 
-
-    public RemotingCommand exposeBotHandler(Channel channel, RemotingCommand remotingCommand) {
+    /**
+     * 脚本上线命令处理
+     *
+     * @param channel         channel
+     * @param remotingCommand remotingCommand
+     * @return RemotingCommand
+     */
+    public RemotingCommand scriptBotOnLineHandler(Channel channel, RemotingCommand remotingCommand) {
         String group = remotingCommand.getGroup();
         String serviceId = remotingCommand.getServiceId();
         String instanceId = remotingCommand.getInstanceId();
@@ -229,7 +242,7 @@ public class BotPlatformControlServer extends BotControlServer {
 
         String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(botGroup, botName, botKey);
 
-        scriptNodeKey2BotInstanceKeyMap.compute(scriptNodeKey, (k, v)->{
+        scriptNodeKey2BotInstanceKeyMap.compute(scriptNodeKey, (k, v) -> {
             if (v == null) {
                 v = new HashSet<>();
             }
@@ -238,10 +251,46 @@ public class BotPlatformControlServer extends BotControlServer {
         });
         botInstanceKey2ScriptNodeKeyMap.put(botInstanceKey, scriptNodeKey);
 
-        log.info("script node[{}] add bot instance[{}]", scriptNodeKey, instanceId);
+        log.info("script node[{}] add bot instance[{}]", scriptNodeKey, botInstanceKey);
 
         RemotingCommand response = new RemotingCommand();
         response.setFlag(BotRemotingCommandFlagConstants.SCRIPT_BOT_ON_LINE_RESPONSE);
+        response.setCode(RemotingCommandCodeConstants.SUCCESS);
+        response.setTransactionId(remotingCommand.getTransactionId());
+
+        return response;
+    }
+
+    /**
+     * 脚本下线命令处理
+     *
+     * @param channel         channel
+     * @param remotingCommand remotingCommand
+     * @return RemotingCommand
+     */
+    private RemotingCommand scriptBotOffLineHandler(Channel channel, RemotingCommand remotingCommand) {
+        String group = remotingCommand.getGroup();
+        String serviceId = remotingCommand.getServiceId();
+        String instanceId = remotingCommand.getInstanceId();
+
+        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(group, serviceId, instanceId);
+
+        String botGroup = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_GROUP_KEY);
+        String botName = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_NAME_KEY);
+        String botKey = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
+
+        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(botGroup, botName, botKey);
+
+        Set<String> onLineBotInstanceKeys = scriptNodeKey2BotInstanceKeyMap.get(scriptNodeKey);
+        if (onLineBotInstanceKeys == null || !onLineBotInstanceKeys.contains(botInstanceKey)) {
+            log.info("script node[{}] remove bot instance[{}] fail, bot instance not exist", scriptNodeKey, botInstanceKey);
+        } else {
+            onLineBotInstanceKeys.remove(botInstanceKey);
+            log.info("script node[{}] remove bot instance[{}]", scriptNodeKey, botInstanceKey);
+        }
+
+        RemotingCommand response = new RemotingCommand();
+        response.setFlag(BotRemotingCommandFlagConstants.SCRIPT_BOT_OFF_LINE_RESPONSE);
         response.setCode(RemotingCommandCodeConstants.SUCCESS);
         response.setTransactionId(remotingCommand.getTransactionId());
 

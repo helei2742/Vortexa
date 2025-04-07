@@ -47,12 +47,12 @@ public class PageMenuNode<T> extends CommandMenuNode {
             BiFunction<Integer, Integer, PageResult<T>> pageInvocation,
             Class<T> tClass
     ) {
-        super(tittle, describe, null);
+        super(tittle, describe);
 
         this.fields = tClass.getDeclaredFields();
         this.limit = limit;
 
-        this.setAction(() -> {
+        this.setAction((node) -> {
             String print = "";
             if (isQuery) {
                 int page = Math.max(1, (Integer) params.getOrDefault(PAGE_KEY, 1));

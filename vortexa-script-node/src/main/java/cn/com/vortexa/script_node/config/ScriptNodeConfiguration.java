@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -36,7 +37,8 @@ public class ScriptNodeConfiguration implements InitializingBean {
     public static final String REACTIVE_PATH_PREFIX = "reactive:";
 
     /**
-     * bot group
+     * bot group（Script Node中运行的bot的、
+     * ）
      */
     private String botGroup;
 
@@ -61,9 +63,14 @@ public class ScriptNodeConfiguration implements InitializingBean {
     private boolean commandMenu = true;
 
     /**
-     * botKeyConfigMap
+     * botKeyConfigMap, （解析配置文件自动填入）
      */
     private Map<String, AutoBotConfig> botKeyConfigMap;
+
+    /**
+     * 自动时自动启动的botKey
+     */
+    private Set<String> autoLaunchBotKeys;
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -87,10 +94,10 @@ public class ScriptNodeConfiguration implements InitializingBean {
                     AutoBotConfig config = YamlConfigLoadUtil.load(configFilePath.toFile(), BOT_INSTANCE_CONFIG_PREFIX, AutoBotConfig.class);
                     // 配置文件校验
                     if (config == null) {
-                        throw new IllegalArgumentException("bot instance config file [" + BOT_INSTANCE_CONFIG_FILE_NAME+"] illegal");
+                        throw new IllegalArgumentException("bot instance config file [" + BOT_INSTANCE_CONFIG_FILE_NAME + "] illegal");
                     }
                     if (StrUtil.isBlank(config.getClassFileName()) && StrUtil.isBlank(config.getClassFilePath())) {
-                        throw new IllegalArgumentException("bot instance config file [" + BOT_INSTANCE_CONFIG_FILE_NAME+"] class path didn't exist");
+                        throw new IllegalArgumentException("bot instance config file [" + BOT_INSTANCE_CONFIG_FILE_NAME + "] class path didn't exist");
                     }
                     if (StrUtil.isBlank(config.getClassFilePath())) {
                         config.setClassFilePath(dir + File.separator + config.getClassFileName());

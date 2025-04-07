@@ -1,6 +1,6 @@
 package cn.com.vortexa.script_node.view;
 
-import cn.com.vortexa.script_node.bot.JobInvokeAutoBot;
+import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.script_node.view.commandMenu.CommandMenuNode;
 import cn.com.vortexa.script_node.view.commandMenu.MenuNodeMethod;
 import lombok.Getter;
@@ -28,17 +28,16 @@ import java.util.concurrent.CountDownLatch;
 @Getter
 public abstract class CommandLineMenu {
 
-    private final Map<String, JobInvokeAutoBot> botKeyMap = new ConcurrentHashMap<>();
+    private final Map<String, AutoLaunchBot<?>> botKeyMap = new ConcurrentHashMap<>();
 
     private final CommandMenuNode mainManu;
 
-    private JobInvokeAutoBot bot;
+    private AutoLaunchBot<?> bot;
 
     public CommandLineMenu() {
         this.mainManu = new CommandMenuNode(
                 "主菜单",
-                "当前可用的Bot",
-                null
+                "当前可用的Bot"
         );
     }
 
@@ -53,7 +52,7 @@ public abstract class CommandLineMenu {
                     () -> {
                         bot = v;
                         return "current use: [%s], status:[%s]".formatted(
-                                bot.getBotInstance().getBotKey(),
+                                bot.getBotKey(),
                                 bot.getStatus()
                         );
                     }
@@ -90,7 +89,7 @@ public abstract class CommandLineMenu {
         });
     }
 
-    protected abstract void buildBotMenuNode(CommandMenuNode botMenu, JobInvokeAutoBot v);
+    protected abstract void buildBotMenuNode(CommandMenuNode botMenu, AutoLaunchBot<?> v);
 
     /**
      * 异步启动
@@ -111,7 +110,6 @@ public abstract class CommandLineMenu {
 
     /**
      * 启动bot
-     *
      */
     public void start() {
         try {
@@ -228,7 +226,7 @@ public abstract class CommandLineMenu {
         sb.append(currentMenuNode.getDescribe()).append("\n");
 
         if (currentMenuNode.getAction() != null) {
-            sb.append(currentMenuNode.getAction().get()).append("\n");
+            sb.append(currentMenuNode.getAction().apply(currentMenuNode)).append("\n");
         }
 
         if (currentMenuNode.isEnd()) {

@@ -5,6 +5,7 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Data
@@ -27,7 +28,7 @@ public class CommandMenuNode {
     /**
      * 当前节点调用的函数, 返回内容会显示在describe 和 子节点选项之间
      */
-    private Supplier<String> action;
+    private Function<CommandMenuNode, String> action;
 
     /**
      * 处理输入
@@ -39,11 +40,32 @@ public class CommandMenuNode {
      */
     private final List<CommandMenuNode> subNodeList = new ArrayList<>();
 
+    public CommandMenuNode(String tittle, String describe) {
+        this(false, tittle, describe);
+    }
+
     public CommandMenuNode(String tittle, String describe, Supplier<String> action) {
         this(false, tittle, describe, action);
     }
 
+    public CommandMenuNode(String tittle, String describe, Function<CommandMenuNode, String> action) {
+        this(false, tittle, describe, action);
+    }
+
+    public CommandMenuNode(boolean isEnd, String tittle, String describe) {
+        this.isEnd = isEnd;
+        this.tittle = tittle;
+        this.describe = describe;
+    }
+
     public CommandMenuNode(boolean isEnd, String tittle, String describe, Supplier<String> action) {
+        this.isEnd = isEnd;
+        this.tittle = tittle;
+        this.describe = describe;
+        this.action = node -> action.get();
+    }
+
+    public CommandMenuNode(boolean isEnd, String tittle, String describe, Function<CommandMenuNode, String> action) {
         this.isEnd = isEnd;
         this.tittle = tittle;
         this.describe = describe;

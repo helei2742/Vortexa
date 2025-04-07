@@ -4,33 +4,61 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.BotInfo">
-        <id column="id" property="id" />
-        <result column="name" property="name" />
-        <result column="describe" property="describe" />
-        <result column="image" property="image" />
-        <result column="limit_project_ids" property="limitProjectIds" />
-        <result column="job_params" property="jobParams" />
-        <result column="params" property="params" />
-        <result column="insert_datetime" property="insertDatetime" />
-        <result column="update_datetime" property="updateDatetime" />
-        <result column="is_valid" property="isValid" />
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="image" property="image"/>
+        <result column="limit_project_ids" property="limitProjectIds"/>
+        <result column="job_params" property="jobParams"/>
+        <result column="params" property="params"/>
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="is_valid" property="isValid"/>
     </resultMap>
 
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.BotInfo">
         INSERT INTO t_bot_info
-        (name, describe, limit_project_ids, image, job_params, params, insert_datetime, update_datetime, is_valid)
-        VALUES (#{name}, #{describe}, #{limitProjectIds}, #{image}, #{jobParams}, #{params}, #{insertDatetime}, #{updateDatetime},
-                #{isValid})
-            ON CONFLICT(name)
-DO
-        UPDATE SET
-            describe = excluded.describe,
-            limit_project_ids = excluded.limit_project_ids,
-            image = excluded.image,
-            job_params = excluded.job_params,
-            params = excluded.params,
-            update_datetime = excluded.update_datetime;
+        (name, description, limit_project_ids, image, job_params, params, insert_datetime, update_datetime, is_valid)
+        VALUES (#{name}, #{description}, #{limitProjectIds}, #{image}, #{jobParams}, #{params}, #{insertDatetime},
+        #{updateDatetime},
+        #{isValid})
+        ON DUPLICATE KEY UPDATE
+        <if test="description != null">
+            description = values (description),
+        </if>
+        <if test="limitProjectIds != null">
+            limit_project_ids = values (limit_project_ids),
+        </if>
+        <if test="image != null">
+            image = values (image),
+        </if>
+        <if test="jobParams != null">
+            job_params =values (job_params),
+        </if>
+        <if test="params != null">
+            params = values (params),
+        </if>
+        <if test="updateDatetime != null">
+            update_datetime =values (update_datetime),
+        </if>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" parameterType="java.util.List">
+        INSERT INTO t_bot_info
+        (name, description, limit_project_ids, image, job_params, params, insert_datetime, update_datetime, is_valid)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.name}, #{item.description}, #{item.limitProjectIds}, #{item.image}, #{item.jobParams},
+            #{item.params}, #{item.insertDatetime}, #{item.updateDatetime},#{item.isValid})
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        description = values(description),
+        limit_project_ids = values(limit_project_ids),
+        image = values(image),
+        job_params = values(job_params),
+        params = values(params),
+        update_datetime = values(update_datetime)
     </insert>
 
     <select id="multipleConditionQuery"
@@ -39,7 +67,7 @@ DO
         select
         t.id as id,
         t.name,
-        t.describe,
+        t.description,
         t.image,
         t.job_params as jobParams,
         t.params,
@@ -48,16 +76,13 @@ DO
         t.is_valid as isValid
         from
         t_bot_info as t
-        <if test="params != null and !params.isEmpty()">
-            left join json_each(t.params) json_each
-        </if>
         <where>
             is_valid = 1
             <if test="name != null">
                 and t.name = #{name}
             </if>
-            <if test="describe != null">
-                and t.describe = #{describe}
+            <if test="description != null">
+                and t.description = #{description}
             </if>
             <if test="image != null">
                 and t.image = #{image}
@@ -66,10 +91,12 @@ DO
                 and t.job_params = #{jobParams}
             </if>
             <if test="params != null and !params.isEmpty()">
-                and
-                <foreach collection="params" item='entry' index='key' separator='AND'>
-                    json_each.key = #{key} and json_each.value = #{entry}
+                AND JSON_CONTAINS(
+                t.params,
+                <foreach collection="params" item='value' index='key' separator=',' open="JSON_OBJECT(" close=")">
+                    #{key}, #{value}
                 </foreach>
+                )
             </if>
         </where>
     </select>

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -86,6 +87,7 @@ public abstract class AbstractBaseService<M extends IBaseMapper<T>, T> extends S
 
     @Override
     public List<T> batchQueryByIds(List<Serializable> ids) {
+        if (ids == null || ids.isEmpty()) return new ArrayList<>();
         return getBaseMapper().selectBatchIds(ids);
     }
 

@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
+        import java.util.function.Supplier;
 
 public abstract class AbstractAutoBot {
 
@@ -175,7 +175,7 @@ public abstract class AbstractAutoBot {
 
                 String tableName = getBotApi().getTableShardStrategy().generateTableName(
                         BOT_ACCOUNT_CONTEXT_TABLE_PREFIX,
-                        new Object[]{botInstance.getBotId(), botInstance.getBotKey()}
+                        new Object[] {botInstance.getBotId(), botInstance.getBotKey()}
                 );
                 botInstance.setBotName(botInfo.getName());
                 botInstance.setAccountTableName(tableName);
@@ -206,14 +206,31 @@ public abstract class AbstractAutoBot {
     protected abstract void doInit() throws BotInitException;
 
     /**
+     * 停止Bot
+     */
+    public void stop() {
+        updateState(BotStatus.STOPPING);
+        try {
+            networkSyncControllerMap.clear();
+            doStop();
+            updateState(BotStatus.STOPPED);
+        } catch (Exception e) {
+            logger.error("stop bot error, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
+            updateState(BotStatus.SHUTDOWN);
+        }
+    }
+
+    protected abstract void doStop();
+
+    /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy   proxy
-     * @param url     url
-     * @param method  method
+     * @param proxy proxy
+     * @param url url
+     * @param method method
      * @param headers headers
-     * @param params  params
-     * @param body    body
+     * @param params params
+     * @param body body
      * @return CompletableFuture<String> response str
      */
     public CompletableFuture<String> syncRequest(
@@ -230,12 +247,12 @@ public abstract class AbstractAutoBot {
     /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy   proxy
-     * @param url     url
-     * @param method  method
+     * @param proxy proxy
+     * @param url url
+     * @param method method
      * @param headers headers
-     * @param params  params
-     * @param body    body
+     * @param params params
+     * @param body body
      * @return CompletableFuture<String> response str
      */
     public CompletableFuture<String> syncRequest(
@@ -253,12 +270,12 @@ public abstract class AbstractAutoBot {
     /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy   proxy
-     * @param url     url
-     * @param method  method
+     * @param proxy proxy
+     * @param url url
+     * @param method method
      * @param headers headers
-     * @param params  params
-     * @param body    body
+     * @param params params
+     * @param body body
      * @return CompletableFuture<Response> String
      */
     public CompletableFuture<String> syncRequest(
@@ -285,12 +302,12 @@ public abstract class AbstractAutoBot {
     /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy   proxy
-     * @param url     url
-     * @param method  method
+     * @param proxy proxy
+     * @param url url
+     * @param method method
      * @param headers headers
-     * @param params  params
-     * @param body    body
+     * @param params params
+     * @param body body
      * @return CompletableFuture<Response> String
      */
     public CompletableFuture<String> syncRequest(
@@ -322,12 +339,12 @@ public abstract class AbstractAutoBot {
     /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy   proxy
-     * @param url     url
-     * @param method  method
+     * @param proxy proxy
+     * @param url url
+     * @param method method
      * @param headers headers
-     * @param params  params
-     * @param body    body
+     * @param params params
+     * @param body body
      * @return CompletableFuture<Response> String
      */
     public CompletableFuture<List<String>> syncStreamRequest(
@@ -417,28 +434,25 @@ public abstract class AbstractAutoBot {
      * @param newStatus 新状态
      */
     public synchronized void updateState(BotStatus newStatus) throws BotStatusException {
-        boolean b = true;
-        if (newStatus.equals(BotStatus.SHUTDOWN)) {
-            status = BotStatus.SHUTDOWN;
-            b = false;
-        } else {
-            b = switch (status) {
-                //当前为NEW，新状态才能为NEW,SHUTDOWN
-                case NEW -> BotStatus.INIT.equals(newStatus);
-                //当前为INIT，新状态只能为INIT_FINISH、INIT_ERROR,SHUTDOWN
-                case INIT -> newStatus.equals(BotStatus.INIT_FINISH)
-                        || newStatus.equals(BotStatus.INIT_ERROR);
-                //当前为INIT_ERROR,新状态只能为ACCOUNT_LOADING, SHUTDOWN
-                case INIT_ERROR -> newStatus.equals(BotStatus.INIT);
-                //当前状态为INIT_FINISH，新状态只能为ACCOUNT_LIST_CONNECT, SHUTDOWN
-                case INIT_FINISH -> newStatus.equals(BotStatus.STARTING);
-                //当前状态为STARING，新状态只能为RUNNING,SHUTDOWN
-                case STARTING -> newStatus.equals(BotStatus.RUNNING);
-                //RUNNING，新状态只能为 SHUTDOWN
-                case RUNNING -> false;
-                case SHUTDOWN -> newStatus.equals(BotStatus.INIT);
-            };
-        }
+
+        boolean b = switch (status) {
+            //当前为NEW，新状态才能为NEW,SHUTDOWN
+            case NEW -> BotStatus.INIT.equals(newStatus);
+            //当前为INIT，新状态只能为INIT_FINISH、INIT_ERROR,SHUTDOWN
+            case INIT -> newStatus.equals(BotStatus.INIT_FINISH)
+                    || newStatus.equals(BotStatus.INIT_ERROR);
+            //当前为INIT_ERROR,新状态只能为ACCOUNT_LOADING, SHUTDOWN
+            case INIT_ERROR -> newStatus.equals(BotStatus.INIT);
+            //当前状态为INIT_FINISH，新状态只能为ACCOUNT_LIST_CONNECT, SHUTDOWN
+            case INIT_FINISH -> newStatus.equals(BotStatus.STARTING);
+            //当前状态为STARING，新状态只能为RUNNING,SHUTDOWN
+            case STARTING -> newStatus.equals(BotStatus.RUNNING);
+            //RUNNING，新状态只能为 SHUTDOWN
+            case RUNNING -> newStatus.equals(BotStatus.STOPPING);
+            case STOPPING -> newStatus.equals(BotStatus.STOPPED) || newStatus.equals(BotStatus.SHUTDOWN);
+            case STOPPED -> newStatus.equals(BotStatus.INIT);
+            case SHUTDOWN -> throw new BotStatusException("bot already shutdown");
+        };
 
         if (b) {
             logger.info("Status change [%s] => [%s]".formatted(status, newStatus));
@@ -454,7 +468,7 @@ public abstract class AbstractAutoBot {
     }
 
     protected synchronized Map<String, AutoBotJobParam> getJobParams() {
-        return this.botInstance.getJobParams();
+        return this.botInstance == null ? new HashMap<>() : this.botInstance.getJobParams();
     }
 
     protected synchronized AutoBotJobParam getJobParam(String jobName) {

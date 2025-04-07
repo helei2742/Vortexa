@@ -4,6 +4,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -48,6 +49,10 @@ public class ConditionBuildUtil {
                 Field field = fields.get(mapParamsFieldName);
                 field.setAccessible(true);
                 Object obj = field.get(condition);
+                if (obj == null) {
+                    field.set(condition, new HashMap<String, Object>());
+                    obj = field.get(condition);
+                }
                 Map<String, Object> map = (Map<String, Object>) obj;
                 map.put(key, value);
             }

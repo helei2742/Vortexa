@@ -65,6 +65,14 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         uniqueACList.addAll(acMap.values().stream().map(List::getFirst).toList());
     }
 
+    @Override
+    protected void doStop() {
+        accountContexts.clear();
+        acMap.clear();
+        uniqueACList.clear();
+        jobCCSemaphoreMap.clear();
+    }
+
     /**
      * 注册账户
      *

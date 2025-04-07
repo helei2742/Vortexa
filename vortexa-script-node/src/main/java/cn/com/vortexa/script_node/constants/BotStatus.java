@@ -12,5 +12,9 @@ public enum BotStatus {
 
     STARTING,
     RUNNING,
+
+    STOPPING,
+    STOPPED,
+
     SHUTDOWN,
 }

@@ -6,13 +6,12 @@ import cn.com.vortexa.script_node.constants.BotStatus;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStartException;
-import cn.com.vortexa.script_node.view.ScriptNodeCMDLineMenu;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -24,6 +23,10 @@ import java.util.function.Function;
 public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoDriveAutoBot<T> {
 
     private BiConsumer<BotStatus, BotStatus> botStatusChangeHandler;
+    @Getter
+    private String botName;
+    @Getter
+    private String botKey;
 
     @Override
     public synchronized void updateState(BotStatus newStatus) throws BotStatusException {
@@ -39,15 +42,22 @@ public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoD
         }
     }
 
+    @Override
+    protected final void doStop() {
+        super.doStop();
+        botStopped();
+    }
+
     /**
      * 启动Bot
      *
      * @param botConfig botConfig
-     * @param botApi    botApi
+     * @param botApi botApi
      * @throws BotStartException BotStartException
-     * @throws BotInitException  BotInitException
+     * @throws BotInitException BotInitException
      */
-    public void launch(AutoBotConfig botConfig, BotApi botApi, Function<AutoLaunchBot<?>, Boolean> initHandler) throws BotStartException, BotInitException {
+    public void launch(AutoBotConfig botConfig, BotApi botApi, Function<AutoLaunchBot<?>, Boolean> initHandler)
+            throws BotStartException, BotInitException {
         String botKey = botConfig.getBotKey();
         if (StrUtil.isBlank(botKey)) {
             throw new BotStartException("botKey is empty");
@@ -72,5 +82,18 @@ public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoD
         }
     }
 
+    /**
+     * bot初始化时调用
+     *
+     * @param botConfig botConfig
+     * @param botApi botApi
+     */
     protected abstract void botInitialized(AutoBotConfig botConfig, BotApi botApi);
+
+    /**
+     * bot stop时调用
+     */
+    protected void botStopped() {
+
+    }
 }

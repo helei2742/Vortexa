@@ -22,24 +22,58 @@
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.ProxyInfo">
         INSERT INTO t_proxy_info
         (proxy_type, proxy_protocol, host, port, username, password, usable, params, insert_datetime, update_datetime,
-         is_valid)
+        is_valid)
         VALUES (#{proxyType}, #{proxyProtocol}, #{host}, #{port}, #{username}, #{password}, #{usable}, #{params},
-                #{insertDatetime}, #{updateDatetime}, #{isValid}) ON CONFLICT(host, port) DO
-        UPDATE SET
-            proxy_type = excluded.proxy_type,
-            proxy_protocol = excluded.proxy_protocol,
-            username = excluded.username,
-            password = excluded.password,
-            usable = excluded.usable,
-            params = excluded.params,
-            update_datetime = excluded.update_datetime;
+        #{insertDatetime}, #{updateDatetime}, #{isValid}) ON DUPLICATE KEY
+        UPDATE
+        <trim suffixOverrides=",">
+            <if test="proxyType != null">
+                proxy_type = values(proxy_type),
+            </if>
+            <if test="proxyProtocol != null">
+                proxy_protocol = values(proxy_protocol),
+            </if>
+            <if test="username != null">
+                username = values(username),
+            </if>
+            <if test="password != null">
+                password = values(password),
+            </if>
+            <if test="usable != null">
+                usable = values(usable),
+            </if>
+            <if test="params != null">
+                params = values(params),
+            </if>
+            <if test="updateDatetime != null">
+                update_datetime = values(update_datetime),
+            </if>
+        </trim>
     </insert>
 
+    <insert id="insertOrUpdateBatch" parameterType="java.util.List">
+        INSERT INTO t_proxy_info
+        (proxy_type, proxy_protocol, host, port, username, password, usable, params, insert_datetime, update_datetime,
+        is_valid)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{proxyType}, #{proxyProtocol}, #{host}, #{port}, #{username}, #{password}, #{usable}, #{params},
+            #{insertDatetime}, #{updateDatetime}, #{isValid})
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        proxy_type = values(proxy_type),
+        proxy_protocol = values(proxy_protocol),
+        username = values(username),
+        password = values(password),
+        usable = values(usable),
+        params = values(params),
+        update_datetime = values(update_datetime),
+    </insert>
     <select id="multipleConditionQuery"
             parameterType="cn.com.vortexa.common.entity.ProxyInfo"
             resultType="cn.com.vortexa.common.entity.ProxyInfo">
         select
-            t.id as id,
+        t.id as id,
         t.proxy_type as proxyType,
         t.proxy_protocol as proxyProtocol,
         t.host, t.port, t.username,
@@ -49,9 +83,6 @@
         t.is_valid as isValid
         from
         t_proxy_info as t
-        <if test="params != null and !params.isEmpty()">
-            left join json_each(t.params) json_each
-        </if>
         <where>
             is_valid = 1
             <if test="id != null">
@@ -79,10 +110,12 @@
                 and t.usable = #{usable}
             </if>
             <if test="params != null and !params.isEmpty()">
-                and
-                <foreach collection="params" item='entry' index='key' separator='AND'>
-                    json_each.key = #{key} and json_each.value = #{entry}
+                AND JSON_CONTAINS(
+                t.params,
+                <foreach collection="params" item='value' index='key' separator=',' open="JSON_OBJECT(" close=")">
+                    #{key}, #{value}
                 </foreach>
+                )
             </if>
         </where>
     </select>

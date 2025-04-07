@@ -1,7 +1,13 @@
+
+
+
 package cn.com.vortexa.script_node.view;
 
-import cn.com.vortexa.script_node.bot.JobInvokeAutoBot;
+import cn.com.vortexa.common.exception.BotInitException;
+import cn.com.vortexa.common.exception.BotStartException;
+import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.script_node.util.AccountInfoPrinter;
+import cn.com.vortexa.script_node.util.ScriptBotLauncher;
 import cn.com.vortexa.script_node.view.commandMenu.CommandMenuNode;
 import cn.com.vortexa.script_node.view.commandMenu.DefaultMenuType;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
@@ -13,26 +19,29 @@ import cn.com.vortexa.common.entity.BrowserEnv;
 import cn.com.vortexa.common.entity.ProxyInfo;
 import cn.com.vortexa.common.entity.RewordInfo;
 import cn.com.vortexa.job.constants.JobStatus;
+
 import com.alibaba.fastjson.JSON;
+
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
 import org.quartz.SchedulerException;
 
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+        import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static cn.com.vortexa.script_node.constants.MapConfigKey.*;
-
 
 @Slf4j
 public class ScriptNodeCMDLineMenu extends CommandLineMenu {
     /**
      * 刷新节点
      */
-    public static final CommandMenuNode REFRESH_NODE = new CommandMenuNode(true, "刷新", "当前数据已刷新", null);
+    public static final CommandMenuNode REFRESH_NODE = new CommandMenuNode(true, "刷新", "当前数据已刷新");
 
     private final List<DefaultMenuType> defaultMenuTypes;
 
@@ -49,9 +58,8 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
         this.defaultMenuTypes.add(DefaultMenuType.BROWSER_ENV_LIST);
     }
 
-
     @Override
-    public final void buildBotMenuNode(CommandMenuNode botMenuNode, JobInvokeAutoBot bot) {
+    public final void buildBotMenuNode(CommandMenuNode botMenuNode, AutoLaunchBot<?> bot) {
         if (addCustomMenuNode != null) {
             addCustomMenuNode.accept(botMenuNode);
         }
@@ -66,10 +74,39 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
                 case BROWSER_ENV_LIST -> buildBrowserListMenuNode();
                 case START_BOT_TASK -> buildStartBotTaskMenuNode(bot);
                 case IMPORT -> buildImportMenuNode();
+                case LAUNCH_SCRIPT -> buildLaunchScriptMenuNode(bot);
             });
         }
     }
 
+    /**
+     * 启动bot菜单
+     *
+     * @return CommandMenuNode
+     */
+    private CommandMenuNode buildLaunchScriptMenuNode(AutoLaunchBot<?> bot) {
+        String botKey = bot.getBotKey();
+
+        CommandMenuNode commandMenuNode = new CommandMenuNode("启动/关闭 Bot", "启动或关闭Bot",
+                () -> "当前选择的Bot[%s][%s]\n状态[%s]".formatted(
+                        bot.getBotName(),
+                        botKey,
+                        bot.getStatus()
+                ));
+
+        return commandMenuNode.addSubMenu(new CommandMenuNode(true, "启动", null, ()->{
+            try {
+                ScriptBotLauncher.launchResolvedScriptBot(botKey);
+                return botKey + " launch finish...Current status: " + bot.getStatus();
+            } catch (BotStartException | BotInitException e) {
+                log.error("start bot[{}] error", botKey, e);
+                return "";
+            }
+        })).addSubMenu(new CommandMenuNode(true, "关闭", null, () -> {
+            bot.stop();
+            return "";
+        }));
+    }
 
     /**
      * 构建注册菜单节点
@@ -109,11 +146,9 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
     }
 
     private CommandMenuNode buildVerifierMenuNode() {
-
         return new CommandMenuNode("验证邮箱", "请选择验证的账户类型",
                 () -> "当前的邮箱类型：" + getBot().getAutoBotConfig().getConfig(EMAIL_VERIFIER_TYPE));
     }
-
 
     /**
      * 获取token
@@ -145,12 +180,12 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
             try {
                 return getBot().getBotApi().getProxyInfoRPC().conditionPageQueryRPC(pageNum, pageSize, new HashMap<>());
             } catch (SQLException e) {
-                getBot().logger.error("查询代理列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
+                getBot().logger.error(
+                        "查询代理列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
                 return null;
             }
         }, ProxyInfo.class);
     }
-
 
     /**
      * 构建查看浏览器环境列表的菜单节点
@@ -160,9 +195,12 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
     private CommandMenuNode buildBrowserListMenuNode() {
         return new PageMenuNode<>("查看浏览器环境列表", "当前浏览器环境:", (pageNum, pageSize) -> {
             try {
-                return getBot().getBotApi().getBrowserEnvRPC().conditionPageQueryRPC(pageNum, pageSize, new HashMap<>());
+                return getBot().getBotApi()
+                        .getBrowserEnvRPC()
+                        .conditionPageQueryRPC(pageNum, pageSize, new HashMap<>());
             } catch (SQLException e) {
-                getBot().logger.error("查询浏览器环境列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
+                getBot().logger.error(
+                        "查询浏览器环境列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
                 return null;
             }
         }, BrowserEnv.class);
@@ -174,20 +212,24 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
      * @return 账户列表节点
      */
     private CommandMenuNode buildAccountListMenuNode() {
-        CommandMenuNode accountListMenuNode = new PageMenuNode<>("查看账号", "当前账户详情列表:", (pageNum, pageSize) -> {
-            try {
-                HashMap<String, Object> filter = new HashMap<>();
-                filter.put("botId", getBot().getBotInstance().getBotId());
-                filter.put("botKey", getBot().getAutoBotConfig().getBotKey());
+        CommandMenuNode accountListMenuNode = new PageMenuNode<>("查看账号", "当前账户详情列表:",
+                (pageNum, pageSize) -> {
+                    try {
+                        HashMap<String, Object> filter = new HashMap<>();
+                        filter.put("botId", getBot().getBotInstance().getBotId());
+                        filter.put("botKey", getBot().getAutoBotConfig().getBotKey());
 
-                PageResult<AccountContext> pageResult = getBot().getBotApi().getBotAccountService().conditionPageQuery(pageNum, pageSize, filter);
-                getBot().getPersistenceManager().fillAccountInfos(pageResult.getList());
-                return pageResult;
-            } catch (Exception e) {
-                getBot().logger.error("查询账号列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
-                return null;
-            }
-        }, AccountContext.class);
+                        PageResult<AccountContext> pageResult = getBot().getBotApi()
+                                .getBotAccountService()
+                                .conditionPageQuery(pageNum, pageSize, filter);
+                        getBot().getPersistenceManager().fillAccountInfos(pageResult.getList());
+                        return pageResult;
+                    } catch (Exception e) {
+                        getBot().logger.error(
+                                "查询账号列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
+                        return null;
+                    }
+                }, AccountContext.class);
 
         return accountListMenuNode
                 .addSubMenu(buildAccountRewardMenuNode())
@@ -203,9 +245,12 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
     private CommandMenuNode buildAccountRewardMenuNode() {
         return new PageMenuNode<>("查看账号收益", "账号收益详情列表:", (pageNum, pageSize) -> {
             try {
-                return getBot().getBotApi().getRewordInfoService().conditionPageQuery(pageNum, pageSize, new HashMap<>());
+                return getBot().getBotApi()
+                        .getRewordInfoService()
+                        .conditionPageQuery(pageNum, pageSize, new HashMap<>());
             } catch (SQLException e) {
-                getBot().logger.error("查询账号收益列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
+                getBot().logger.error(
+                        "查询账号收益列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
                 return null;
             }
         }, RewordInfo.class);
@@ -224,39 +269,40 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
         ).addSubMenu(REFRESH_NODE);
     }
 
-
     /**
      * 开始账户连接菜单节点
      *
      * @return 连接账户菜单节点
      */
-    private CommandMenuNode buildStartBotTaskMenuNode(JobInvokeAutoBot bot) {
+    private CommandMenuNode buildStartBotTaskMenuNode(AutoLaunchBot<?> bot) {
+
         CommandMenuNode menuNode = new CommandMenuNode(
                 "启动任务",
                 "选择任务类型",
-                null
-        );
+                node ->{
+                    for (String jobName : bot.botJobNameList()) {
 
-        Set<String> jobNameSet = bot.botJobNameList();
-        for (String jobName : jobNameSet) {
+                        CommandMenuNode typeInput = new CommandMenuNode(true, null, "type",
+                                () -> JSON.toJSONString(bot.startBotJob(jobName))
+                        );
 
-            CommandMenuNode typeInput = new CommandMenuNode(true, null, "type",
-                    () -> JSON.toJSONString(bot.startBotJob(jobName))
-            );
+                        typeInput.setTittleBuilder(() -> {
+                            JobStatus status = null;
+                            try {
+                                status = getBot().getBotApi()
+                                        .getBotJobService()
+                                        .queryJobStatus(getBot().getAutoBotConfig().getBotKey(), jobName);
+                                return "%s 任务 (%s)".formatted(jobName, status);
+                            } catch (SchedulerException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
 
-            typeInput.setTittleBuilder(() -> {
-                JobStatus status = null;
-                try {
-                    status = getBot().getBotApi().getBotJobService().queryJobStatus(getBot().getAutoBotConfig().getBotKey(), jobName);
-                    return "%s 任务 (%s)".formatted(jobName, status);
-                } catch (SchedulerException e) {
-                    throw new RuntimeException(e);
+                        node.addSubMenu(typeInput);
+                    }
+                    return "";
                 }
-            });
-
-            menuNode.addSubMenu(typeInput);
-        }
-
+        );
         return menuNode;
     }
 
@@ -267,7 +313,7 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
      */
     private CommandMenuNode buildImportMenuNode() {
 
-        return new CommandMenuNode("导入", "请选择要导入的数据", null)
+        return new CommandMenuNode("导入", "请选择要导入的数据")
                 .addSubMenu(buildImportBotAccountContextMenuNode())
                 // .addSubMenu(buildImportBaseAccountMenuNode())
                 // .addSubMenu(buildImportProxyMenuNode())
@@ -389,7 +435,6 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
     //     });
     // }
 
-
     /**
      * 导入bot使用的账号菜单节点
      *
@@ -411,7 +456,6 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
             }
         });
     }
-
 
     /**
      * 打印当前的邀请码

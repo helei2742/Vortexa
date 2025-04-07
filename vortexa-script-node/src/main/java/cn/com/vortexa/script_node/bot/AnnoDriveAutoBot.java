@@ -191,6 +191,15 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         );
     }
 
+    @Override
+    protected void doStop() {
+        registerMethod = null;
+        loginMethod = null;
+        updateRewordMethod = null;
+        webSocketClientLauncher.clear();
+        super.doStop();
+    }
+
     /**
      * 获取账号的token
      *
@@ -452,7 +461,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
     protected BotInfo generateFromAnno(BotApplication annotation) {
         BotInfo botInfo = new BotInfo();
         botInfo.setName(annotation.name());
-        botInfo.setDescribe(annotation.describe());
+        botInfo.setDescription(annotation.describe());
         botInfo.setImage(annotation.image());
         botInfo.setLimitProjectIds(Arrays.toString(annotation.limitProjectIds()));
         botInfo.getParams()

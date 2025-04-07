@@ -43,8 +43,8 @@ public class BotInfo implements Serializable {
     @TableField("name")
     private String name;
 
-    @TableField("describe")
-    private String describe;
+    @TableField("description")
+    private String description;
 
     @TableField("image")
     private String image;

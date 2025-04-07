@@ -74,6 +74,11 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
         logger.info("[%s]定时任务执行完毕".formatted(jobName));
     }
 
+    @Override
+    protected void doStop() {
+        jobRuntimeParamMap.clear();
+        super.doStop();
+    }
 
     /**
      * 将Job注册到Bot中

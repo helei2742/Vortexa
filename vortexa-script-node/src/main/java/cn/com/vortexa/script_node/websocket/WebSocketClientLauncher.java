@@ -211,4 +211,13 @@ public class WebSocketClientLauncher {
             }
         });
     }
+
+    public void clear() {
+        for (Map.Entry<String, BaseBotWSClient<?>> entry : launchedWSClientMap.entrySet()) {
+            BaseBotWSClient<?> client = entry.getValue();
+            client.close();
+        }
+        launchedWSClientMap.clear();
+        wsCCSemapthoreMap.clear();
+    }
 }
