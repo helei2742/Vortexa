@@ -1,8 +1,8 @@
 package cn.com.vortexa.control.service.impl;
 
-import cn.com.vortexa.common.dto.ScriptNodeRegisterInfo;
+import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.control.constant.RegistryState;
-import cn.com.vortexa.common.dto.control.RegisteredService;
+import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.util.ControlServerUtil;
@@ -19,13 +19,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author helei
@@ -35,7 +32,7 @@ import java.util.regex.Pattern;
 public class FileRegistryService implements IRegistryService {
 
     private static final String FILE_NAME = "nameserver-registry.json";
-    private final ConcurrentHashMap<String, RegisteredService> registryServiceMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, RegisteredScriptNode> registryServiceMap = new ConcurrentHashMap<>();
     private final AtomicBoolean updated = new AtomicBoolean(false);
     @Setter
     private int saveIntervalSecond = 60;
@@ -59,8 +56,8 @@ public class FileRegistryService implements IRegistryService {
     }
 
     @Override
-    public RegistryState registryService(ServiceInstance serviceInstance, ScriptNodeRegisterInfo scriptNodeRegisterInfo) {
-        String group = serviceInstance.getGroup();
+    public RegistryState registryService(ServiceInstance serviceInstance) {
+        String group = serviceInstance.getGroupId();
         String serviceId = serviceInstance.getServiceId();
         String clientId = serviceInstance.getInstanceId();
 
@@ -70,9 +67,8 @@ public class FileRegistryService implements IRegistryService {
 
         try {
             String key = ControlServerUtil.generateServiceInstanceKey(group, serviceId, clientId);
-
             // 存内存
-            registryServiceMap.put(key, new RegisteredService(serviceInstance, scriptNodeRegisterInfo));
+            registryServiceMap.put(key, new RegisteredScriptNode(ScriptNode.generateFromServiceInstance(serviceInstance)));
             updated.set(true);
 
             // 存磁盘
@@ -114,25 +110,25 @@ public class FileRegistryService implements IRegistryService {
     }
 
     @Override
-    public List<RegisteredService> queryServiceInstance(String keyPattern) {
-        Pattern compile = Pattern.compile(keyPattern);
-
-        return registryServiceMap.keySet().stream().filter(key -> {
-            Matcher matcher = compile.matcher(key);
-            return matcher.find();
-        }).map(registryServiceMap::get).toList();
+    public List<RegisteredScriptNode> queryServiceInstance(ServiceInstance query) {
+        return queryServiceInstance(query.getGroupId(), query.getServiceId(), query.getInstanceId());
     }
 
     @Override
-    public List<RegisteredService> queryServiceInstance(
+    public List<RegisteredScriptNode> queryServiceInstance(String target) {
+        return registryServiceMap.keySet().stream().filter(key -> key.contains(target)).map(registryServiceMap::get).toList();
+    }
+
+    @Override
+    public List<RegisteredScriptNode> queryServiceInstance(
             String groupId,
             String serviceId,
             String clientId
     ) {
         String keyPattern = ControlServerUtil.generateServiceInstanceKey(
-                StrUtil.isBlank(groupId) ? "*" : groupId,
-                StrUtil.isBlank(serviceId) ? "*" : serviceId,
-                StrUtil.isBlank(clientId) ? "*" : clientId
+                groupId,
+                serviceId,
+                clientId
         );
 
         return queryServiceInstance(keyPattern);

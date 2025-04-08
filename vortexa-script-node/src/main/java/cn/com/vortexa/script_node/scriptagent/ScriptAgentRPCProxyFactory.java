@@ -4,7 +4,7 @@ import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.dto.RPCResultWrapper;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.exception.RPCException;
 import cn.com.vortexa.control.util.RPCMethodUtil;
 import lombok.extern.slf4j.Slf4j;

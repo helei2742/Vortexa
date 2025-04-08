@@ -15,7 +15,7 @@ import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.*;
 import cn.com.vortexa.control.exception.ControlServerException;
 import cn.com.vortexa.control.exception.CustomCommandInvokeException;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.service.IConnectionService;
 import cn.com.vortexa.control.service.IRegistryService;
 import cn.com.vortexa.control.util.ControlServerUtil;

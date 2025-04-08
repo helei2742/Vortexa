@@ -9,7 +9,7 @@ import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;
 import cn.com.vortexa.control.processor.CustomCommandProcessor;
 import cn.com.vortexa.control.processor.ScriptAgentProcessorAdaptor;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.service.ScriptAgentMetricsUploadService;
 import cn.com.vortexa.control.util.DistributeIdMaker;
 import cn.com.vortexa.control.util.RemotingCommandDecoder;
@@ -101,7 +101,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
             message.setTransactionId(nextTxId());
         }
 
-        message.setGroup(serviceInstance.getGroup());
+        message.setGroup(serviceInstance.getGroupId());
         message.setServiceId(serviceInstance.getServiceId());
         message.setInstanceId(serviceInstance.getInstanceId());
 
@@ -205,7 +205,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
      */
     public RemotingCommand newRequestCommand(int commandFlag, boolean needTxId) {
         RemotingCommand command = new RemotingCommand();
-        command.setGroup(serviceInstance.getGroup());
+        command.setGroup(serviceInstance.getGroupId());
         command.setServiceId(serviceInstance.getServiceId());
         command.setInstanceId(serviceInstance.getInstanceId());
         command.setTransactionId(needTxId ? nextTxId() : null);

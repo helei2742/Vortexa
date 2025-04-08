@@ -37,6 +37,7 @@ import javax.net.ssl.SSLException;
 @Setter
 @Getter
 public abstract class AutoConnectWSService implements IWSService {
+    public static final int UN_LIMIT_RECONNECT_MARK = -1;   // 无限重连标记
     private static final AtomicReferenceFieldUpdater<AutoConnectWSService, Channel> CHANNEL_ATOMIC_UPDATER
             = AtomicReferenceFieldUpdater.newUpdater(AutoConnectWSService.class, Channel.class, "channel");
     private static volatile EventLoopGroup eventLoopGroup;    //netty线程组
@@ -122,7 +123,7 @@ public abstract class AutoConnectWSService implements IWSService {
 
         return CompletableFuture.supplyAsync(() -> {
             //Step 1 重连次数超过限制，关闭
-            if (reconnectTimes.get() >= reconnectLimit) {
+            if (reconnectLimit != UN_LIMIT_RECONNECT_MARK && reconnectTimes.get() >= reconnectLimit) {
                 log.error("reconnect times out of limit [{}], close websocket client", reconnectLimit);
                 shutdown();
                 return false;
@@ -155,7 +156,7 @@ public abstract class AutoConnectWSService implements IWSService {
                 log.info("init Websocket finish，start connect server [{}]", url);
 
                 //Step 4 链接服务器
-                if (reconnectTimes.incrementAndGet() <= reconnectLimit) {
+                if (reconnectLimit == UN_LIMIT_RECONNECT_MARK || reconnectTimes.incrementAndGet() <= reconnectLimit) {
 
                     //Step 4.1 每进行重连都会先将次数加1并设置定时任务将重连次数减1
                     getEventLoopGroup().schedule(() -> {

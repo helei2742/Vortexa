@@ -1,6 +1,6 @@
 package cn.com.vortexa.control.processor;
 
-import cn.com.vortexa.common.dto.ScriptNodeRegisterInfo;
+import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.RegistryState;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
@@ -44,17 +44,17 @@ public class ServiceRegistryProcessor {
         String[] serviceAddress = channel.remoteAddress().toString().split(":");
 
         ServiceInstance serviceInstance = ServiceInstance.builder()
-                .group(group)
+                .groupId(group)
                 .serviceId(serviceId)
                 .instanceId(clientId)
                 .host(serviceAddress[0])
                 .port(Integer.parseInt(serviceAddress[1]))
                 .build();
 
-        ScriptNodeRegisterInfo scriptNodeRegisterInfo = null;
+        ScriptNode scriptNode = null;
         if (remotingCommand.getBody() != null && remotingCommand.getBody().length > 0) {
             try {
-                scriptNodeRegisterInfo = remotingCommand.getObjBodY(ScriptNodeRegisterInfo.class);
+                scriptNode = remotingCommand.getObjBodY(ScriptNode.class);
             } catch (Exception e) {
                 log.warn("get service props from remoting command error, {}", e.getMessage());
             }
@@ -67,7 +67,7 @@ public class ServiceRegistryProcessor {
         RegistryState registryState;
 
         try {
-            registryState = registryService.registryService(serviceInstance, scriptNodeRegisterInfo);
+            registryState = registryService.registryService(scriptNode);
 
             if (registryState == RegistryState.OK) {
                 response.setCode(RemotingCommandCodeConstants.SUCCESS);

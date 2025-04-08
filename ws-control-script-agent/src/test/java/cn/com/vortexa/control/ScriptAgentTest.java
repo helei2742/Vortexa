@@ -7,7 +7,7 @@ import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
 import cn.com.vortexa.control.dto.RPCArgsWrapper;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.exception.CustomCommandException;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.util.DistributeIdMaker;
 import lombok.extern.slf4j.Slf4j;
 

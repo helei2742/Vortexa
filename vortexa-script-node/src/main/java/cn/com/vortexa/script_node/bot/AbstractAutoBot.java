@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
-        import java.util.function.Supplier;
+import java.util.function.Supplier;
 
 public abstract class AbstractAutoBot {
 
@@ -167,7 +167,7 @@ public abstract class AbstractAutoBot {
             BotInstance dbInstance = getBotApi().getBotInstanceRPC().selectOneRPC(botInstance);
 
             // 数据库存在bot instance实例信息并且job信息没变化，用数据库的。 否则用BotInfo信息生成BotInstance信息写入库
-            if (dbInstance != null && dbInstance.getJobParams().keySet().equals(botInfo.getJobParams().keySet())) {
+            if (dbInstance != null && !compareBotJobParamsChanged(botInfo, dbInstance)) {
                 this.botInstance = dbInstance;
                 logger.info("exist botInstance, use exist instance config");
             } else {
@@ -503,4 +503,44 @@ public abstract class AbstractAutoBot {
     protected abstract BotInfo buildBotInfo() throws BotInitException;
 
     protected abstract void resolveBotJobMethod();
+
+    /**
+     * 比较botInfo 和 BotInstance是否发生变化
+     *
+     * @param botInfo botInfo
+     * @param dbInstance dbInstance
+     * @return boolean
+     */
+    private boolean compareBotJobParamsChanged(BotInfo botInfo, BotInstance dbInstance) {
+        Map<String, AutoBotJobParam> botJobParam = botInfo.getJobParams();
+        Map<String, AutoBotJobParam> botInstanceParam = dbInstance.getJobParams();
+
+        // rpc map序列化范型丢失处理
+        Map<String, AutoBotJobParam> jobParams = dbInstance.getJobParams();
+        if (jobParams != null) {
+            for (String key : jobParams.keySet()) {
+                Object param = jobParams.get(key);
+                if (param instanceof JSONObject jb) {
+                    jobParams.put(key, JSONObject.parseObject(JSONObject.toJSONString(jb), AutoBotJobParam.class));
+                }
+            }
+        }
+
+        if (botJobParam.size() != botInstanceParam.size()) return true;
+
+        if (!botJobParam.keySet().containsAll(botInstanceParam.keySet())) {
+            return true;
+        }
+
+        for (Map.Entry<String, AutoBotJobParam> entry : botJobParam.entrySet()) {
+            String jobName = entry.getKey();
+            AutoBotJobParam param = entry.getValue();
+            AutoBotJobParam instanceParam = botInstanceParam.get(jobName);
+
+            if (!param.equals(instanceParam)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -45,7 +45,7 @@
             <if test="params != null">
                 params = values(params),
             </if>
-            <if test="updateDatetime != null">
+            <if test="true">
                 update_datetime = values(update_datetime),
             </if>
             <if test="valid != null">

@@ -6,7 +6,7 @@ import cn.com.vortexa.control.dto.RPCResultWrapper;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.exception.RPCException;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.util.RPCMethodUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -72,7 +72,7 @@ public class ControlServerRPCProxyFactory {
 
                     // Step 3 发送请求，等待响应
                     RemotingCommand response = botControlServer.sendCommandToServiceInstance(
-                            serviceInstance.getGroup(),
+                            serviceInstance.getGroupId(),
                             serviceInstance.getServiceId(),
                             serviceInstance.getInstanceId(),
                             request

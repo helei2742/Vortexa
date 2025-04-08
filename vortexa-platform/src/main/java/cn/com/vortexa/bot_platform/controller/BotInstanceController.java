@@ -1,7 +1,7 @@
 package cn.com.vortexa.bot_platform.controller;
 
 import cn.com.vortexa.bot_platform.dto.BotJob;
-import cn.com.vortexa.common.dto.control.RegisteredService;
+import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
 import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.common.dto.Result;
@@ -48,8 +48,8 @@ public class BotInstanceController {
 
     @PostMapping("/onlineInstance")
     public Result onlineInstance() {
-        List<RegisteredService> registeredServices = botInstanceService.queryOnLineInstance();
-        return Result.ok(registeredServices);
+        List<RegisteredScriptNode> registeredScriptNodes = botInstanceService.queryOnLineInstance();
+        return Result.ok(registeredScriptNodes);
     }
 
     @PostMapping("/startJob")

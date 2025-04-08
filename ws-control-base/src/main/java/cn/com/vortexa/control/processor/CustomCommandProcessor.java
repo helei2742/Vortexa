@@ -6,7 +6,7 @@ import cn.com.vortexa.control.dto.RequestHandleResult;
 import cn.com.vortexa.control.dto.RPCResultWrapper;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import cn.hutool.core.util.StrUtil;
 import io.netty.channel.Channel;

@@ -14,7 +14,7 @@ import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.exception.ControlServerException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;
 import cn.com.vortexa.control.processor.ControlServerProcessorAdaptor;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.service.IConnectionService;
 import cn.com.vortexa.control.service.IMetricsService;
 import cn.com.vortexa.control.service.IRegistryService;
@@ -301,7 +301,7 @@ public class BotControlServer {
         RemotingCommand remotingCommand = new RemotingCommand();
         remotingCommand.setFlag(flag);
         ServiceInstance serviceInstance = controlServerConfig.getServiceInstance();
-        remotingCommand.setGroup(serviceInstance.getGroup());
+        remotingCommand.setGroup(serviceInstance.getGroupId());
         remotingCommand.setServiceId(serviceInstance.getServiceId());
         remotingCommand.setInstanceId(serviceInstance.getInstanceId());
         remotingCommand.setTransactionId(needId ? nextTxId() : null);

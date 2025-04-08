@@ -10,7 +10,7 @@ import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.exception.ControlServerException;
 import cn.com.vortexa.control.handler.CustomRequestHandler;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.service.impl.FileRegistryService;
 import cn.com.vortexa.control.service.impl.MemoryConnectionService;
 
@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Random;
@@ -33,7 +32,7 @@ class BotControlServerTest {
     static Random random = new Random();
     static ServiceInstance clientInstance = ServiceInstance
             .builder()
-            .group("test1")
+            .groupId("test1")
             .serviceId("client")
             .instanceId("client-1")
             .build();
@@ -45,7 +44,7 @@ class BotControlServerTest {
         controlServerConfig = new ControlServerConfig();
 
         ServiceInstance address = ServiceInstance.builder()
-                .group("default")
+                .groupId("default")
                 .serviceId("sahara")
                 .instanceId("sahara_test")
                 .host("127.0.0.1")

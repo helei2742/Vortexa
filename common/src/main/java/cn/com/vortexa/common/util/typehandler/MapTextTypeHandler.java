@@ -15,8 +15,7 @@ public class MapTextTypeHandler extends BaseTypeHandler<Map<String, Object>> {
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, Map<String, Object> parameter, JdbcType jdbcType) throws SQLException {
-
-        String jsonString = parameter != null ? JSONObject.toJSONString(parameter) : "";
+        String jsonString = parameter != null ? JSONObject.toJSONString(parameter) : null;
         ps.setString(i, jsonString);
     }
 

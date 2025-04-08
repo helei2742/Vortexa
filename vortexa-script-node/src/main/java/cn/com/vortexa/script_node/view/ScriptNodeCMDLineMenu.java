@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static cn.com.vortexa.script_node.constants.MapConfigKey.*;
 
@@ -271,14 +272,18 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
      * @return 连接账户菜单节点
      */
     private CommandMenuNode buildStartBotTaskMenuNode(AutoLaunchBot<?> bot) {
-
         CommandMenuNode menuNode = new CommandMenuNode(
                 "启动任务",
                 "选择任务类型",
                 node -> {
-                    for (String jobName : bot.botJobNameList()) {
+                    Set<String> existJobs = node.getSubNodeList()
+                            .stream()
+                            .map(CommandMenuNode::getDescribe)
+                            .collect(Collectors.toSet());
 
-                        CommandMenuNode typeInput = new CommandMenuNode(true, null, "type",
+                    for (String jobName : bot.botJobNameList()) {
+                        if (existJobs.contains(jobName)) continue;
+                        CommandMenuNode typeInput = new CommandMenuNode(true, null, jobName,
                                 () -> JSON.toJSONString(bot.startBotJob(jobName))
                         );
 

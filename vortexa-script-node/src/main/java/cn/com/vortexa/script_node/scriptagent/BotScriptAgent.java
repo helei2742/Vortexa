@@ -3,7 +3,8 @@ package cn.com.vortexa.script_node.scriptagent;
 import cn.com.vortexa.common.constants.BotExtFieldConstants;
 import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
 import cn.com.vortexa.common.dto.BotACJobResult;
-import cn.com.vortexa.common.dto.ScriptNodeRegisterInfo;
+import cn.com.vortexa.common.dto.control.ServiceInstance;
+import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.config.ScriptAgentConfig;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
@@ -13,7 +14,7 @@ import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.dto.RequestHandleResult;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.exception.CustomCommandInvokeException;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.control.util.RPCMethodUtil;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
@@ -28,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -54,11 +54,15 @@ public class BotScriptAgent extends ScriptAgent {
     ) {
         super(clientConfig);
         super.setName(clientConfig.getServiceInstance().toString());
-        super.setRegistryBodySetter(() -> ScriptNodeRegisterInfo
-                .builder()
-                .botKeyConfigMap(scriptNodeConfiguration.getBotKeyConfigMap())
-                .build()
-        );
+        super.setRegistryBodySetter(() -> {
+            ServiceInstance serviceInstance = clientConfig.getServiceInstance();
+
+            ScriptNode scriptNode = ScriptNode.generateFromServiceInstance(serviceInstance);
+            scriptNode.setBotGroup(scriptNodeConfiguration.getBotGroup());
+            scriptNode.setBotConfigMap(scriptNodeConfiguration.getBotKeyConfigMap());
+
+            return scriptNode;
+        });
 
         this.botGroup = scriptNodeConfiguration.getBotGroup();
         this.rpcServiceInfos = rpcServiceInfos;

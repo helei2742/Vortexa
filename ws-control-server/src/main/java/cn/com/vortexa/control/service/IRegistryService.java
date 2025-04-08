@@ -1,13 +1,11 @@
 package cn.com.vortexa.control.service;
 
-import cn.com.vortexa.common.dto.ScriptNodeRegisterInfo;
 import cn.com.vortexa.control.constant.RegistryState;
-import cn.com.vortexa.common.dto.control.RegisteredService;
+import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author helei
@@ -21,34 +19,42 @@ public interface IRegistryService {
      * @param serviceInstance serviceInstance
      * @return 注册状态
      */
-    RegistryState registryService(ServiceInstance serviceInstance, ScriptNodeRegisterInfo scriptNodeRegisterInfo);
+    RegistryState registryService(ServiceInstance serviceInstance);
 
     /**
      * 保存注册信息
      *
      * @return Boolean
      */
-    Boolean saveRegistryInfo() throws IOException;
+    Boolean saveRegistryInfo() throws IOException, InterruptedException;
+
+    /**
+     * 查询服务实例
+     *
+     * @param query query
+     * @return List<RegisteredService>
+     */
+    List<RegisteredScriptNode> queryServiceInstance(ServiceInstance query);
 
     /**
      * 查找服务实例
      *
-     * @param keyPattern keyPattern
+     * @param key key
      * @return List<ServiceInstance>
      */
-    List<RegisteredService> queryServiceInstance(
-            String keyPattern
+    List<RegisteredScriptNode> queryServiceInstance(
+            String key
     );
 
     /**
      * 查找服务实例
      *
-     * @param groupId   groupId
+     * @param groupId groupId
      * @param serviceId serviceId
-     * @param clientId  clientId
+     * @param clientId clientId
      * @return List<ServiceInstance>
      */
-    List<RegisteredService> queryServiceInstance(
+    List<RegisteredScriptNode> queryServiceInstance(
             String groupId,
             String serviceId,
             String clientId

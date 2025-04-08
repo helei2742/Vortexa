@@ -1,6 +1,5 @@
-package cn.com.vortexa.control.protocol;
+package cn.com.vortexa.common.util.protocol;
 
-import cn.com.vortexa.websocket.netty.util.ProtostuffUtils;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 

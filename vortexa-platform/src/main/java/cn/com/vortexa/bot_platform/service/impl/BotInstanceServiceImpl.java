@@ -6,7 +6,7 @@ import cn.com.vortexa.common.vo.BotInstanceVO;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.exception.BotStartException;
-import cn.com.vortexa.common.dto.control.RegisteredService;
+import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
 import cn.com.vortexa.bot_platform.mapper.BotInfoMapper;
 import cn.com.vortexa.control.constant.WSControlSystemConstants;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
@@ -108,8 +108,8 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
     }
 
     @Override
-    public List<RegisteredService> queryOnLineInstance() {
-        List<RegisteredService> res = new ArrayList<>();
+    public List<RegisteredScriptNode> queryOnLineInstance() {
+        List<RegisteredScriptNode> res = new ArrayList<>();
         List<String> keys = botControlServer.getConnectionService().queryOnlineInstanceKey();
         keys.forEach(key -> res.addAll(botControlServer.getRegistryService().queryServiceInstance(key)));
         return res;

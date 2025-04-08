@@ -3,7 +3,7 @@ package cn.com.vortexa.bot_platform.service;
 import cn.com.vortexa.bot_platform.dto.BotJob;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
-import cn.com.vortexa.common.dto.control.RegisteredService;
+import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
 import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.common.vo.BotInstanceVO;
@@ -31,7 +31,7 @@ public interface IBotInstanceService extends IBaseService<BotInstance> {
      *
      * @return List<BotInfo>
      */
-    List<RegisteredService> queryOnLineInstance();
+    List<RegisteredScriptNode> queryOnLineInstance();
 
     /**
      * 启动job

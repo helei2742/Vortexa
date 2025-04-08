@@ -11,7 +11,7 @@ public class ControlServerUtil {
     private static final String STORE_FILE_RESOURCE_PATH = System.getProperty("user.dir") + File.separator
             + "nameserver";
 
-    private static final String SERVICE_INSTANCE_KEY_DISPATCHER = "#%&%#";
+    public static final String SERVICE_INSTANCE_KEY_DISPATCHER = "#%&%#";
 
     /**
      * 生成服务实例的key

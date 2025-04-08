@@ -1,4 +1,4 @@
-package cn.com.vortexa.websocket.netty.util;
+package cn.com.vortexa.common.util.protocol;
 
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;

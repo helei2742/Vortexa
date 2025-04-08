@@ -4,7 +4,7 @@ import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.LanguageCode;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.constant.RemotingCommandFlagConstants;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.util.DistributeIdMaker;
 import lombok.AllArgsConstructor;
 import lombok.Data;

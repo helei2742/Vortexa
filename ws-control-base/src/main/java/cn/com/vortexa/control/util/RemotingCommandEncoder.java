@@ -1,7 +1,7 @@
 package cn.com.vortexa.control.util;
 
 import cn.com.vortexa.control.dto.RemotingCommand;
-import cn.com.vortexa.control.protocol.Serializer;
+import cn.com.vortexa.common.util.protocol.Serializer;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;

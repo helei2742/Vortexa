@@ -34,6 +34,6 @@ vortexa:
     service-instance:
       host: localhost # 命名服务host
       port: 18848 # 命名服务port
-      group: test1
+      groupId: test1
       serviceId: nameserver
       instanceId: nameserver-1

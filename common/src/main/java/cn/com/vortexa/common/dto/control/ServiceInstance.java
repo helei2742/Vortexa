@@ -1,5 +1,6 @@
 package cn.com.vortexa.common.dto.control;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.*;
 
 import java.io.Serial;
@@ -15,25 +16,23 @@ public class ServiceInstance implements Serializable {
     @Serial
     private static final long serialVersionUID = 189273891273821798L;
 
-    private String group;
+    @TableField("group_id")
+    protected String groupId;
 
-    private String serviceId;
+    @TableField("service_id")
+    protected String serviceId;
 
-    private String instanceId;
+    @TableField("instance_id")
+    protected String instanceId;
 
-    private String host;
+    @TableField("host")
+    protected String host;
 
-    private int port;
+    @TableField("port")
+    protected Integer port;
 
     @Override
     public String toString() {
-        return "[%s][%s][%s]-[%s:%s]".formatted(group, serviceId, instanceId, host, port);
-    }
-
-    public String getGroup() {
-        if (group == null) {
-            return "default";
-        }
-        return group;
+        return "[%s][%s][%s]-[%s:%s]".formatted(groupId, serviceId, instanceId, host, port);
     }
 }
