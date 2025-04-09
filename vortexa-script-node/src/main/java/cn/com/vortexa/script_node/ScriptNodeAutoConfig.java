@@ -85,7 +85,7 @@ public class ScriptNodeAutoConfig {
          MybatisConfiguration configuration = new MybatisConfiguration();
          factoryBean.setConfiguration(configuration);
          configuration.setMapUnderscoreToCamelCase(true);
-         configuration.setLogImpl(StdOutImpl.class);
+//         configuration.setLogImpl(StdOutImpl.class);
          GlobalConfig globalConfig = new GlobalConfig();
          GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
          dbConfig.setLogicDeleteField("valid");

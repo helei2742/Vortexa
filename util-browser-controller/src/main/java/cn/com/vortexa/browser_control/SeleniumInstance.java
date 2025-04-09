@@ -10,7 +10,6 @@ import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WindowType;
@@ -28,7 +27,7 @@ import java.util.function.Consumer;
 
 @Slf4j
 @Getter
-public abstract class SeleniumInstance {
+public abstract class SeleniumInstance implements SeleniumOperate {
 
     private final SeleniumParams params;
 
@@ -125,6 +124,7 @@ public abstract class SeleniumInstance {
 
             // Step 2 启动浏览器
             launchBrowser();
+
             webDriverLaunched();
 
             // Step 3 遍历execute chain 执行
@@ -150,7 +150,7 @@ public abstract class SeleniumInstance {
      *
      * @throws InterruptedException InterruptedException
      */
-    private void executeChainInvoke() throws InterruptedException {
+    protected void executeChainInvoke() throws InterruptedException {
         for (ExecuteGroup executeGroup : seleniumExecuteChain) {
             String groupName = executeGroup.getName();
 

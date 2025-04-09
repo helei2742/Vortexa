@@ -1,5 +1,6 @@
 package cn.com.vortexa.browser_control.driver;
 
+import cn.com.vortexa.common.util.RateLimiter;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
@@ -8,6 +9,7 @@ import cn.com.vortexa.browser_control.dto.QueryEntity;
 import cn.com.vortexa.common.constants.HttpMethod;
 import cn.com.vortexa.common.util.http.RestApiClientFactory;
 
+import javax.naming.LimitExceededException;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -17,6 +19,8 @@ import java.util.concurrent.ExecutionException;
  * @since 2025/3/26 9:25
  */
 public abstract class FingerprintBrowserDriver {
+
+    private final RateLimiter rateLimiter = new RateLimiter(5);
 
     private final String connectUrl;
 
@@ -354,15 +358,28 @@ public abstract class FingerprintBrowserDriver {
     protected abstract QueryEntity<JSON> displayListQueryBody();
 
     protected CompletableFuture<String> request(QueryEntity<JSON> queryEntity) {
-        if (queryEntity.getMethod() == null) {
-            queryEntity.setMethod(HttpMethod.POST);
+        try {
+            rateLimiter.callMethodWithRateLimit(120);
+            if (queryEntity.getMethod() == null) {
+                queryEntity.setMethod(HttpMethod.POST);
+            }
+            return RestApiClientFactory.getClient(null).request(
+                    connectUrl + queryEntity.getContentPath(),
+                    queryEntity.getMethod(),
+                    new HashMap<>(),
+                    queryEntity.getMethod() == HttpMethod.POST ? null : queryEntity.getBody(),
+                    queryEntity.getMethod() == HttpMethod.POST ? (queryEntity.getBody() != null ? queryEntity.getBody() : new JSONObject()) : new JSONObject()
+            );
+        } catch (LimitExceededException | InterruptedException e) {
+            throw new RuntimeException("request concurrent limit exception", e);
         }
-        return RestApiClientFactory.getClient(null).request(
-                connectUrl + queryEntity.getContentPath(),
-                queryEntity.getMethod(),
-                new HashMap<>(),
-                queryEntity.getMethod() == HttpMethod.POST ? null : queryEntity.getBody(),
-                queryEntity.getMethod() == HttpMethod.POST ? (queryEntity.getBody() != null ? queryEntity.getBody() : new JSONObject()) : new JSONObject()
-        );
     }
+
+    /**
+     * 根据序号启动，返回窗口debugAddress
+     *
+     * @param fingerSeq fingerSeq
+     * @return  String
+     */
+    public abstract String startWebDriverBySeq(Integer fingerSeq);
 }

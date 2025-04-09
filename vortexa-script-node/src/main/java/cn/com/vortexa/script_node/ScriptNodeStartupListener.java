@@ -65,7 +65,7 @@ public class ScriptNodeStartupListener implements ApplicationListener<Applicatio
 
                 log.info("[{}] class load success ", botKey);
 
-                if (AutoLaunchBot.class.equals(aClass.getSuperclass())) {
+                if (isClassInInheritanceChain(aClass, AutoLaunchBot.class)) {
                     Class<AutoLaunchBot<?>> botClass = (Class<AutoLaunchBot<?>>) aClass;
 
                     boolean launch = autoLaunchBotKeys.contains(botKey);
@@ -119,5 +119,16 @@ public class ScriptNodeStartupListener implements ApplicationListener<Applicatio
         classFilePath = classFilePath.replace(".java", ".class");
 
         return DynamicJavaLoader.loadClassFromFile(classFilePath, className);
+    }
+
+    public static boolean isClassInInheritanceChain(Class<?> subclass, Class<?> superclass) {
+        Class<?> currentClass = subclass;
+        while (currentClass != null) {
+            if (currentClass.equals(superclass)) {
+                return true;
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+        return false;
     }
 }

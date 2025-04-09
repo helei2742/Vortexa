@@ -113,9 +113,9 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
     @Override
     protected void resolveBotJobMethod() {
         // 解析bot job 参数
-
+        logger.debug("resole job method...");
         // Step 1 遍历方法
-        for (Method method : getClass().getDeclaredMethods()) {
+        for (Method method : allMethods()) {
             method.setAccessible(true);
 
             // Step 2 找到方法中带有BotMethod注解的
@@ -470,5 +470,19 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 .put(ACCOUNT_PARAMS_KEY, JSONArray.parseArray(JSONArray.toJSONString(annotation.accountParams())));
 
         return botInfo;
+    }
+
+    public  List<Method> allMethods() {
+        List<Method> list = new ArrayList<>();
+        Class<?> clazz = getClass();
+
+        while (clazz != null) {
+            // 获取当前类的所有声明的方法，包括私有方法、保护方法和公共方法
+            Method[] methods = clazz.getDeclaredMethods();
+            list.addAll(Arrays.asList(methods));
+            // 获取父类继续遍历
+            clazz = clazz.getSuperclass();
+        }
+        return list;
     }
 }

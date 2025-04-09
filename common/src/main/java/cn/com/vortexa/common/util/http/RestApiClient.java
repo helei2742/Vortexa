@@ -63,7 +63,7 @@ public class RestApiClient {
                 });
             }
         } else {
-            builder.proxy(Proxy.NO_PROXY);
+//            builder.proxy(Proxy.NO_PROXY);
         }
         this.okHttpClient = builder.build();
     }
