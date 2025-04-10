@@ -13,6 +13,8 @@ import java.util.Map;
 @ToString
 public class AutoBotConfig implements Serializable {
 
+    public static final String TWO_CAPTCHA_API_KEY = "two_captcha_api_key";
+
     @Serial
     private static final long serialVersionUID = -3278263726328378273L;
 

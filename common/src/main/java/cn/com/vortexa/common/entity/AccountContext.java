@@ -17,6 +17,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import lombok.*;
 
@@ -140,6 +141,14 @@ public class AccountContext implements Serializable {
 
     public String getParam(String key) {
         return params.get(key) == null ? "" : params.get(key).toString();
+    }
+
+    public <T> T getParam(String key, Supplier<T> build) {
+        Object o = params.get(key);
+        if (o == null) {
+            o = build.get();
+        }
+        return o == null ? null : (T) o;
     }
 
     public void setParam(String key, Object value) {

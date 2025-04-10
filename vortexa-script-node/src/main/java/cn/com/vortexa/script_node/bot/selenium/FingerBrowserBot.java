@@ -16,7 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,17 +28,19 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
 
-    public static final int BROWSER_BATCH_SIZE = 1; //  浏览器批大小
+    public static final int BROWSER_BATCH_SIZE = 2; //  浏览器批大小
     public static final String DEFAULT_WEB_SITE_URL = "default_web_site_url";   // 默认打开地址Key
     public static final String FINGER_BROWSER_API_URL_KEY = "finger_browser_api_url"; // 指纹浏览器api地址Key
     public static final String CHROME_DRIVER_URL_KEY = "chrome_driver_url"; // chromedriver连接地址Key
     public static final String FINGER_BROWSER_SEQ_KEY = "finger_browser_seq";   //  指纹浏览器序号Key
+    private static final Set<Integer> currentWindowSeq = new HashSet<>();
 
     private static final ConcurrentHashMap<AccountContext, AccountFingerBrowserSelenium> accountFBSeleniumMap = new ConcurrentHashMap<>();
     private static final List<ACBotTypedSeleniumExecuteInfo> acExecuteInfos = new ArrayList<>();
     private static volatile FingerprintBrowserDriver browserDriver;
     private static String chromeDriverUrl;
     private static String fingerBrowserApiUrl;
+
 
     @Override
     protected void botInitialized(AutoBotConfig botConfig, BotApi botApi) {
@@ -68,13 +72,16 @@ public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
 
     @BotMethod(jobType = BotJobType.ONCE_TASK, concurrentCount = BROWSER_BATCH_SIZE)
     public void accountBrowserTask(AccountContext accountContext) {
+        int seq = Integer.parseInt((String) accountContext.getParams().get(FINGER_BROWSER_SEQ_KEY));
+
         try {
+            currentWindowSeq.add(seq);
             AccountFingerBrowserSelenium browserSelenium = accountFBSeleniumMap.compute(accountContext, (k, v) -> {
                 if (v == null) {
                     try {
                         v = new AccountFingerBrowserSelenium(
                                 accountContext,
-                                buildSeleniumParams(Integer.parseInt((String) accountContext.getParams().get(FINGER_BROWSER_SEQ_KEY)))
+                                buildSeleniumParams(seq)
                         );
 
                         for (ACBotTypedSeleniumExecuteInfo acExecuteInfo : acExecuteInfos) {
@@ -88,12 +95,15 @@ public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
             });
 
             if (!browserSelenium.isRunning()) {
+                browserDriver.flexAbleWindowBounds(new ArrayList<>(currentWindowSeq));
                 browserSelenium.startACFBSelenium();
             } else {
                 logger.warn(accountContext.getSimpleInfo() + " selenium is running...cancel new start");
             }
         } catch (Exception e) {
             logger.error(accountContext.getSimpleInfo() + " - start selenium task error", e);
+        } finally {
+            currentWindowSeq.remove(seq);
         }
     }
 

@@ -11,6 +11,7 @@ import cn.com.vortexa.common.util.http.RestApiClientFactory;
 
 import javax.naming.LimitExceededException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -374,6 +375,8 @@ public abstract class FingerprintBrowserDriver {
             throw new RuntimeException("request concurrent limit exception", e);
         }
     }
+
+    public abstract JSONObject flexAbleWindowBounds(List<Integer> seqList);
 
     /**
      * 根据序号启动，返回窗口debugAddress

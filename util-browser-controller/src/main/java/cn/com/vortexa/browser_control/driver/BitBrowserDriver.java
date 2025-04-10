@@ -183,6 +183,7 @@ public class BitBrowserDriver extends FingerprintBrowserDriver {
      * @param seqList seqList
      * @return JSONObject
      */
+    @Override
     public JSONObject flexAbleWindowBounds(List<Integer> seqList) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("seqlist", seqList);

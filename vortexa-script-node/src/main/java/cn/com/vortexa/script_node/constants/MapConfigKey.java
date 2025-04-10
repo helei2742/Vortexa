@@ -15,4 +15,14 @@ public class MapConfigKey {
     public static final String CONNECT_URL_KEY = "connect_url";
 
     public static final String USER_AGENT_KEY = "user_agent";
+
+    public static final String TWO_CAPTCHA_API_KEY = "two_captcha_api_key";
+
+    public static final String PASSWORD_KEY = "password";
+
+    public static final String ACCESS_TOKEN_KEY_V1 = "access_token";
+    public static final String ACCESS_TOKEN_KEY_V2 ="accessToken";
+
+    public static final String REFRESH_TOKEN_KEY_V1 = "refresh_token";
+    public static final String REFRESH_TOKEN_KEY_V2 = "refreshToken";
 }
