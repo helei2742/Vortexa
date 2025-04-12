@@ -62,10 +62,7 @@ public class RestApiClient {
                             .build();
                 });
             }
-        } else {
-//            builder.proxy(Proxy.NO_PROXY);
         }
-        builder.connectionPool(new ConnectionPool(250, 5, TimeUnit.MINUTES)) ; // 10个连接，5分钟空闲时间
 
         this.okHttpClient = builder.build();
     }
