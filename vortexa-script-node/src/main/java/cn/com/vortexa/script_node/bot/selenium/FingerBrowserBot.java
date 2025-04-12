@@ -28,19 +28,21 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
 
-    public static final int BROWSER_BATCH_SIZE = 2; //  浏览器批大小
-    public static final String DEFAULT_WEB_SITE_URL = "default_web_site_url";   // 默认打开地址Key
+    public static final int BROWSER_BATCH_SIZE = 9; //  浏览器批大小
+    public static final String DEFAULT_WEB_SITE_URL = "http://www.google.com";   // 默认打开地址Key
+    public static final String DEFAULT_WEB_SITE_URL_KEY = "default_web_site_url";   // 默认打开地址Key
     public static final String FINGER_BROWSER_API_URL_KEY = "finger_browser_api_url"; // 指纹浏览器api地址Key
     public static final String CHROME_DRIVER_URL_KEY = "chrome_driver_url"; // chromedriver连接地址Key
     public static final String FINGER_BROWSER_SEQ_KEY = "finger_browser_seq";   //  指纹浏览器序号Key
-    private static final Set<Integer> currentWindowSeq = new HashSet<>();
 
+    private static final Set<Integer> currentWindowSeq = new HashSet<>();
     private static final ConcurrentHashMap<AccountContext, AccountFingerBrowserSelenium> accountFBSeleniumMap = new ConcurrentHashMap<>();
     private static final List<ACBotTypedSeleniumExecuteInfo> acExecuteInfos = new ArrayList<>();
     private static volatile FingerprintBrowserDriver browserDriver;
     private static String chromeDriverUrl;
     private static String fingerBrowserApiUrl;
 
+    private String openUrl = DEFAULT_WEB_SITE_URL;
 
     @Override
     protected void botInitialized(AutoBotConfig botConfig, BotApi botApi) {
@@ -50,6 +52,8 @@ public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
         if (fingerBrowserApiUrl == null) {
             fingerBrowserApiUrl = (String) botConfig.getCustomConfig().get(FINGER_BROWSER_API_URL_KEY);
         }
+
+        openUrl = getDefaultWebSiteUrl(botConfig);
         initBrowserDriver();
 
         synchronized (acExecuteInfos) {
@@ -119,7 +123,7 @@ public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
                 .builder()
                 .driverPath(chromeDriverUrl)
                 .experimentalOptions(List.of(new Pair<>("debuggerAddress", debuggerAddress)))
-                .targetWebSite("https://www.google.com")
+                .targetWebSite(openUrl)
                 .build();
     }
 
@@ -151,4 +155,14 @@ public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
      * @return List<ExecuteGroup>
      */
     protected abstract ACBotTypedSeleniumExecuteInfo buildExecuteGroupChain();
+
+    /**
+     * 获取默认打开的url
+     *
+     * @param botConfig botConfig
+     * @return String
+     */
+    private String getDefaultWebSiteUrl(AutoBotConfig botConfig) {
+        return (String) botConfig.getCustomConfig().getOrDefault(DEFAULT_WEB_SITE_URL_KEY, DEFAULT_WEB_SITE_URL);
+    }
 }

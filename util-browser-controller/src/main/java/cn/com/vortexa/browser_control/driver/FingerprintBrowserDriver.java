@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutionException;
  */
 public abstract class FingerprintBrowserDriver {
 
-    private final RateLimiter rateLimiter = new RateLimiter(5);
+    private final RateLimiter rateLimiter = new RateLimiter(1);
 
     private final String connectUrl;
 

@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RateLimiter {
-    private static final int INTERVAL = 500;
+    private static final int INTERVAL = 200;
 
     private final int maxRequestsPerSecond;
     private final AtomicLong lastRequestTime;
@@ -42,14 +42,14 @@ public class RateLimiter {
 
     public static void main(String[] args) throws LimitExceededException, InterruptedException {
         // 每秒最多允许 3 次请求
-        RateLimiter rateLimiter = new RateLimiter(3);
+        RateLimiter rateLimiter = new RateLimiter(1);
 
         // 模拟连续调用方法
         for (int i = 0; i < 10; i++) {
             rateLimiter.callMethodWithRateLimit(10);
             try {
                 // 模拟请求间隔
-                Thread.sleep(300);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
