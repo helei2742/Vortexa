@@ -178,17 +178,15 @@ public class RestApiClient {
         Request.Builder builder = new Request.Builder();
 
         RequestBody requestBody = null;
-        if (body != null) {
-            String contentType = "application/json";
-            if (headers != null) {
-                contentType = headers.getOrDefault(
-                        "Content-Type",
-                        headers.getOrDefault("content-type", "application/json; charset=utf-8")
-                ).toLowerCase();
-            } else {
-                headers = new HashMap<>(1);
-            }
 
+        if (headers == null) {
+            headers = new HashMap<>();
+        }
+
+        if (body != null) {
+            String contentType = headers.getOrDefault("Content-Type",
+                            headers.getOrDefault("content-type", "application/json; charset=utf-8"))
+                    .toLowerCase();
 
             if (contentType.contains("x-www-form-urlencoded")) {
                 StringBuilder formData = new StringBuilder();
@@ -204,6 +202,11 @@ public class RestApiClient {
                         MediaType.parse("application/x-www-form-urlencoded"));
             } else if (contentType.startsWith("application/json")) {
                 MediaType JSON = MediaType.parse(contentType);
+
+                requestBody = RequestBody.create(body.toJSONString(), JSON);
+            } else {
+                MediaType JSON = MediaType.parse(headers.getOrDefault("Content-Type",
+                        headers.getOrDefault("content-type", "application/json; charset=utf-8")));
 
                 requestBody = RequestBody.create(body.toJSONString(), JSON);
             }

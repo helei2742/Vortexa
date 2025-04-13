@@ -50,3 +50,5 @@ A_back/
 
 /logs/
 /ws-control-server/logs/
+
+*.class
