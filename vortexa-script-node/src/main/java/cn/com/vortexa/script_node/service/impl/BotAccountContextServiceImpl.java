@@ -2,7 +2,6 @@ package cn.com.vortexa.script_node.service.impl;
 
 import cn.com.vortexa.script_node.mapper.BotAccountContextMapper;
 import cn.com.vortexa.script_node.service.IBotAccountContextService;
-import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.AccountContext;
@@ -20,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
@@ -86,7 +86,7 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
         if (Paths.get(fileBotConfigPath).isAbsolute()) {
             proxyFilePath = fileBotConfigPath;
         } else {
-            proxyFilePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, fileBotConfigPath);
+            proxyFilePath = FileUtil.getAppResourceAppConfigPath() + File.separator + fileBotConfigPath;
         }
 
         try {

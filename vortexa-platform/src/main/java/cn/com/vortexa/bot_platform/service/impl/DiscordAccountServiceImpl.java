@@ -2,7 +2,6 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.bot_platform.service.IDiscordAccountService;
 import cn.com.vortexa.rpc.api.platform.IDiscordAccountRPC;
-import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.excel.ExcelReadUtil;
@@ -13,6 +12,7 @@ import cn.com.vortexa.bot_platform.mapper.DiscordAccountMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.List;
@@ -47,7 +47,7 @@ public class DiscordAccountServiceImpl extends AbstractBaseService<DiscordAccoun
 
     @Override
     public Integer importFromExcel(String fileBotConfigPath) {
-        String dirResourcePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_BOT_PATH, fileBotConfigPath);
+        String dirResourcePath = FileUtil.getAppResourceSystemConfigPath() + File.separator +  fileBotConfigPath;
 
         try {
             List<Map<String, Object>> rawLines = ExcelReadUtil.readExcelToMap(dirResourcePath);

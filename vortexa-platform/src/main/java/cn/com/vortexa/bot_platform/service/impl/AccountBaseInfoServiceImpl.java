@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.SQLException;
@@ -82,7 +83,7 @@ public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseI
 
     @Override
     public Integer importFromExcel(String botConfigPath) {
-        String proxyFilePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_BOT_PATH, botConfigPath);
+        String proxyFilePath = FileUtil.getAppResourceSystemConfigPath() + File.separator +  botConfigPath;
         AtomicInteger total = new AtomicInteger();
         try {
             ExcelReadUtil.readExcelAsMap(

@@ -11,6 +11,8 @@ target/
 *.iws
 *.iml
 *.ipr
+*.class
+bot-instance-config.yaml
 
 **/.xlsx
 ### Eclipse ###
@@ -51,4 +53,3 @@ A_back/
 /logs/
 /ws-control-server/logs/
 
-*.class

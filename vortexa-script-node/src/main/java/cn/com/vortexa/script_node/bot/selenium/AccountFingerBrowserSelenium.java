@@ -87,6 +87,10 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
 
             log.info("[{}] all selenium execute finish", getInstanceId());
         } finally {
+            log.info("[{}] closing webDriver", getInstanceId());
+            close();
+            log.info("[{}] close webDriver finish", getInstanceId());
+
             running = false;
             lock.unlock();
         }

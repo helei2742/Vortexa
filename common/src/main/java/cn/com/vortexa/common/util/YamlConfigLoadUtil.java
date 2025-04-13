@@ -1,6 +1,5 @@
 package cn.com.vortexa.common.util;
 
-import cn.com.vortexa.common.config.SystemConfig;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -38,7 +37,7 @@ public class YamlConfigLoadUtil {
             List<String> prefixList,
             Class<T> clazz
     ) {
-        String dirResourcePath = FileUtil.getConfigDirResourcePath(path, fileName);
+        String dirResourcePath = FileUtil.getAppResourcePath(path, fileName);
 
         Object compute = LOADED_CONFIG_MAP.compute(dirResourcePath, (k, config) -> {
             if (config == null) {
@@ -78,7 +77,7 @@ public class YamlConfigLoadUtil {
             String fileName,
             List<String> prefixList
     ) {
-        String dirResourcePath = FileUtil.getConfigDirResourcePath(path, fileName);
+        String dirResourcePath = FileUtil.getAppResourcePath(path, fileName);
 
         Object compute = LOADED_CONFIG_MAP.compute(dirResourcePath, (k, config) -> {
             if (config == null) {
@@ -146,9 +145,4 @@ public class YamlConfigLoadUtil {
         }
         return camelCase.toString();
     }
-
-    public static void main(String[] args) {
-        System.out.println(YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_BOT_PATH, "browser-env.yaml", List.of("bot", "browser")));
-    }
-
 }

@@ -2,7 +2,6 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.bot_platform.service.IProxyInfoService;
 import cn.com.vortexa.rpc.api.platform.IProxyInfoRPC;
-import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.constants.ProxyProtocol;
 import cn.com.vortexa.common.constants.ProxyType;
 import cn.com.vortexa.common.dto.PageResult;
@@ -15,6 +14,7 @@ import cn.com.vortexa.bot_platform.mapper.ProxyInfoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.List;
@@ -49,7 +49,7 @@ public class ProxyInfoServiceImpl extends AbstractBaseService<ProxyInfoMapper, P
 
     @Override
     public Integer importFromExcel(String botConfigPath) {
-        String proxyFilePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_BOT_PATH, botConfigPath);
+        String proxyFilePath = FileUtil.getAppResourceSystemConfigPath() + File.separator + botConfigPath;
 
         int total = 0;
 

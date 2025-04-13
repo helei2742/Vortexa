@@ -2,7 +2,6 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.bot_platform.service.ITelegramAccountService;
 import cn.com.vortexa.rpc.api.platform.ITelegramAccountRPC;
-import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.excel.ExcelReadUtil;
@@ -14,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.List;
@@ -48,7 +48,7 @@ public class TelegramAccountServiceImpl extends AbstractBaseService<TelegramAcco
 
     @Override
     public Integer importFromExcel(String fileBotConfigPath) throws SQLException {
-        String dirResourcePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_BOT_PATH, fileBotConfigPath);
+        String dirResourcePath = FileUtil.getAppResourceSystemConfigPath() + File.separator + fileBotConfigPath;
 
         try {
             List<Map<String, Object>> rawLines = ExcelReadUtil.readExcelToMap(dirResourcePath);

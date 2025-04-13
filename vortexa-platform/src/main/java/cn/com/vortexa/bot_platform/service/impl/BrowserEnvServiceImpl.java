@@ -2,7 +2,6 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.bot_platform.service.IBrowserEnvService;
 import cn.com.vortexa.rpc.api.platform.IBrowserEnvRPC;
-import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.excel.ExcelReadUtil;
@@ -15,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.List;
@@ -66,7 +66,7 @@ public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper,
 
     @Override
     public Integer importFromExcel(String fileBotConfigPath) throws SQLException {
-        String proxyFilePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_BOT_PATH, fileBotConfigPath);
+        String proxyFilePath = FileUtil.getAppResourceSystemConfigPath() + File.separator + fileBotConfigPath;
 
         List<Map<String, Object>> headerList = ExcelReadUtil.readExcelToMap(proxyFilePath);
 

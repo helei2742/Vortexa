@@ -121,7 +121,7 @@ public class SystemInfoUtil {
 
     public static SystemInfoUtil loadFromYaml(String classpath) {
 
-        return  YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_BOT_PATH, classpath, List.of("bot", "system"), SystemInfoUtil.class);
+        return  YamlConfigLoadUtil.load(FileUtil.CONFIG_DIR_BOT_PATH, classpath, List.of("bot", "system"), SystemInfoUtil.class);
     }
 
 

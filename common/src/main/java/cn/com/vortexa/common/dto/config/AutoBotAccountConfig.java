@@ -14,5 +14,8 @@ public class AutoBotAccountConfig implements Serializable {
     @Serial
     private static final long serialVersionUID = -8347837647826838273L;
 
+    /**
+     * 账户配置文件位置
+     */
     private String configFilePath;
 }

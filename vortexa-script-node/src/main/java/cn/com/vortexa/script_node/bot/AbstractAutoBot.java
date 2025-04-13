@@ -5,7 +5,6 @@ import static cn.com.vortexa.common.entity.BotInfo.BASIC_JOB_LIST_KEY;
 
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.script_node.constants.BotStatus;
-import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.constants.BotJobType;
 import cn.com.vortexa.common.constants.HttpMethod;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
@@ -29,6 +28,7 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -425,7 +425,7 @@ public abstract class AbstractAutoBot {
      * @return String
      */
     public String getAppConfigDir() {
-        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, getBotInstance().getBotKey());
+        return FileUtil.getAppResourceAppConfigPath() + File.separator + getBotInstance().getBotKey();
     }
 
     /**

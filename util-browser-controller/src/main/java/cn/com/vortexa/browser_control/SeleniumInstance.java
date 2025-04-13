@@ -135,13 +135,6 @@ public abstract class SeleniumInstance implements SeleniumOperate {
             if (finishHandler != null) {
                 finishHandler.accept(System.currentTimeMillis() - start);
             }
-            if (StrUtil.isNotBlank(targetHandle)) {
-                webDriver.switchTo().window(targetHandle);
-                webDriver.close();
-            }
-            if (autoClose) {
-                webDriver.close();
-            }
         }
     }
 
@@ -300,5 +293,16 @@ public abstract class SeleniumInstance implements SeleniumOperate {
         chromeOptions.addArguments("--start-maximized");
         chromeOptions.setExperimentalOption("useAutomationExtension", false);
         chromeOptions.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
+    }
+
+    public void close() {
+        if (StrUtil.isNotBlank(targetHandle)) {
+            try {
+                webDriver.switchTo().window(targetHandle);
+                webDriver.close();
+            } catch (Exception e) {
+                log.error("{} close exception", instanceId, e);
+            }
+        }
     }
 }

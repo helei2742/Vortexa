@@ -29,16 +29,16 @@ public class AutoBotConfig implements Serializable {
     private boolean commandMenu = true;
 
     /**
-     * 资源文件dir
+     * 资源文件dir, 运行时写入，为class文件所在目录(bot-instance-config所在目录)
      */
     private String resourceDir;
 
     /**
-     * 类名
+     * 类名， 必填，还需包含包路径
      */
     private String className;
     /**
-     * class 文件名
+     * class 文件名，和classFilePath二选一。选classFileName则会用bot-instance-config所在目录
      */
     private String classFileName;
     /**
