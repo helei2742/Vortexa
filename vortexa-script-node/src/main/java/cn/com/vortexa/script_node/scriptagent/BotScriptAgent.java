@@ -20,7 +20,6 @@ import cn.com.vortexa.control.util.RPCMethodUtil;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
 import cn.hutool.core.util.BooleanUtil;
-import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 
 import javax.net.ssl.SSLException;
 
@@ -44,7 +42,7 @@ public class BotScriptAgent extends ScriptAgent {
     private final AtomicInteger initCount = new AtomicInteger(0);   // 启动次数
     private final BotScriptAgentLogUploadService logUploadService = new BotScriptAgentLogUploadService(this);  // 日志上传服务
     private final Map<String, BotInstanceMetaInfo> runningBotMap = new HashMap<>(); // key map bot
-    private final String botGroup;
+    private final String scriptNodeName;
     private final List<RPCServiceInfo<?>> rpcServiceInfos;  // RPC方法信息
 
     public BotScriptAgent(
@@ -58,27 +56,57 @@ public class BotScriptAgent extends ScriptAgent {
             ServiceInstance serviceInstance = clientConfig.getServiceInstance();
 
             ScriptNode scriptNode = ScriptNode.generateFromServiceInstance(serviceInstance);
-            scriptNode.setBotGroup(scriptNodeConfiguration.getBotGroup());
+            scriptNode.setBotGroup(scriptNodeConfiguration.getScriptNodeName());
             scriptNode.setBotConfigMap(scriptNodeConfiguration.getBotKeyConfigMap());
 
             return scriptNode;
         });
 
-        this.botGroup = scriptNodeConfiguration.getBotGroup();
+        this.scriptNodeName = scriptNodeConfiguration.getScriptNodeName();
         this.rpcServiceInfos = rpcServiceInfos;
-
     }
 
     @Override
     protected void init() throws SSLException, URISyntaxException {
         super.init();
 
-        // Step 1 RPC命令处理
-        if (rpcServiceInfos == null) {
-            return;
-        }
         if (initCount.getAndIncrement() > 0) {
             return;
+        }
+
+        // Step 1 RPC命令处理
+        if (initRPCMethod()) return;
+
+        // Step 2 其它命令处理
+        customCommandInit();
+    }
+
+    /**
+     * 初始化自定义命令
+     */
+    private void customCommandInit() {
+        addCustomRemotingCommandHandler(
+                BotRemotingCommandFlagConstants.START_UP_BOT_LOG,
+                logUploadService::startUploadLogRCHandler
+        );
+        addCustomRemotingCommandHandler(
+                BotRemotingCommandFlagConstants.STOP_UP_BOT_LOG,
+                logUploadService::stopUploadLogRCHandler
+        );
+        addCustomRemotingCommandHandler(
+                BotRemotingCommandFlagConstants.START_BOT_JOB,
+                (channel, remotingCommand) -> startOrParsedBotJob(remotingCommand)
+        );
+    }
+
+    /**
+     * 初始化rpc方法
+     *
+     * @return 是否初始化成功
+     */
+    private boolean initRPCMethod() {
+        if (rpcServiceInfos == null) {
+            return true;
         }
         log.info("start registry rpc services");
         for (RPCServiceInfo<?> rpcServiceInfo : rpcServiceInfos) {
@@ -110,22 +138,7 @@ public class BotScriptAgent extends ScriptAgent {
                 }
             }
         }
-
-        // Step 2 其它命令处理
-        Map<Integer, BiFunction<Channel, RemotingCommand, RemotingCommand>> handlerMap
-                = getCustomRemotingCommandHandlerMap();
-        handlerMap.put(
-                BotRemotingCommandFlagConstants.START_UP_BOT_LOG,
-                logUploadService::startUploadLogRCHandler
-        );
-        handlerMap.put(
-                BotRemotingCommandFlagConstants.STOP_UP_BOT_LOG,
-                logUploadService::stopUploadLogRCHandler
-        );
-        handlerMap.put(
-                BotRemotingCommandFlagConstants.START_BOT_JOB,
-                (channel, remotingCommand) -> startOrParsedBotJob(remotingCommand)
-        );
+        return false;
     }
 
     /**
@@ -136,7 +149,7 @@ public class BotScriptAgent extends ScriptAgent {
      * @param bot     bot
      */
     public void addRunningBot(String botName, String botKey, AutoLaunchBot<?> bot) {
-        String key = ControlServerUtil.generateServiceInstanceKey(botGroup, botName, botKey);
+        String key = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
 
         if (runningBotMap.containsKey(key)) {
             throw new IllegalArgumentException("bot[%s][%s] exist".formatted(botName, botKey));
@@ -144,7 +157,11 @@ public class BotScriptAgent extends ScriptAgent {
         runningBotMap.put(key, new BotInstanceMetaInfo(bot));
 
         // 上报bot上线
-        reportScriptBotOnLine(botGroup, botName, botKey);
+        reportScriptBotOnLine(scriptNodeName, botName, botKey)
+                .exceptionally(throwable -> {
+                    log.error("bot[{}][{}]expose error", botName, botKey, throwable);
+                    return false;
+                });
     }
 
     /**
@@ -154,11 +171,15 @@ public class BotScriptAgent extends ScriptAgent {
      * @param botKey  botKey
      */
     public void removeRunningBot(String botName, String botKey) {
-        String key = ControlServerUtil.generateServiceInstanceKey(botGroup, botName, botKey);
+        String key = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
         runningBotMap.remove(key);
 
         // 上报bot下线
-        reportScriptBotOffLine(botGroup, botName, botKey);
+        reportScriptBotOffLine(scriptNodeName, botName, botKey)
+                .exceptionally(throwable -> {
+                    log.error("bot[{}][{}] ffLine error", botName, botKey, throwable);
+                    return false;
+                });
     }
 
 
@@ -193,10 +214,6 @@ public class BotScriptAgent extends ScriptAgent {
                     } else {
                         return false;
                     }
-                })
-                .exceptionally(throwable -> {
-                    log.error("[{}] expose bot[{}][{}] error", botGroup, botName, botKey, throwable);
-                    return false;
                 });
     }
 
@@ -224,10 +241,6 @@ public class BotScriptAgent extends ScriptAgent {
                     } else {
                         return false;
                     }
-                })
-                .exceptionally(throwable -> {
-                    log.error("[{}] offLine bot[{}][{}] error", botGroup, botName, botKey, throwable);
-                    return false;
                 });
     }
 
@@ -244,7 +257,7 @@ public class BotScriptAgent extends ScriptAgent {
         String jobName = remotingCommand.getExtFieldsValue(BotExtFieldConstants.JOB_NAME);
 
         // Step 1 生成key，从map中查找存在的bot
-        String key = ControlServerUtil.generateServiceInstanceKey(botGroup, botName, botKey);
+        String key = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
 
         RemotingCommand response = new RemotingCommand();
         response.setCode(RemotingCommandCodeConstants.FAIL);

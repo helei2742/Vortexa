@@ -1,4 +1,4 @@
-package cn.com.vortexa.script_node.scriptagent;
+package cn.com.vortexa.script_node.scriptagent.config;
 
 
 import cn.com.vortexa.control.ScriptAgent;

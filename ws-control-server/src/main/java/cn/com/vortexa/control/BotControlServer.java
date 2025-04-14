@@ -171,6 +171,21 @@ public class BotControlServer {
     }
 
     /**
+     * 添加自定义远程命令处理器
+     * 与addCustomCommandHandler(String commandFlag, CustomRequestHandler customRequestHandler)不同的是，
+     * 这个注册的RemotingCommand 的flag为 commandFlag
+     *
+     * @param commandFlag commandFlag
+     * @param handler     handler
+     */
+    public void addCustomRemotingCommandHandler(
+            Integer commandFlag,
+            BiFunction<Channel, RemotingCommand, RemotingCommand> handler
+    ) {
+        customRemotingCommandHandlerMap.put(commandFlag, handler);
+    }
+
+    /**
      * 调用自定义命令handler
      *
      * @param channel channel

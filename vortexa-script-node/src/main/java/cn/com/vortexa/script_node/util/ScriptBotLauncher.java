@@ -47,8 +47,6 @@ public class ScriptBotLauncher {
             Function<AutoLaunchBot<?>, Boolean> initHandler,
             boolean launch
     ) throws BotStartException, BotInitException {
-        BannerUtil.printBanner("");
-
         String botKey = botConfig.getBotKey();
         if (StrUtil.isBlank(botKey)) {
             throw new BotStartException("bot key is empty");

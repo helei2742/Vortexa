@@ -1,9 +1,10 @@
-package cn.com.vortexa.script_node.scriptagent;
+package cn.com.vortexa.script_node.scriptagent.config;
 
 import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.config.ScriptAgentConfig;
 import cn.com.vortexa.control.dto.RPCServiceInfo;
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
+import cn.com.vortexa.script_node.scriptagent.BotScriptAgent;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;

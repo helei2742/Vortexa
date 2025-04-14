@@ -109,7 +109,7 @@ public class AccountContext implements Serializable {
 
     @TableField(value = "valid", fill = FieldFill.INSERT)
     @TableLogic
-    private Boolean valid;
+    private Integer valid;
 
 
     @TableField(exist = false)

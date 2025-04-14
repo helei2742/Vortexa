@@ -15,7 +15,6 @@ import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.bot_platform.mapper.BotInstanceMapper;
 import cn.com.vortexa.bot_platform.service.IBotInstanceService;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
@@ -78,18 +77,24 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
                 .map(JobExecutionContext::getTrigger)
                 .collect(Collectors.groupingBy(trigger -> trigger.getJobKey().getGroup()));
 
+        // 运行的bot
+
         ArrayList<BotInstanceVO> voList = new ArrayList<>();
         for (BotInstance instance : result.getList()) {
+
+            String botName = instance.getBotName();
+            String botKey = instance.getBotKey();
+
             BotInstanceVO vo = new BotInstanceVO();
 
             vo.setBotInstance(instance);
             vo.setBotInfo(idMapBotInfo.get(instance.getBotId()));
-            vo.setRunningJob(JSONObject.toJSONString(groupByBotKey.get(instance.getBotKey())));
+            vo.setRunningJob(groupByBotKey.get(botKey));
 
             voList.add(vo);
 
             instance.addParam(BotInstance.BOT_INSTANCE_STATUS_KEY, botControlServer.getBotInstanceStatus(
-                    WSControlSystemConstants.DEFAULT_GROUP, instance.getBotName(), instance.getBotKey()
+                    WSControlSystemConstants.DEFAULT_GROUP, botName, botKey
             ));
         }
 

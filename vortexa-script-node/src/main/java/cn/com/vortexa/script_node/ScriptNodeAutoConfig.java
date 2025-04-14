@@ -25,8 +25,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -52,9 +50,15 @@ public class ScriptNodeAutoConfig {
     @Autowired
     private ScriptNodeConfiguration scriptNodeConfiguration;
 
+    @Autowired
+    private MybatisConfiguration mybatisConfiguration;
+
+    @Autowired
+    private GlobalConfig globalConfig;
+
     @Bean("vortexaDataSource")
     public DataSource vortexaDataSource() {
-        String botGroup = scriptNodeConfiguration.getBotGroup();
+        String botGroup = scriptNodeConfiguration.getScriptNodeName();
         if (StrUtil.isBlank(botGroup)) {
             throw new IllegalArgumentException("botGroup is empty");
         }
@@ -79,28 +83,14 @@ public class ScriptNodeAutoConfig {
                  jsonTypeHandler, mapTextTypeHandler, localDateTimeTypeHandler
          );
          factoryBean.setTypeAliasesPackage("cn.com.vortexa.entity");
-         MybatisConfiguration configuration = new MybatisConfiguration();
-         factoryBean.setConfiguration(configuration);
-         configuration.setMapUnderscoreToCamelCase(true);
-//         configuration.setLogImpl(StdOutImpl.class);
-         GlobalConfig globalConfig = new GlobalConfig();
-         GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
-         dbConfig.setLogicDeleteField("valid");
-         dbConfig.setLogicDeleteValue("0");
-         dbConfig.setLogicNotDeleteValue("1");
-         globalConfig.setDbConfig(dbConfig);
-         globalConfig.setBanner(false);
+         factoryBean.setConfiguration(mybatisConfiguration);
          factoryBean.setGlobalConfig(globalConfig);
          // 分表插件， 不同bot账户用不同的表
          factoryBean.setPlugins(tableShardInterceptor());
          return factoryBean.getObject();
      }
 
-    // 配置事务管理器
-    @Bean(name = "transactionManager")
-    public PlatformTransactionManager transactionManager() {
-        return new DataSourceTransactionManager(vortexaDataSource());
-    }
+
 
     @Bean
     public ITableShardStrategy tableShardStrategy() {

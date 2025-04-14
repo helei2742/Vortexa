@@ -1,4 +1,4 @@
-package cn.com.vortexa.script_node.scriptagent;
+package cn.com.vortexa.script_node.scriptagent.rpc;
 
 import cn.com.vortexa.control.ScriptAgent;
 import cn.com.vortexa.control.anno.RPCReference;

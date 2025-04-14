@@ -2,12 +2,10 @@ package cn.com.vortexa.db_layer.config;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;
-import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDateTime;
 
-@Configuration
-public class MybatisConfig implements MetaObjectHandler {
+public class MyMetaObjectHandler implements MetaObjectHandler {
 
 
     /**
@@ -18,7 +16,7 @@ public class MybatisConfig implements MetaObjectHandler {
         //设置属性值
         this.setFieldValByName("insertDatetime", LocalDateTime.now(), metaObject);
         this.setFieldValByName("updateDatetime", LocalDateTime.now(), metaObject);
-        this.setFieldValByName("valid", true, metaObject);
+        this.setFieldValByName("valid", 1, metaObject);
     }
 
     /**

@@ -1,4 +1,4 @@
-package cn.com.vortexa.bot_platform.script_control;
+package cn.com.vortexa.bot_platform.script_control.rpc;
 
 import cn.com.vortexa.control.BotControlServer;
 import cn.com.vortexa.control.anno.RPCReference;

@@ -3,9 +3,10 @@ package cn.com.vortexa.db_layer;
 import cn.com.vortexa.common.util.typehandler.JsonTypeHandler;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
 import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
-import cn.com.vortexa.db_layer.config.MybatisConfig;
+import cn.com.vortexa.db_layer.config.MyMetaObjectHandler;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
+import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -19,11 +20,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 
 @Configuration
-@Import(MybatisConfig.class)
+@Import(MyMetaObjectHandler.class)
 public class DBLayerAutoConfig {
     @Value("${spring.datasource.driver-class-name}")
     private String driverClassName;
@@ -63,10 +66,23 @@ public class DBLayerAutoConfig {
                 jsonTypeHandler(), mapTextTypeHandler()
         );
         factoryBean.setTypeAliasesPackage("cn.com.vortexa.entity");
+        factoryBean.setConfiguration(mybatisConfiguration());
+        factoryBean.setGlobalConfig(globalConfig());
+        return factoryBean.getObject();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public MybatisConfiguration mybatisConfiguration() {
         MybatisConfiguration configuration = new MybatisConfiguration();
-        factoryBean.setConfiguration(configuration);
         configuration.setMapUnderscoreToCamelCase(true);
-        configuration.setLogImpl(StdOutImpl.class);
+//        configuration.setLogImpl(StdOutImpl.class);
+        return configuration;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public GlobalConfig globalConfig() {
         GlobalConfig globalConfig = new GlobalConfig();
         GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
         dbConfig.setLogicDeleteField("valid");
@@ -74,8 +90,19 @@ public class DBLayerAutoConfig {
         dbConfig.setLogicNotDeleteValue("1");
         globalConfig.setDbConfig(dbConfig);
         globalConfig.setBanner(false);
-        factoryBean.setGlobalConfig(globalConfig);
-        return factoryBean.getObject();
+        globalConfig.setMetaObjectHandler(metaObjectHandler());
+        return globalConfig;
+    }
+
+    @Bean
+    public MetaObjectHandler metaObjectHandler() {
+        return new MyMetaObjectHandler();
+    }
+
+    // 配置事务管理器
+    @Bean(name = "transactionManager")
+    public PlatformTransactionManager transactionManager() {
+        return new DataSourceTransactionManager(vortexaDataSource());
     }
 
     @Bean

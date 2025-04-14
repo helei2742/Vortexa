@@ -40,7 +40,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
      * bot group（Script Node中运行的bot的group)
      * ）
      */
-    private String botGroup;
+    private String scriptNodeName;
 
     /**
      * bot-instance 配置文件位置
@@ -76,7 +76,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         botKeyConfigMap = new HashMap<>();
         // 解析地址，
-        scriptNodeBasePath = FileUtil.getAppResourceAppConfigPath() + File.separator + botGroup;
+        scriptNodeBasePath = FileUtil.getAppResourceAppConfigPath() + File.separator + scriptNodeName;
 
         resolvedInstanceLocations = FileUtil.generateAbsPath(botInstanceLocations, null);
 

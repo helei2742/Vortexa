@@ -53,7 +53,7 @@ public class ScriptNode extends ServiceInstance implements Serializable {
 
     @TableField(value = "valid", fill = FieldFill.INSERT)
     @TableLogic
-    private Boolean valid;
+    private Integer valid;
 
     public boolean usable() {
        return StrUtil.isNotBlank(groupId) && StrUtil.isNotBlank(serviceId) && StrUtil.isNotBlank(instanceId)

@@ -66,7 +66,7 @@
         from
         t_account_base_info as t
         <where>
-            valid = 1
+            t.valid = 1
             <if test="id != null">
                 and t.id = #{id}
             </if>

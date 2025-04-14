@@ -1,6 +1,4 @@
 spring:
-  main:
-    banner-mode: OFF
   datasource:
     driver-class-name: org.sqlite.JDBC
     url:

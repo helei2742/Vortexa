@@ -1,5 +1,6 @@
-package cn.com.vortexa.bot_platform.script_control;
+package cn.com.vortexa.bot_platform.script_control.config;
 
+import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
 import cn.com.vortexa.bot_platform.script_control.service.DBRegistryService;
 import cn.com.vortexa.bot_platform.service.IScriptNodeService;
 import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;

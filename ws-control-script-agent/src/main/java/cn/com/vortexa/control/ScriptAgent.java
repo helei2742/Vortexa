@@ -155,7 +155,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
     }
 
     /**
-     * 添加自定义命令处理器
+     * 添加自定义命令处理器,flag为CUSTOM_COMMAND，参数的commandFlag是放RemotingCommand的extFields里的
      *
      * @param commandFlag          commandFlag 命令标识
      * @param customRequestHandler customRequestHandler    处理器
@@ -163,6 +163,21 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
     public void addCustomCommandHandler(String commandFlag, CustomRequestHandler customRequestHandler)
             throws CustomCommandException {
         customCommandProcessor.addCustomCommandHandler(commandFlag, customRequestHandler);
+    }
+
+    /**
+     * 添加自定义远程命令处理器
+     * 与addCustomCommandHandler(String commandFlag, CustomRequestHandler customRequestHandler)不同的是，
+     * 这个注册的RemotingCommand 的flag为 commandFlag
+     *
+     * @param commandFlag commandFlag
+     * @param handler     handler
+     */
+    public void addCustomRemotingCommandHandler(
+            Integer commandFlag,
+            BiFunction<Channel, RemotingCommand, RemotingCommand> handler
+    ) {
+        customRemotingCommandHandlerMap.put(commandFlag, handler);
     }
 
     /**

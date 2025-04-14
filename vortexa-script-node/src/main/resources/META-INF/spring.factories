@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-cn.com.vortexa.script_node.scriptagent.BotScriptAgentConfig
+cn.com.vortexa.script_node.scriptagent.config.BotScriptAgentConfig

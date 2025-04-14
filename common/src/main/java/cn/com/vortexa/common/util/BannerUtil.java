@@ -6,9 +6,9 @@ package cn.com.vortexa.common.util;
  */
 public class BannerUtil {
 
-    public static void printBanner(String filePath) {
+    public static void closeOtherBanner() {
         System.setProperty("pagehelper.banner", "false");
-        System.setProperty("spring.main.banner-mode", "OFF");
+//        System.setProperty("spring.main.banner-mode", "OFF");
         System.setProperty("mybatis-plus.global-config.banner", "off");
     }
 }

@@ -14,7 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @ImportAutoConfiguration(classes = {DBLayerAutoConfig.class, JobAutoConfig.class})
 public class BotPlatformApplication {
     public static void main(String[] args) {
-        BannerUtil.printBanner("");
+        BannerUtil.closeOtherBanner();
         SpringApplication.run(BotPlatformApplication.class, args);
     }
 }

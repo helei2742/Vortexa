@@ -1,6 +1,7 @@
 package cn.com.vortexa.script_node;
 
 
+import cn.com.vortexa.common.util.BannerUtil;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,6 +19,7 @@ public class ScriptNodeApplication {
     public static ConfigurableApplicationContext applicationContext;
 
     public static void main(String[] args) {
+        BannerUtil.closeOtherBanner();
         applicationContext = SpringApplication.run(ScriptNodeApplication.class, args);
     }
 }

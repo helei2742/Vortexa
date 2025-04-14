@@ -14,6 +14,7 @@ import cn.com.vortexa.control.config.ControlServerConfig;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.*;
 import cn.com.vortexa.control.exception.ControlServerException;
+import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.exception.CustomCommandInvokeException;
 import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control.service.IConnectionService;
@@ -26,6 +27,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -70,6 +72,21 @@ public class BotPlatformControlServer extends BotControlServer {
         super.init(registryService, connectionService);
 
         // 1 RPC 服务
+        initRPCMethodHandler();
+
+        // 1 expose bot 注册、下线
+        initScriptNodeExposeBotHandler();
+
+        // 2 日志上传
+        initScriptNodeUploadLogHandler();
+    }
+
+    /**
+     * 初始化rpc调用方法处理器
+     *
+     * @throws CustomCommandException CustomCommandException
+     */
+    private void initRPCMethodHandler() throws CustomCommandException {
         for (RPCServiceInfo<?> rpcServiceInfo : rpcServiceInfos) {
             Class<?> interfaces = rpcServiceInfo.getInterfaces();
 
@@ -102,24 +119,18 @@ public class BotPlatformControlServer extends BotControlServer {
                 });
             }
         }
-
-        // 1 expose bot 注册、下线
-        initScriptNodeExposeBotHandler();
-
-        // 2 日志上传
-        initScriptNodeUploadLogHandler();
     }
 
     /**
      * 初始化script暴露bot命令
      */
     private void initScriptNodeExposeBotHandler() {
-        getCustomRemotingCommandHandlerMap().put(
+        addCustomRemotingCommandHandler(
                 BotRemotingCommandFlagConstants.SCRIPT_BOT_ON_LINE,
-                this::scriptBotOnLineHandler
+                this::scriptNodeOnLineHandler
         );
 
-        getCustomRemotingCommandHandlerMap().put(
+        addCustomRemotingCommandHandler(
                 BotRemotingCommandFlagConstants.SCRIPT_BOT_OFF_LINE,
                 this::scriptBotOffLineHandler
         );
@@ -229,7 +240,7 @@ public class BotPlatformControlServer extends BotControlServer {
      * @param remotingCommand remotingCommand
      * @return RemotingCommand
      */
-    public RemotingCommand scriptBotOnLineHandler(Channel channel, RemotingCommand remotingCommand) {
+    public RemotingCommand scriptNodeOnLineHandler(Channel channel, RemotingCommand remotingCommand) {
         String group = remotingCommand.getGroup();
         String serviceId = remotingCommand.getServiceId();
         String instanceId = remotingCommand.getInstanceId();
@@ -286,6 +297,7 @@ public class BotPlatformControlServer extends BotControlServer {
             log.info("script node[{}] remove bot instance[{}] fail, bot instance not exist", scriptNodeKey, botInstanceKey);
         } else {
             onLineBotInstanceKeys.remove(botInstanceKey);
+            botInstanceKey2ScriptNodeKeyMap.remove(scriptNodeKey);
             log.info("script node[{}] remove bot instance[{}]", scriptNodeKey, botInstanceKey);
         }
 
@@ -295,5 +307,19 @@ public class BotPlatformControlServer extends BotControlServer {
         response.setTransactionId(remotingCommand.getTransactionId());
 
         return response;
+    }
+
+    /**
+     * 查询script node所有在线的bot
+     *
+     * @param scriptNodeKey scriptNodeKey
+     * @return List<String>
+     */
+    public List<String> selectScriptNodeOnlineBot(String scriptNodeKey) {
+        Set<String> onLineBotInstanceKeys = scriptNodeKey2BotInstanceKeyMap.get(scriptNodeKey);
+        if (onLineBotInstanceKeys != null && !onLineBotInstanceKeys.isEmpty()) {
+            return new ArrayList<>(onLineBotInstanceKeys);
+        }
+        return List.of();
     }
 }

@@ -1,4 +1,4 @@
-package cn.com.vortexa.bot_platform.script_control;
+package cn.com.vortexa.bot_platform.script_control.config;
 
 
 import cn.com.vortexa.rpc.api.platform.*;

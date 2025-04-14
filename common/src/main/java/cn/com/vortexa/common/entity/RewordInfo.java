@@ -59,7 +59,7 @@ public class RewordInfo implements Serializable {
 
     @TableField(value = "valid", fill = FieldFill.INSERT)
     @TableLogic
-    private Boolean valid;
+    private Integer valid;
 
 
     public RewordInfo newInstance() {

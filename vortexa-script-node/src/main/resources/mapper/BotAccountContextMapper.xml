@@ -135,7 +135,7 @@
             left join json_each(t.params) json_each
         </if>
         <where>
-            valid = 1
+            t.valid = 1
             <if test="id != null">
                 and t.id = #{id}
             </if>

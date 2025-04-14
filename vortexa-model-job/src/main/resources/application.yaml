@@ -6,6 +6,6 @@ spring:
       driver-class: com.mysql.cj.jdbc.Driver
       url: jdbc:mysql://localhost:3306/job_store
       user: root
-      password: 962464HeLei
+      password:
       scheduler:
         instance-name: QuartzScheduler

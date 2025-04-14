@@ -478,7 +478,7 @@ public abstract class AbstractAutoBot {
     }
 
     public String getScriptNodeName() {
-        return scriptNodeConfiguration.getBotGroup();
+        return scriptNodeConfiguration.getScriptNodeName();
     }
 
     protected synchronized Map<String, AutoBotJobParam> getJobParams() {
