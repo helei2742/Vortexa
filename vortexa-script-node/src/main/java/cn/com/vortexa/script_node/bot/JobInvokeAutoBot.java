@@ -164,6 +164,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
      */
     public BotACJobResult startBotJob(String jobName) {
         return getBotApi().getBotJobService().startJob(
+                getScriptNodeName(),
                 getAutoBotConfig().getBotKey(),
                 jobName,
                 getJobParam(jobName),
@@ -363,6 +364,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
 
             // Step 3 开始job
             getBotApi().getBotJobService().startJob(
+                    getScriptNodeName(),
                     param.getJobName(),
                     newJobName,
                     jobParam,

@@ -47,6 +47,7 @@ public class QuartzBotJobService implements BotJobService {
 
     @Override
     public List<BotACJobResult> startJobList(
+            String scriptNodeName,
             String botKey,
             String jobName,
             Collection<AutoBotJobParam> autoBotJobParams,
@@ -55,7 +56,7 @@ public class QuartzBotJobService implements BotJobService {
         List<BotACJobResult> resultList = new ArrayList<>(autoBotJobParams.size());
 
         for (AutoBotJobParam autoBotJob : autoBotJobParams) {
-            resultList.add(startJob(botKey, jobName, autoBotJob, invoker));
+            resultList.add(startJob(scriptNodeName, botKey, jobName, autoBotJob, invoker));
         }
 
         return resultList;
@@ -64,20 +65,22 @@ public class QuartzBotJobService implements BotJobService {
 
     @Override
     public BotACJobResult startJob(
+            String scriptNodeName,
             String botKey,
             String jobName,
             AutoBotJobParam jobParam,
             AutoBotJobInvoker invoker,
             boolean refreshTrigger
     ) {
+        String group = botQuartzGroupBuilder(scriptNodeName, botKey);
 
-        JobKey jobKey = new JobKey(jobName, botKey);
+        JobKey jobKey = new JobKey(jobName, group);
 
         registerJobInvoker(jobKey, invoker);
 
         BotACJobResult result = BotACJobResult
                 .builder()
-                .group(botKey)
+                .group(group)
                 .jobName(jobName)
                 .success(true)
                 .build();
@@ -107,8 +110,8 @@ public class QuartzBotJobService implements BotJobService {
 
 
     @Override
-    public BotACJobResult startJob(String group, String jobName, AutoBotJobParam autoBotJobParam, AutoBotJobInvoker invoker) {
-        return startJob(group, jobName, autoBotJobParam, invoker, true);
+    public BotACJobResult startJob(String scriptNodeName, String botKey, String jobName, AutoBotJobParam autoBotJobParam, AutoBotJobInvoker invoker) {
+        return startJob(scriptNodeName, botKey, jobName, autoBotJobParam, invoker, true);
     }
 
     @Override
@@ -124,20 +127,21 @@ public class QuartzBotJobService implements BotJobService {
 
 
     @Override
-    public void parseJob(String botKey, String jobName) throws SchedulerException {
+    public void parseJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException {
         JobKey jobKey = new JobKey(jobName, botKey);
         parseJob(jobKey);
     }
 
     @Override
-    public void parseGroupJob(String botKey) throws SchedulerException {
-        scheduler.pauseJobs(GroupMatcher.jobGroupEquals(botKey));
-        log.info("bot[{}] all job parsed", botKey);
+    public void parseGroupJob(String scriptNodeName, String botKey) throws SchedulerException {
+        String group = botQuartzGroupBuilder(scriptNodeName, botKey);
+        scheduler.pauseJobs(GroupMatcher.jobGroupEquals(group));
+        log.info("{} all job parsed", group);
     }
 
     @Override
-    public void resumeJob(String botKey, String jobName) throws SchedulerException {
-        JobKey jobKey = new JobKey(jobName, botKey);
+    public void resumeJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException {
+        JobKey jobKey = new JobKey(jobName, botQuartzGroupBuilder(scriptNodeName, botKey));
         resumeJob(jobKey);
     }
 
@@ -152,8 +156,8 @@ public class QuartzBotJobService implements BotJobService {
     }
 
     @Override
-    public JobStatus queryJobStatus(String botKey, String jobName) throws SchedulerException {
-        JobKey jobKey = new JobKey(jobName, botKey);
+    public JobStatus queryJobStatus(String scriptNodeName, String botKey, String jobName) throws SchedulerException {
+        JobKey jobKey = new JobKey(jobName, botQuartzGroupBuilder(scriptNodeName, botKey));
         return queryJobStatus(jobKey);
     }
 
@@ -258,5 +262,10 @@ public class QuartzBotJobService implements BotJobService {
             result.setSuccess(false);
             result.setErrorMsg("job exist");
         }
+    }
+
+
+    private String botQuartzGroupBuilder(String scriptNodeName, String botKey) {
+        return "node{" + scriptNodeName + "}bot{" + botKey + "}";
     }
 }

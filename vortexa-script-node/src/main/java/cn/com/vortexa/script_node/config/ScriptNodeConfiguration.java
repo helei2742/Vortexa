@@ -37,7 +37,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
     public static final List<String> BOT_INSTANCE_CONFIG_PREFIX = List.of("vortexa", "botInstance");
 
     /**
-     * bot group（Script Node中运行的bot的、
+     * bot group（Script Node中运行的bot的group)
      * ）
      */
     private String botGroup;

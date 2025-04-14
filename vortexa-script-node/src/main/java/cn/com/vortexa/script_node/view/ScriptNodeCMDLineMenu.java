@@ -292,7 +292,11 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
                             try {
                                 status = getBot().getBotApi()
                                         .getBotJobService()
-                                        .queryJobStatus(getBot().getAutoBotConfig().getBotKey(), jobName);
+                                        .queryJobStatus(
+                                                getBot().getScriptNodeName(),
+                                                getBot().getAutoBotConfig().getBotKey(),
+                                                jobName
+                                        );
                                 return "%s 任务 (%s)".formatted(jobName, status);
                             } catch (SchedulerException e) {
                                 throw new RuntimeException(e);

@@ -2,6 +2,7 @@ package cn.com.vortexa.script_node.bot;
 
 import cn.com.vortexa.common.exception.BotStatusException;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
+import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
 import cn.com.vortexa.script_node.constants.BotStatus;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.common.exception.BotInitException;
@@ -51,13 +52,19 @@ public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoD
     /**
      * 启动Bot
      *
-     * @param botConfig botConfig
-     * @param botApi botApi
+     * @param scriptNodeConfiguration scriptNodeConfiguration
+     * @param botConfig               botConfig
+     * @param botApi                  botApi
+     * @param initHandler             initHandler
      * @throws BotStartException BotStartException
-     * @throws BotInitException BotInitException
+     * @throws BotInitException  BotInitException
      */
-    public void launch(AutoBotConfig botConfig, BotApi botApi, Function<AutoLaunchBot<?>, Boolean> initHandler)
-            throws BotStartException, BotInitException {
+    public void launch(
+            ScriptNodeConfiguration scriptNodeConfiguration,
+            AutoBotConfig botConfig,
+            BotApi botApi,
+            Function<AutoLaunchBot<?>, Boolean> initHandler
+    ) throws BotStartException, BotInitException {
         String botKey = botConfig.getBotKey();
         if (StrUtil.isBlank(botKey)) {
             throw new BotStartException("botKey is empty");
@@ -65,7 +72,7 @@ public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoD
         T instance = getInstance();
 
         // 初始化
-        instance.init(botApi, botConfig);
+        instance.init(scriptNodeConfiguration, botApi, botConfig);
 
         instance.updateState(BotStatus.STARTING);
         if (BooleanUtil.isTrue(initHandler.apply(this))) {
@@ -86,7 +93,7 @@ public abstract class AutoLaunchBot<T extends AnnoDriveAutoBot<T>> extends AnnoD
      * bot初始化时调用
      *
      * @param botConfig botConfig
-     * @param botApi botApi
+     * @param botApi    botApi
      */
     protected abstract void botInitialized(AutoBotConfig botConfig, BotApi botApi);
 

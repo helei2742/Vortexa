@@ -3,6 +3,7 @@ package cn.com.vortexa.script_node.bot;
 import static cn.com.vortexa.script_node.service.impl.BotAccountContextServiceImpl.BOT_ACCOUNT_CONTEXT_TABLE_PREFIX;
 import static cn.com.vortexa.common.entity.BotInfo.BASIC_JOB_LIST_KEY;
 
+import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.script_node.constants.BotStatus;
 import cn.com.vortexa.common.constants.BotJobType;
@@ -78,6 +79,12 @@ public abstract class AbstractAutoBot {
     private BotInstance botInstance;
 
     /**
+     * script node配置
+     */
+    @Getter
+    private ScriptNodeConfiguration scriptNodeConfiguration;
+
+    /**
      * 配置
      */
     @Getter
@@ -106,7 +113,10 @@ public abstract class AbstractAutoBot {
      * @param autoBotConfig autoBotConfig
      * @throws BotInitException BotInitException
      */
-    public final void init(BotApi botApi, AutoBotConfig autoBotConfig) throws BotInitException {
+    public final void init(
+            ScriptNodeConfiguration scriptNodeConfiguration, BotApi botApi, AutoBotConfig autoBotConfig
+    ) throws BotInitException {
+        this.scriptNodeConfiguration = scriptNodeConfiguration;
         this.botApi = botApi;
 
         // Step 1 参数校验
@@ -175,7 +185,7 @@ public abstract class AbstractAutoBot {
 
                 String tableName = getBotApi().getTableShardStrategy().generateTableName(
                         BOT_ACCOUNT_CONTEXT_TABLE_PREFIX,
-                        new Object[] {botInstance.getBotId(), botInstance.getBotKey()}
+                        new Object[]{botInstance.getBotId(), botInstance.getBotKey()}
                 );
                 botInstance.setBotName(botInfo.getName());
                 botInstance.setAccountTableName(tableName);
@@ -225,12 +235,12 @@ public abstract class AbstractAutoBot {
     /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy proxy
-     * @param url url
-     * @param method method
+     * @param proxy   proxy
+     * @param url     url
+     * @param method  method
      * @param headers headers
-     * @param params params
-     * @param body body
+     * @param params  params
+     * @param body    body
      * @return CompletableFuture<String> response str
      */
     public CompletableFuture<String> syncRequest(
@@ -247,12 +257,12 @@ public abstract class AbstractAutoBot {
     /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy proxy
-     * @param url url
-     * @param method method
+     * @param proxy   proxy
+     * @param url     url
+     * @param method  method
      * @param headers headers
-     * @param params params
-     * @param body body
+     * @param params  params
+     * @param body    body
      * @return CompletableFuture<String> response str
      */
     public CompletableFuture<String> syncRequest(
@@ -270,12 +280,12 @@ public abstract class AbstractAutoBot {
     /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy proxy
-     * @param url url
-     * @param method method
+     * @param proxy   proxy
+     * @param url     url
+     * @param method  method
      * @param headers headers
-     * @param params params
-     * @param body body
+     * @param params  params
+     * @param body    body
      * @return CompletableFuture<Response> String
      */
     public CompletableFuture<String> syncRequest(
@@ -302,12 +312,12 @@ public abstract class AbstractAutoBot {
     /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy proxy
-     * @param url url
-     * @param method method
+     * @param proxy   proxy
+     * @param url     url
+     * @param method  method
      * @param headers headers
-     * @param params params
-     * @param body body
+     * @param params  params
+     * @param body    body
      * @return CompletableFuture<Response> String
      */
     public CompletableFuture<String> syncRequest(
@@ -339,12 +349,12 @@ public abstract class AbstractAutoBot {
     /**
      * 同步请求，使用syncController控制并发
      *
-     * @param proxy proxy
-     * @param url url
-     * @param method method
+     * @param proxy   proxy
+     * @param url     url
+     * @param method  method
      * @param headers headers
-     * @param params params
-     * @param body body
+     * @param params  params
+     * @param body    body
      * @return CompletableFuture<Response> String
      */
     public CompletableFuture<List<String>> syncStreamRequest(
@@ -467,6 +477,10 @@ public abstract class AbstractAutoBot {
         return "Bot[%s]-[%s]".formatted(botInstance.getBotName(), autoBotConfig.getBotKey());
     }
 
+    public String getScriptNodeName() {
+        return scriptNodeConfiguration.getBotGroup();
+    }
+
     protected synchronized Map<String, AutoBotJobParam> getJobParams() {
         return this.botInstance == null ? new HashMap<>() : this.botInstance.getJobParams();
     }
@@ -507,7 +521,7 @@ public abstract class AbstractAutoBot {
     /**
      * 比较botInfo 和 BotInstance是否发生变化
      *
-     * @param botInfo botInfo
+     * @param botInfo    botInfo
      * @param dbInstance dbInstance
      * @return boolean
      */

@@ -24,7 +24,7 @@ public interface BotJobService {
     /**
      * 获取job的调用者
      *
-     * @param jobKey jobKey
+     * @param jobKey         jobKey
      * @return invoker
      */
     AutoBotJobInvoker getJobInvoker(JobKey jobKey);
@@ -37,6 +37,7 @@ public interface BotJobService {
      * @return Result
      */
     List<BotACJobResult> startJobList(
+            String scriptNodeName,
             String botKey,
             String jobName,
             Collection<AutoBotJobParam> autoBotJobParams,
@@ -55,6 +56,7 @@ public interface BotJobService {
      * @return BotACJobResult
      */
     BotACJobResult startJob(
+            String scriptNodeName,
             String group,
             String jobName,
             AutoBotJobParam autoBotJobParam,
@@ -72,6 +74,7 @@ public interface BotJobService {
      * @return BotACJobResult
      */
     BotACJobResult startJob(
+            String scriptNodeName,
             String group,
             String jobName,
             AutoBotJobParam autoBotJobParam,
@@ -86,7 +89,7 @@ public interface BotJobService {
      * @param botKey  botKey
      * @param jobName jobName
      */
-    void parseJob(String botKey, String jobName) throws SchedulerException;
+    void parseJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException;
 
     /**
      * 暂停Bot的全部任务
@@ -94,7 +97,7 @@ public interface BotJobService {
      * @param botKey botKey
      * @throws SchedulerException SchedulerException
      */
-    void parseGroupJob(String botKey) throws SchedulerException;
+    void parseGroupJob(String scriptNodeName, String botKey) throws SchedulerException;
 
 
     /**
@@ -104,7 +107,7 @@ public interface BotJobService {
      * @param jobName jobName
      * @throws SchedulerException SchedulerException
      */
-    void resumeJob(String botKey, String jobName) throws SchedulerException;
+    void resumeJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException;
 
     /**
      * 重新启动Job
@@ -122,7 +125,7 @@ public interface BotJobService {
      * @param jobName jobName
      * @return JobStatus
      */
-    JobStatus queryJobStatus(String botKey, String jobName) throws SchedulerException;
+    JobStatus queryJobStatus(String scriptNodeName, String botKey, String jobName) throws SchedulerException;
 
     /**
      * 查询Job状态

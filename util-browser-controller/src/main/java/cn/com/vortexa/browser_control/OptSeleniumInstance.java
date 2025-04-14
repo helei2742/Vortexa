@@ -14,9 +14,9 @@ import java.util.concurrent.TimeUnit;
 
 public class OptSeleniumInstance extends SeleniumInstance {
 
-    public static final int CLICK_WAIT_MIN_TIME = 500;
+    public static final int CLICK_WAIT_MIN_TIME = 100;
 
-    public static final int CLICK_WAIT_MAX_TIME = 2500;
+    public static final int CLICK_WAIT_MAX_TIME = 500;
 
     public static final int NORMAL_DRIVER_WAITE_TIME = 30;
 

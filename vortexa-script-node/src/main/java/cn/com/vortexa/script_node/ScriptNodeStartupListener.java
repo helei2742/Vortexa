@@ -71,7 +71,7 @@ public class ScriptNodeStartupListener implements ApplicationListener<Applicatio
                     boolean launch = autoLaunchBotKeys.contains(botKey);
 
                     // Step 3 启动bot
-                    AutoLaunchBot<?> autoLaunchBot = ScriptBotLauncher.launch(botClass, botConfig, botApi, bot -> {
+                    AutoLaunchBot<?> autoLaunchBot = ScriptBotLauncher.launch(scriptNodeConfiguration, botClass, botConfig, botApi, bot -> {
                         bot.setBotStatusChangeHandler((oldStatus, newStatus) -> {
                             // 3.1 添加监听， bot状态改变时上报
                             if (newStatus == BotStatus.RUNNING) {

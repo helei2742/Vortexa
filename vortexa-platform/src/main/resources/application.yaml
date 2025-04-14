@@ -11,7 +11,7 @@ spring:
       table-prefix: QRTZ_
       driver-class: com.mysql.cj.jdbc.Driver
       url: jdbc:mysql://localhost:3306/job_store
-      user: root
+      user: helei
       password: 123456
       scheduler:
         instance-name: QuartzScheduler

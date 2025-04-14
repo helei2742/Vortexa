@@ -3,6 +3,7 @@ package cn.com.vortexa.script_node.util;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
+import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStartException;
@@ -36,9 +37,10 @@ public class ScriptBotLauncher {
      * @param botClass botClass
      * @return ApplicationContext
      * @throws BotStartException BotStartException
-     * @throws BotInitException BotInitException
+     * @throws BotInitException  BotInitException
      */
     public static AutoLaunchBot<?> launch(
+            ScriptNodeConfiguration scriptNodeConfiguration,
             Class<? extends AutoLaunchBot<?>> botClass,
             AutoBotConfig botConfig,
             BotApi botApi,
@@ -74,7 +76,7 @@ public class ScriptBotLauncher {
 
         bot.setBotName(botName);
         bot.setBotKey(botKey);
-        botMetaInfoMap.put(botKey, new ScriptBotMetaInfo(bot, botConfig, botApi, initHandler));
+        botMetaInfoMap.put(botKey, new ScriptBotMetaInfo(scriptNodeConfiguration, bot, botConfig, botApi, initHandler));
 
         if (launch) {
             // Step 3 启动bot
@@ -95,7 +97,7 @@ public class ScriptBotLauncher {
      * 添加Bot到菜单
      *
      * @param botKey botKey
-     * @param bot bot
+     * @param bot    bot
      */
     public static void addBotInMenu(String botKey, AutoLaunchBot<?> bot) {
         scriptNodeCMDLineMenu.getBotKeyMap().put(botKey, bot);
@@ -110,6 +112,7 @@ public class ScriptBotLauncher {
 
         log.info("bot[{}] start launch", botKey);
         scriptBotMetaInfo.getBot().launch(
+                scriptBotMetaInfo.scriptNodeConfiguration,
                 scriptBotMetaInfo.botConfig,
                 scriptBotMetaInfo.botApi,
                 scriptBotMetaInfo.initHandler
@@ -120,6 +123,7 @@ public class ScriptBotLauncher {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class ScriptBotMetaInfo {
+        private ScriptNodeConfiguration scriptNodeConfiguration;
         private AutoLaunchBot<?> bot;
         private AutoBotConfig botConfig;
         private BotApi botApi;
