@@ -18,6 +18,8 @@ public class AutoBotConfig implements Serializable {
 
     public static int LOG_CACHE_COUNT = 50; // 日志缓存数量
 
+    private String botName;
+
     /**
      * 标识bot，不同于bot id， botKey是由用户定义的
      */

@@ -107,7 +107,6 @@ public class YamlConfigLoadUtil {
         return (List<Object>) compute;
     }
 
-
     public static <T> T load(File path, List<String> prefixList, Class<T> tClass) {
         Object compute = LOADED_CONFIG_MAP.compute(path.getAbsolutePath(), (k, config) -> {
             if (config == null) {
@@ -130,6 +129,30 @@ public class YamlConfigLoadUtil {
                 } catch (IOException e) {
                     throw new RuntimeException(String.format("加载配置池文件[%s]发生错误", path), e);
                 }
+            }
+            return config;
+        });
+
+        return (T) compute;
+    }
+
+
+    public static <T> T load(String name, InputStream inputStream, List<String> prefixList, Class<T> tClass) {
+        Object compute = LOADED_CONFIG_MAP.compute(name, (k, config) -> {
+            if (config == null) {
+                Yaml yaml = new Yaml();
+                Map<String, Object> yamlData = yaml.load(inputStream);
+                if (prefixList != null) {
+                    for (String prefix : prefixList) {
+                        yamlData = (Map<String, Object>) yamlData.get(prefix);
+                        Map<String, Object> target = new HashMap<>();
+                        for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
+                            target.put(toCamelCase(entry.getKey()), entry.getValue());
+                        }
+                        yamlData = target;
+                    }
+                }
+                return yaml.loadAs(yaml.dump(yamlData), tClass);
             }
             return config;
         });

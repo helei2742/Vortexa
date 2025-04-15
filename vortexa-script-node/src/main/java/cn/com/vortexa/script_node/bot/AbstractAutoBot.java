@@ -30,6 +30,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,7 +44,7 @@ public abstract class AbstractAutoBot {
 
     private static final ProxyInfo DEFAULT_PROXY = new ProxyInfo();
 
-    public final AppendLogger logger = new AppendLogger(getClass());
+    public AppendLogger logger;
 
     /**
      * 代理并发控制
@@ -116,6 +117,17 @@ public abstract class AbstractAutoBot {
     public final void init(
             ScriptNodeConfiguration scriptNodeConfiguration, BotApi botApi, AutoBotConfig autoBotConfig
     ) throws BotInitException {
+        try {
+            this.logger = new AppendLogger(
+                    getClass(),
+                    scriptNodeConfiguration.getScriptNodeName(),
+                    autoBotConfig.getBotName(),
+                    autoBotConfig.getBotKey()
+            );
+        } catch (IOException e) {
+            throw new BotInitException("bot logger create error", e);
+        }
+
         this.scriptNodeConfiguration = scriptNodeConfiguration;
         this.botApi = botApi;
 
@@ -156,8 +168,6 @@ public abstract class AbstractAutoBot {
                 .build();
 
         // Step 2.3 设置logger前缀与线程池
-        String botName = runtimeBotName();
-        logger.append(botName);
         this.executorService = Executors.newThreadPerTaskExecutor(
                 new NamedThreadFactory(botInfo.getName() + "-executor"));
 
@@ -465,7 +475,7 @@ public abstract class AbstractAutoBot {
         };
 
         if (b) {
-            logger.info("Status change [%s] => [%s]".formatted(status, newStatus));
+            logger.debug("Status change [%s] => [%s]".formatted(status, newStatus));
             this.status = newStatus;
         } else {
             throw new BotStatusException(

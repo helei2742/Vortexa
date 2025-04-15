@@ -116,8 +116,10 @@ public class ScriptNodeStartupListener implements ApplicationListener<Applicatio
         if (classFilePath.endsWith(".java") && !DynamicJavaLoader.compileJavaFile(classFilePath)) {
             throw new RuntimeException(classFilePath + " compile to class error");
         }
-        classFilePath = classFilePath.replace(".java", ".class");
 
+        log.info("compile finish, start load class {}", classFilePath);
+        classFilePath = classFilePath.replace(".java", ".class");
+        log.info("load class {} finish", classFilePath);
         return DynamicJavaLoader.loadClassFromFile(classFilePath, className);
     }
 

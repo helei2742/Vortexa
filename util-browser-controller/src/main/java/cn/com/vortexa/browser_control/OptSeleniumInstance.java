@@ -3,6 +3,7 @@ package cn.com.vortexa.browser_control;
 import cn.com.vortexa.browser_control.dto.SeleniumParams;
 import cn.com.vortexa.browser_control.dto.SeleniumProxy;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -94,5 +95,14 @@ public class OptSeleniumInstance extends SeleniumInstance {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void scrollTo(WebElement element) {
+        ((JavascriptExecutor) getWebDriver()).executeScript(
+                "var rect = arguments[0].getBoundingClientRect();" +
+                        "window.scrollTo({ top: rect.top + window.pageYOffset - window.innerHeight/2 });",
+                element
+        );
     }
 }

@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.function.Consumer;
 
 public class AppendLogger {
@@ -27,8 +28,10 @@ public class AppendLogger {
     @Setter
     private Consumer<LogContent> beforePrintHandler;
 
-    public AppendLogger(Class<?> clazz) {
+    public AppendLogger(Class<?> clazz, String scriptNodeName, String botName, String botKey) throws IOException {
         log = LoggerFactory.getLogger(clazz);
+
+        append("scriptNode{%s}-botName{%s}-botKey{%s}".formatted(scriptNodeName, botName, botKey));
     }
 
     public AppendLogger append(Object context) {

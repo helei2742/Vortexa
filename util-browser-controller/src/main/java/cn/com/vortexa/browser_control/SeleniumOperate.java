@@ -26,4 +26,6 @@ public interface SeleniumOperate {
     void randomWait(int i);
 
     void randomWait();
+
+    void scrollTo(WebElement webElement);
 }

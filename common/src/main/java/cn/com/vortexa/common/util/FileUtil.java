@@ -3,7 +3,9 @@ package cn.com.vortexa.common.util;
 import cn.com.vortexa.common.constants.FilePathType;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class FileUtil {
@@ -106,5 +108,19 @@ public class FileUtil {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 创建日志目录
+     *
+     * @param scriptNodeName scriptNodeName
+     * @param botKey         botKey
+     */
+    public static String createLogsDir(String scriptNodeName, String botKey) throws IOException {
+        Path path = Paths.get(RESOURCE_ROOT_DIR, "logs", scriptNodeName, botKey);
+        if (Files.notExists(path)) {
+            Files.createDirectories(path);
+        }
+        return path.toString();
     }
 }

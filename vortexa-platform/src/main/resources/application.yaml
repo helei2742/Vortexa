@@ -15,13 +15,6 @@ spring:
       scheduler:
         instance-name: QuartzScheduler
 
-
-logging:
-  level:
-    org:
-      apache:
-        dubbo: WARN
-        zookeeper: WARN
 server:
   port: 10110
 
@@ -33,6 +26,6 @@ vortexa:
     service-instance:
       host: localhost # 命名服务host
       port: 18848 # 命名服务port
-      groupId: test1
-      serviceId: nameserver
-      instanceId: nameserver-1
+      groupId: default
+      serviceId: vortexa-platform
+      instanceId: vortexa-platform-mac

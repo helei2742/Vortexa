@@ -20,10 +20,11 @@ public class DynamicJavaLoader {
     public static boolean compileJavaFile(String javaFilePath) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
+        String classpath = System.getProperty("java.class.path");
         // 编译参数，可以添加 -Xlint:-options 或 -proc:none
         List<String> options = List.of(
-                "-Xlint:-options"
-                // "-proc:none" // 如果想禁用注解处理
+                "-Xlint:-options",
+                "-classpath", classpath
         );
 
         // 创建标准文件管理器
@@ -58,7 +59,10 @@ public class DynamicJavaLoader {
         // 1. 获取 class 文件路径
         File classFile = new File(classPath); // 设置为存放 class 文件的路径
         URL classUrl = classFile.toURI().toURL();
-        try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl})) {
+        try (URLClassLoader urlClassLoader = new URLClassLoader(
+                new URL[]{classUrl},
+                Thread.currentThread().getContextClassLoader()
+        )) {
             // 2. 加载 class 文件
             return urlClassLoader.loadClass(className);
         }

@@ -19,7 +19,7 @@ import java.util.List;
  * @since 2025-04-08
  */
 @RestController
-@RequestMapping("/scriptNode")
+@RequestMapping("/script-node")
 public class ScriptNodeController {
 
     @Autowired

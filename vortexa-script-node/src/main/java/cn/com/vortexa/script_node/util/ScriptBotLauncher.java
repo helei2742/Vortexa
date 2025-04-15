@@ -72,9 +72,16 @@ public class ScriptBotLauncher {
             throw new BotInitException(e);
         }
 
+        botConfig.setBotName(botName);
         bot.setBotName(botName);
         bot.setBotKey(botKey);
-        botMetaInfoMap.put(botKey, new ScriptBotMetaInfo(scriptNodeConfiguration, bot, botConfig, botApi, initHandler));
+        botMetaInfoMap.put(botKey, new ScriptBotMetaInfo(
+                scriptNodeConfiguration,
+                bot,
+                botConfig,
+                botApi,
+                initHandler
+        ));
 
         if (launch) {
             // Step 3 启动bot

@@ -4,11 +4,28 @@ spring:
     url:
     username:
     password:
-
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      table-prefix: QRTZ_
+      driver-class: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/job_store
+      user: helei
+      password: 123456
+      scheduler:
+        instance-name: QuartzScheduler
 
 vortexa:
   script-node:
-    bot-group: test1
+    script-node-name: helei-macbook
+    bot-instance-locations: /Users/helei/develop/ideaworkspace/BotFramework/vortexa-script-bot/src/main/java/cn/com/vortexa/script_bot
+    auto-launch-bot-keys:
+      #      - optim_ai_test
+      #      - klok_test
+      #      - flow3_bot_test
+      - magic_newton_v2
+      - beamable_test
+  #    bot-instance-locations: "reactive:"
   script-agent:
     registryCenterUrl: ws://localhost:18848
     nio-thread-count: 1
@@ -16,7 +33,6 @@ vortexa:
     service-instance:
       host: localhost
       port: 20001
-      group: test1
-      serviceId: client
-      instanceId: client-1
-
+      groupId: default
+      serviceId: script-node
+      instanceId: script-node-macbook

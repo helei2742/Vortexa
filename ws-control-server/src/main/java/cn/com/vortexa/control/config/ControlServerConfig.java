@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
 
@@ -31,16 +32,15 @@ public class ControlServerConfig {
         if (INSTANCE == null) {
             synchronized (ControlServerConfig.class) {
                 if (INSTANCE == null) {
-                    URL resource = ControlServerConfig.class.getClassLoader().getResource(fileName);
-                    if (resource != null) {
-                        String file = resource.getFile();
+                    try (InputStream inputStream = ControlServerConfig.class.getClassLoader().getResourceAsStream(fileName);){
                         INSTANCE = YamlConfigLoadUtil.load(
-                                new File(file),
+                                fileName,
+                                inputStream,
                                 List.of(prefix.split("\\.")),
                                 ControlServerConfig.class
                         );
-                    } else {
-                        throw new FileNotFoundException("config file not found");
+                    } catch (Exception e) {
+                        throw new RuntimeException("config load error", e);
                     }
                 }
             }

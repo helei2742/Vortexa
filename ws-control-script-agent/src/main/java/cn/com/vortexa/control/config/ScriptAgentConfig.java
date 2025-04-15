@@ -7,7 +7,7 @@ import lombok.Data;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.net.URL;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -31,16 +31,19 @@ public class ScriptAgentConfig {
         if (INSTANCE == null) {
             synchronized (ScriptAgentConfig.class) {
                 if (INSTANCE == null) {
-                    URL resource = ScriptAgentConfig.class.getClassLoader().getResource(fileName);
-                    if (resource != null) {
-                        String file = resource.getFile();
-                        INSTANCE = YamlConfigLoadUtil.load(
-                                new File(file),
-                                List.of(prefix.split("\\.")),
-                                ScriptAgentConfig.class
-                        );
-                    } else {
-                        throw new FileNotFoundException("config file not found");
+                    try(InputStream inputStream = ScriptAgentConfig.class.getClassLoader().getResourceAsStream(fileName)) {
+                        if (inputStream != null) {
+                            INSTANCE = YamlConfigLoadUtil.load(
+                                    fileName,
+                                    inputStream,
+                                    List.of(prefix.split("\\.")),
+                                    ScriptAgentConfig.class
+                            );
+                        } else {
+                            throw new FileNotFoundException("config file not found");
+                        }
+                    } catch (Exception e) {
+
                     }
                 }
             }

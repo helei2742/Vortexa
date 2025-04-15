@@ -1,6 +1,5 @@
 package cn.com.vortexa.script_node.config;
 
-
 import cn.com.vortexa.common.dto.config.AutoBotAccountConfig;
 import cn.com.vortexa.common.dto.config.ClassInfo;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;

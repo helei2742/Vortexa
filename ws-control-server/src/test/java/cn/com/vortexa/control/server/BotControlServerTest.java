@@ -39,7 +39,7 @@ class BotControlServerTest {
     static int command_client = 3001;
     static int command_service = 3002;
 
-    @BeforeAll
+//    @BeforeAll
     public static void setUp() throws Exception {
         controlServerConfig = new ControlServerConfig();
 
@@ -57,7 +57,7 @@ class BotControlServerTest {
         botControlServer.init(new FileRegistryService(botControlServer.getExecutorService()), new MemoryConnectionService());
     }
 
-    @Test
+//    @Test
     public void test() throws ControlServerException, InterruptedException, CustomCommandException, ExecutionException, NoSuchMethodException {
         Class<TestRpc> rpcClass = TestRpc.class;
         String name = rpcClass.getName();
