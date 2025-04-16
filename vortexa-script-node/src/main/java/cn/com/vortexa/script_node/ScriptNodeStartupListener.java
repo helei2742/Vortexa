@@ -3,7 +3,7 @@ package cn.com.vortexa.script_node;
 import cn.com.vortexa.common.dto.config.ClassInfo;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStartException;
-import cn.com.vortexa.common.util.DynamicJavaLoader;
+import cn.com.vortexa.common.util.classloader.DynamicJavaLoader;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
