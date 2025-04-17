@@ -1,6 +1,6 @@
 package cn.com.vortexa.script_node.scriptagent.rpc;
 
-import cn.com.vortexa.control.ScriptAgent;
+import cn.com.vortexa.script_agent.ScriptAgent;
 import cn.com.vortexa.control.anno.RPCReference;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;

@@ -198,3 +198,23 @@ CREATE TABLE `t_twitter_account` (
 ) ENGINE=InnoDB AUTO_INCREMENT=251 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+create table t_script_node
+(
+    id              bigint auto_increment
+        primary key,
+    group_id        varchar(255)                         null,
+    service_id      varchar(255)                         null,
+    instance_id     varchar(255)                         null,
+    host            varchar(255)                         null,
+    port            int                                  null,
+    script_node_name       varchar(255)                         null,
+    description     text                                 null,
+    bot_config_map  text                                 null,
+    params          text                                 null,
+    insert_datetime datetime   default CURRENT_TIMESTAMP null,
+    update_datetime datetime   default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    valid           tinyint(1) default 1                 null,
+    constraint `group`
+        unique (group_id, service_id, instance_id)
+);

@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -43,6 +44,7 @@ public abstract class AutoConnectWSService implements IWSService {
     private static volatile EventLoopGroup eventLoopGroup;    //netty线程组
     private final AtomicInteger reconnectTimes = new AtomicInteger(0);  //重链接次数
     private final ReentrantLock reconnectLock = new ReentrantLock();    //重连锁
+    private final AtomicLong lastConnectTime = new AtomicLong(-1);   //  上次启动时间
     private final Condition startingWaitCondition = reconnectLock.newCondition();   //启动中阻塞的condition
     private final String url; //websocket的url字符串
     private Bootstrap bootstrap; //netty bootstrap
@@ -163,7 +165,7 @@ public abstract class AutoConnectWSService implements IWSService {
                         reconnectTimes.decrementAndGet();
                     }, reconnectCountDownSecond, TimeUnit.SECONDS);
 
-                    long waitingConnectTime = reconnectTimes.get() == 1 ? 0 : NettyConstants.RECONNECT_DELAY_SECONDS;
+                    long waitingConnectTime = getWaitingConnectTime();
                     log.info("start connect client [{}], url[{}], current times [{}], start after [{}]s",
                             name, url, reconnectTimes.get(), waitingConnectTime);
 
@@ -238,6 +240,17 @@ public abstract class AutoConnectWSService implements IWSService {
 
             return isSuccess.get();
         }, getCallbackInvoker());
+    }
+
+    private long getWaitingConnectTime() {
+        if (reconnectTimes.get() <= 1) {
+            if (lastConnectTime.get() != -1) {
+                return Math.ceilDiv(System.currentTimeMillis() - lastConnectTime.get(), 1000);
+            } else {
+                return 0;
+            }
+        }
+        return NettyConstants.RECONNECT_DELAY_SECONDS;
     }
 
     /**

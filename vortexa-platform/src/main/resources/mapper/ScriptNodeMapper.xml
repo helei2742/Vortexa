@@ -10,7 +10,7 @@
         <result column="instance_id" property="instanceId" />
         <result column="host" property="host" />
         <result column="port" property="port" />
-        <result column="bot_group" property="botGroup" />
+        <result column="script_node_name" property="scriptNodeName" />
         <result column="description" property="description" />
         <result column="bot_config_map" property="botConfigMap" />
         <result column="params" property="params" />
@@ -21,9 +21,9 @@
 
     <insert id="insertOrUpdate">
         INSERT INTO t_script_node
-        (group_id, service_id, instance_id, host, port, bot_group, description, bot_config_map, params, update_datetime,  valid)
+        (group_id, service_id, instance_id, host, port, script_node_name, description, bot_config_map, params, update_datetime,  valid)
         VALUES (
-                #{groupId}, #{serviceId}, #{instanceId}, #{host}, #{port}, #{botGroup}, #{description}, #{botConfigMap}, #{params},  current_timestamp, 1
+        #{groupId}, #{serviceId}, #{instanceId}, #{host}, #{port}, #{scriptNodeName}, #{description}, #{botConfigMap}, #{params},  current_timestamp, 1
         ) ON DUPLICATE KEY  UPDATE
         <trim suffixOverrides=",">
             <if test="groupId != null">
@@ -41,8 +41,8 @@
             <if test="port != null">
                 port = values(port),
             </if>
-            <if test="botGroup != null">
-                bot_group = values(bot_group),
+            <if test="scriptNodeName != null">
+                script_node_name = values(script_node_name),
             </if>
             <if test="description != null">
                 description = values(description),

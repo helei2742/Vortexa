@@ -1,8 +1,11 @@
 package cn.com.vortexa.script_node.view;
 
+import cn.com.vortexa.common.util.AnsiColor;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
+import cn.com.vortexa.script_node.constants.BotStatus;
 import cn.com.vortexa.script_node.view.commandMenu.CommandMenuNode;
 import cn.com.vortexa.script_node.view.commandMenu.MenuNodeMethod;
+import cn.hutool.core.collection.ConcurrentHashSet;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,9 +20,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+
+import static cn.com.vortexa.common.util.AnsiColor.CYAN;
 
 /**
  * 命令行交互的depin机器人
@@ -27,8 +33,8 @@ import java.util.concurrent.CountDownLatch;
 @Slf4j
 @Getter
 public abstract class CommandLineMenu {
-
-    private final Map<String, AutoLaunchBot<?>> botKeyMap = new ConcurrentHashMap<>();
+    private final Map<String, AutoLaunchBot<?>> loadedBotMap = new ConcurrentHashMap<>();
+    private final Set<String> usableBotKeySet = new ConcurrentHashSet<>();
 
     private final CommandMenuNode mainManu;
 
@@ -45,51 +51,62 @@ public abstract class CommandLineMenu {
      * 构建command菜单
      */
     protected void buildMenuNode(CommandMenuNode mainManu) {
-        botKeyMap.forEach((k, v) -> {
+        usableBotKeySet.forEach(botKey -> {
             CommandMenuNode botMenu = new CommandMenuNode(
-                    k,
-                    String.format("欢迎使用[%s]-bot", k),
-                    () -> {
-                        bot = v;
-                        return "current use: [%s], status:[%s]".formatted(
-                                bot.getBotKey(),
-                                bot.getStatus()
-                        );
-                    }
+                    botKey,
+                    String.format("欢迎使用[%s]-bot", botKey)
             );
 
-            buildBotMenuNode(botMenu, v);
-
-            // 解析MenuNodeMethod注解添加菜单节点
-            for (Method method : v.getClass().getDeclaredMethods()) {
-                method.setAccessible(true);
-
-                if (method.isAnnotationPresent(MenuNodeMethod.class)) {
-                    if (method.getParameterCount() > 0) {
-                        throw new IllegalArgumentException("菜单方法参数数量必须为0");
-                    }
-
-                    MenuNodeMethod anno = method.getAnnotation(MenuNodeMethod.class);
-                    String title = anno.title();
-                    String description = anno.description();
-
-                    CommandMenuNode menuNode = new CommandMenuNode(title, description, () -> {
-                        try {
-                            return method.invoke(v).toString();
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-
-                    botMenu.addSubMenu(menuNode);
+            botMenu.setTittleBuilder(()->{
+                BotStatus botStatus = BotStatus.NOT_LOADED;
+                AutoLaunchBot<?> alb = loadedBotMap.get(botKey);
+                if (alb != null) {
+                    botStatus = alb.getStatus();
                 }
-            }
+                return botKey + " - " + AnsiColor.colorize(botStatus.name(), CYAN);
+            });
+
+            botMenu.setAction(menu ->{
+                AutoLaunchBot<?> curBot = bot = loadedBotMap.getOrDefault(botKey, null);
+                if (curBot != null) {
+                    // 解析MenuNodeMethod注解添加菜单节点
+                    for (Method method : curBot.getClass().getDeclaredMethods()) {
+                        method.setAccessible(true);
+
+                        if (method.isAnnotationPresent(MenuNodeMethod.class)) {
+                            if (method.getParameterCount() > 0) {
+                                throw new IllegalArgumentException("菜单方法参数数量必须为0");
+                            }
+
+                            MenuNodeMethod anno = method.getAnnotation(MenuNodeMethod.class);
+                            String title = anno.title();
+                            String description = anno.description();
+
+                            CommandMenuNode menuNode = new CommandMenuNode(title, description, () -> {
+                                try {
+                                    return method.invoke(curBot).toString();
+                                } catch (IllegalAccessException | InvocationTargetException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
+
+                            botMenu.addSubMenu(menuNode);
+                        }
+                    }
+                }
+
+                return "current use: [%s], status:[%s]".formatted(
+                        botKey,
+                        curBot == null ? BotStatus.NOT_LOADED :curBot.getStatus()
+                );
+            });
 
             mainManu.addSubMenu(botMenu);
+            buildBotMenuNode(botMenu, botKey);
         });
     }
 
-    protected abstract void buildBotMenuNode(CommandMenuNode botMenu, AutoLaunchBot<?> v);
+    protected abstract void buildBotMenuNode(CommandMenuNode botMenu, String botKey);
 
     /**
      * 异步启动
@@ -103,7 +120,7 @@ public abstract class CommandLineMenu {
             } finally {
                 startLatch.countDown();
             }
-        }, "depin-bot-main");
+        }, "script-node-cmd");
         commandInputThread.setDaemon(true);
         commandInputThread.start();
     }
@@ -143,7 +160,8 @@ public abstract class CommandLineMenu {
             //Step 2.1 获取输入
             String choice;
             try {
-                choice = reader.readLine("\n<\n" + getInvokeActionAndMenuNodePrintStr(currentMenuNode) + "请选择>")
+                System.out.println("\n<\n" + getInvokeActionAndMenuNodePrintStr(currentMenuNode) + "请选择>");
+                choice = reader.readLine()
                         .trim();
             } catch (Exception e) {
                 log.error("进入菜单节点[{}]发生异常", currentMenuNode.getTittle(), e);

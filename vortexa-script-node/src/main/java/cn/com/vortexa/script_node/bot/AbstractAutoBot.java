@@ -119,7 +119,6 @@ public abstract class AbstractAutoBot {
     ) throws BotInitException {
         try {
             this.logger = new AppendLogger(
-                    getClass(),
                     scriptNodeConfiguration.getScriptNodeName(),
                     autoBotConfig.getBotName(),
                     autoBotConfig.getBotKey()
@@ -457,6 +456,7 @@ public abstract class AbstractAutoBot {
 
         boolean b = switch (status) {
             //当前为NEW，新状态才能为NEW,SHUTDOWN
+            case NOT_LOADED -> BotStatus.NEW.equals(newStatus);
             case NEW -> BotStatus.INIT.equals(newStatus);
             //当前为INIT，新状态只能为INIT_FINISH、INIT_ERROR,SHUTDOWN
             case INIT -> newStatus.equals(BotStatus.INIT_FINISH)

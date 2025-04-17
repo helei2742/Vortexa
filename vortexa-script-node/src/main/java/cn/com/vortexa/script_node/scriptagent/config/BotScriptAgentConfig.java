@@ -1,7 +1,7 @@
 package cn.com.vortexa.script_node.scriptagent.config;
 
-import cn.com.vortexa.control.ScriptAgent;
-import cn.com.vortexa.control.config.ScriptAgentConfig;
+import cn.com.vortexa.script_agent.ScriptAgent;
+import cn.com.vortexa.script_agent.config.ScriptAgentConfig;
 import cn.com.vortexa.control.dto.RPCServiceInfo;
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
 import cn.com.vortexa.script_node.scriptagent.BotScriptAgent;
@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.io.FileNotFoundException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @author helei
@@ -40,10 +41,10 @@ public class BotScriptAgentConfig {
     }
 
     @Bean
-    public BotScriptAgent scriptAgent() throws FileNotFoundException {
+    public BotScriptAgent scriptAgent() throws FileNotFoundException, ExecutionException, InterruptedException {
         ScriptAgentConfig scriptAgentConfig = scriptAgentClientConfig();
         BotScriptAgent botScriptAgent = new BotScriptAgent(scriptAgentConfig, scriptNodeConfiguration, rpcServiceInfos);
-        botScriptAgent.connect();
+        botScriptAgent.connect().get();
         return botScriptAgent;
     }
 }

@@ -4,6 +4,8 @@ package cn.com.vortexa.script_node.constants;
  * Depin Bot 状态
  */
 public enum BotStatus {
+    NOT_LOADED,
+
     NEW,
 
     INIT,

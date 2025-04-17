@@ -1,6 +1,6 @@
 package cn.com.vortexa.bot_platform.script_control.rpc;
 
-import cn.com.vortexa.control.BotControlServer;
+import cn.com.vortexa.control_server.BotControlServer;
 import cn.com.vortexa.control.anno.RPCReference;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;

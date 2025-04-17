@@ -26,7 +26,7 @@ public class AppendLogger {
     @Setter
     private Consumer<LogContent> beforePrintHandler;
 
-    public AppendLogger(Class<?> clazz, String scriptNodeName, String botKey) throws IOException {
+    public AppendLogger(String scriptNodeName, String botName, String botKey) throws IOException {
         log = ScriptLoggerFactory.getScriptLogger(scriptNodeName, botKey);
     }
 

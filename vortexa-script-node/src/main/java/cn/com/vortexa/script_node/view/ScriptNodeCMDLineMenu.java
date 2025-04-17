@@ -1,8 +1,8 @@
 package cn.com.vortexa.script_node.view;
 
-import cn.com.vortexa.common.exception.BotInitException;
-import cn.com.vortexa.common.exception.BotStartException;
+import cn.com.vortexa.common.util.AnsiColor;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
+import cn.com.vortexa.script_node.constants.BotStatus;
 import cn.com.vortexa.script_node.util.AccountInfoPrinter;
 import cn.com.vortexa.script_node.util.ScriptBotLauncher;
 import cn.com.vortexa.script_node.view.commandMenu.CommandMenuNode;
@@ -56,7 +56,7 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
     }
 
     @Override
-    public final void buildBotMenuNode(CommandMenuNode botMenuNode, AutoLaunchBot<?> bot) {
+    public final void buildBotMenuNode(CommandMenuNode botMenuNode, String botKey) {
         if (addCustomMenuNode != null) {
             addCustomMenuNode.accept(botMenuNode);
         }
@@ -69,9 +69,9 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
                 case ACCOUNT_LIST -> buildAccountListMenuNode();
                 case PROXY_LIST -> buildProxyListMenuNode();
                 case BROWSER_ENV_LIST -> buildBrowserListMenuNode();
-                case START_BOT_TASK -> buildStartBotTaskMenuNode(bot);
+                case START_BOT_TASK -> buildStartBotTaskMenuNode(botKey);
                 case IMPORT -> buildImportMenuNode();
-                case LAUNCH_SCRIPT -> buildLaunchScriptMenuNode(bot);
+                case LAUNCH_SCRIPT -> buildLaunchScriptMenuNode(botKey);
             });
         }
     }
@@ -81,26 +81,29 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
      *
      * @return CommandMenuNode
      */
-    private CommandMenuNode buildLaunchScriptMenuNode(AutoLaunchBot<?> bot) {
-        String botKey = bot.getBotKey();
+    private CommandMenuNode buildLaunchScriptMenuNode(String botKey) {
+        ScriptBotLauncher botLauncher = ScriptBotLauncher.INSTANCE;
 
         CommandMenuNode commandMenuNode = new CommandMenuNode("启动/关闭 Bot", "启动或关闭Bot",
-                () -> "当前选择的Bot[%s][%s]\n状态[%s]".formatted(
-                        bot.getBotName(),
+                () -> "当前选择的Bot[%s]\n状态[%s]".formatted(
                         botKey,
-                        bot.getStatus()
+                        botLauncher.getBotStatus(botKey)
                 ));
 
         return commandMenuNode.addSubMenu(new CommandMenuNode(true, "启动", null, () -> {
             try {
-                ScriptBotLauncher.launchResolvedScriptBot(botKey);
-                return botKey + " launch finish...Current status: " + bot.getStatus();
-            } catch (BotStartException | BotInitException e) {
+                botLauncher.loadAndLaunchBot(botKey);
+                return botKey + " launch finish...Current status: " + botLauncher.getBotStatus(botKey);
+            } catch (Exception e) {
                 log.error("start bot[{}] error", botKey, e);
                 return "";
             }
         })).addSubMenu(new CommandMenuNode(true, "关闭", null, () -> {
-            bot.stop();
+            AutoLaunchBot<?> keyBot = botLauncher.getBotByBotKey(botKey);
+            if (keyBot == null || keyBot.getStatus() != BotStatus.RUNNING) {
+                return AnsiColor.colorize("bot当前状态不能关闭", AnsiColor.YELLOW);
+            }
+            keyBot.stop();
             return "";
         }));
     }
@@ -271,11 +274,14 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
      *
      * @return 连接账户菜单节点
      */
-    private CommandMenuNode buildStartBotTaskMenuNode(AutoLaunchBot<?> bot) {
-        CommandMenuNode menuNode = new CommandMenuNode(
+    private CommandMenuNode buildStartBotTaskMenuNode(String botKey) {
+        return new CommandMenuNode(
                 "启动任务",
                 "选择任务类型",
                 node -> {
+                    AutoLaunchBot<?> bot = getLoadedBotMap().get(botKey);
+                    if (bot == null) return null;
+
                     Set<String> existJobs = node.getSubNodeList()
                             .stream()
                             .map(CommandMenuNode::getDescribe)
@@ -308,7 +314,6 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
                     return "";
                 }
         );
-        return menuNode;
     }
 
     /**

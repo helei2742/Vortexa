@@ -5,8 +5,8 @@ import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
 import cn.com.vortexa.common.dto.BotACJobResult;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.common.entity.ScriptNode;
-import cn.com.vortexa.control.ScriptAgent;
-import cn.com.vortexa.control.config.ScriptAgentConfig;
+import cn.com.vortexa.script_agent.ScriptAgent;
+import cn.com.vortexa.script_agent.config.ScriptAgentConfig;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RPCArgsWrapper;
 import cn.com.vortexa.control.dto.RPCServiceInfo;
@@ -56,7 +56,7 @@ public class BotScriptAgent extends ScriptAgent {
             ServiceInstance serviceInstance = clientConfig.getServiceInstance();
 
             ScriptNode scriptNode = ScriptNode.generateFromServiceInstance(serviceInstance);
-            scriptNode.setBotGroup(scriptNodeConfiguration.getScriptNodeName());
+            scriptNode.setScriptNodeName(scriptNodeConfiguration.getScriptNodeName());
             scriptNode.setBotConfigMap(scriptNodeConfiguration.getBotKeyConfigMap());
 
             return scriptNode;

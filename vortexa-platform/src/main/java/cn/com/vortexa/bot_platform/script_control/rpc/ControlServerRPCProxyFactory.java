@@ -1,6 +1,6 @@
 package cn.com.vortexa.bot_platform.script_control.rpc;
 
-import cn.com.vortexa.control.BotControlServer;
+import cn.com.vortexa.control_server.BotControlServer;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RPCResultWrapper;
 import cn.com.vortexa.control.dto.RemotingCommand;

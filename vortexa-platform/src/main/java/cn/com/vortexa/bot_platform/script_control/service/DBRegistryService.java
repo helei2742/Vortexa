@@ -5,7 +5,7 @@ import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.control.constant.RegistryState;
-import cn.com.vortexa.control.service.IRegistryService;
+import cn.com.vortexa.control_server.service.IRegistryService;
 import cn.com.vortexa.control.util.ControlServerUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ public class DBRegistryService implements IRegistryService {
                 return RegistryState.PARAM_ERROR;
             }
             try {
-                updatedCache.offer(new RegisteredScriptNode(scriptNode));
+                scriptNodeService.insertOrUpdate(scriptNode);
                 return RegistryState.OK;
             } catch (Exception e) {
                 log.error("update registry error", e);

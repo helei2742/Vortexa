@@ -1,11 +1,9 @@
 package cn.com.vortexa.script_node.config;
 
 import cn.com.vortexa.common.dto.config.AutoBotAccountConfig;
-import cn.com.vortexa.common.dto.config.ClassInfo;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.YamlConfigLoadUtil;
-import cn.hutool.core.util.StrUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
@@ -92,25 +90,8 @@ public class ScriptNodeConfiguration implements InitializingBean {
                     if (config == null) {
                         throw new IllegalArgumentException("bot instance config file [" + BOT_INSTANCE_CONFIG_FILE_NAME + "] illegal");
                     }
-                    if (StrUtil.isBlank(config.getClassFileName()) && StrUtil.isBlank(config.getClassFilePath())) {
-                        throw new IllegalArgumentException("bot instance config file [" + BOT_INSTANCE_CONFIG_FILE_NAME + "] class path didn't exist");
-                    }
-
                     // 路径转换
                     reactivePathConfigConvert(config, dir.toString());
-
-                    if (StrUtil.isBlank(config.getClassFilePath())) {
-                        config.setClassFilePath(dir + File.separator + config.getClassFileName());
-                    }
-
-                    List<ClassInfo> extraClass = config.getExtraClass();
-                    if (extraClass != null && !extraClass.isEmpty()) {
-                        for (ClassInfo classInfo : extraClass) {
-                            if (classInfo.getClassFilePath() == null) {
-                                classInfo.setClassFilePath(dir + File.separator + classInfo.getClassFileName());
-                            }
-                        }
-                    }
 
                     config.setResourceDir(dir.toString());
                     botKeyConfigMap.put(config.getBotKey(), config);

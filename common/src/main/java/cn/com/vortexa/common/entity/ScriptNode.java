@@ -33,8 +33,8 @@ public class ScriptNode extends ServiceInstance implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @TableField("bot_group")
-    private String botGroup;
+    @TableField("script_node_name")
+    private String scriptNodeName;
 
     @TableField("description")
     private String description;
@@ -57,7 +57,7 @@ public class ScriptNode extends ServiceInstance implements Serializable {
 
     public boolean usable() {
        return StrUtil.isNotBlank(groupId) && StrUtil.isNotBlank(serviceId) && StrUtil.isNotBlank(instanceId)
-               && StrUtil.isNotBlank(host) && port != null && StrUtil.isNotBlank(botGroup);
+               && StrUtil.isNotBlank(host) && port != null && StrUtil.isNotBlank(scriptNodeName);
     }
 
     public static ScriptNode generateFromServiceInstance(ServiceInstance serviceInstance) {

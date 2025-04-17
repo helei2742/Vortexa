@@ -20,9 +20,47 @@ public class FileUtil {
     public static final String RESOURCE_ROOT_DIR = System.getProperty("user.dir") + File.separator + "botData";
 
     /**
-     * 获取配置文件
+     * class资源
      *
-     * @param path     子路径
+     * @return path
+     * @throws IOException exception
+     */
+    public static String getCompileClassResourceDir() throws IOException {
+        Path path = Paths.get(RESOURCE_ROOT_DIR + File.separator + "classes");
+        if (Files.notExists(path)) {
+            Files.createDirectories(path);
+        }
+        return path.toString();
+    }
+
+    /**
+     * class资源
+     *
+     * @return path
+     * @throws IOException exception
+     */
+    public static String getCompileClassResource(String subDir) throws IOException {
+        String dir = getCompileClassResourceDir();
+        Path path = Paths.get(dir + File.separator + subDir);
+        if (Files.notExists(path)) {
+            Files.createDirectories(path);
+        }
+        return path.toString();
+    }
+
+    /**
+     * 获取数据库文件的dir
+     *
+     * @return String
+     */
+    public static String getDBResourceDir() {
+        return RESOURCE_ROOT_DIR + File.separator + "db";
+    }
+
+    /**
+     * 获取资源路径
+     *
+     * @param path 子路径
      * @param fileName 文件名
      * @return 绝对路径
      */
@@ -62,9 +100,8 @@ public class FileUtil {
         return RESOURCE_ROOT_DIR + File.separator + String.join(File.separator, CONFIG_DIR_BOT_PATH);
     }
 
-
     /**
-     * 获取系统配置目录
+     * 获取data目录
      *
      * @return 配置目录绝对路径
      */
@@ -84,17 +121,17 @@ public class FileUtil {
         return switch (filePathType) {
             case absolute -> {
                 if (patternPath.startsWith(filePathType.name())) {
-                    yield patternPath.replaceFirst("absolute:", "");
+                    yield patternPath.replace("absolute:", "");
                 }
                 yield patternPath;
             }
             case instance_resource ->
-                    patternPath.replaceFirst("instance_resource:", botInstanceResourcePath + File.separator);
-            case app_resource -> patternPath.replaceFirst("app_resource:", RESOURCE_ROOT_DIR + File.separator);
+                    patternPath.replace("instance_resource:", botInstanceResourcePath + File.separator);
+            case app_resource -> patternPath.replace("app_resource:", RESOURCE_ROOT_DIR + File.separator);
             case app_resource_config ->
-                    patternPath.replaceFirst("app_resource_config:", getAppResourceAppConfigPath() + File.separator);
+                    patternPath.replace("app_resource_config:", getAppResourceAppConfigPath() + File.separator);
             case app_resource_data ->
-                    patternPath.replaceFirst("app_resource_data:", getAppResourceDataPath() + File.separator);
+                    patternPath.replace("app_resource_data:", getAppResourceDataPath() + File.separator);
         };
     }
 
@@ -114,7 +151,7 @@ public class FileUtil {
      * 创建日志目录
      *
      * @param scriptNodeName scriptNodeName
-     * @param botKey         botKey
+     * @param botKey botKey
      */
     public static String createLogsDir(String scriptNodeName, String botKey) throws IOException {
         Path path = Paths.get(RESOURCE_ROOT_DIR, "logs", scriptNodeName, botKey);

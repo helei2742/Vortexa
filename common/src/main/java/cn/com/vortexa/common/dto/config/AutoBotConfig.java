@@ -39,19 +39,8 @@ public class AutoBotConfig implements Serializable {
      * 类名， 必填，还需包含包路径
      */
     private String className;
-    /**
-     * class 文件名，和classFilePath二选一。选classFileName则会用bot-instance-config所在目录
-     */
-    private String classFileName;
-    /**
-     * class 文件绝对路径
-     */
-    private String classFilePath;
 
-    /**
-     * 其它class文件
-     */
-    private List<ClassInfo> extraClass;
+    private List<String> extraClassNameList;
 
     /**
      * 账户配置
@@ -65,7 +54,7 @@ public class AutoBotConfig implements Serializable {
 
 
     public String getConfig(String key) {
-        return String.valueOf(customConfig.get(key));
+        return customConfig == null ? null : String.valueOf(customConfig.get(key));
     }
 
     public void setConfig(String key, String value) {
