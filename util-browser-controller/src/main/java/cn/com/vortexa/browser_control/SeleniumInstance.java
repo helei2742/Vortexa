@@ -4,6 +4,7 @@ import cn.com.vortexa.browser_control.dto.SeleniumParams;
 import cn.com.vortexa.browser_control.dto.SeleniumProxy;
 import cn.com.vortexa.browser_control.execute.ExecuteGroup;
 import cn.com.vortexa.browser_control.execute.ExecuteLogic;
+import cn.com.vortexa.browser_control.util.SeleniumProxyAuth;
 import cn.com.vortexa.browser_control.util.SeleniumUtil;
 import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.StrUtil;
@@ -274,6 +275,9 @@ public abstract class SeleniumInstance implements SeleniumOperate {
         if (params.getExtensionPaths() != null) {
             chromeOptions.addExtensions(params.getExtensionPaths().stream().map(File::new).toList());
         }
+        if (proxy != null) {
+            chromeOptions.addExtensions(new File(SeleniumProxyAuth.createProxyAuthExtension(proxy)));
+        }
         return chromeOptions;
     }
 
@@ -281,7 +285,6 @@ public abstract class SeleniumInstance implements SeleniumOperate {
         // 设置用户数据目录
         chromeOptions.addArguments("user-data-dir=" + SeleniumUtil.getUserDataDir(instanceId));
         // 设置代理
-        chromeOptions.addArguments("--proxy-server=" + proxy.getHost() + ":" + proxy.getPort());
         chromeOptions.addArguments("--disable-gpu");
         chromeOptions.addArguments("--remote-allow-origins=*");
         chromeOptions.addArguments("--no-default-browser-check");

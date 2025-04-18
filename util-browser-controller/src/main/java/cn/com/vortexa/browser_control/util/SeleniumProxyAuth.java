@@ -1,72 +1,86 @@
 package cn.com.vortexa.browser_control.util;
 
+import cn.com.vortexa.browser_control.dto.SeleniumProxy;
+import cn.com.vortexa.common.util.FileUtil;
+
 import java.io.*;
-import java.nio.file.Files;
+        import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class SeleniumProxyAuth {
 
-    private static final String BASE_DIR = System.getProperty("user.dir") + File.separator + "botData" + File.separator + "extensions";
+    private static final String BASE_DIR = FileUtil.RESOURCE_ROOT_DIR + File.separator + "extensions";
 
-    public static String createProxyAuthExtension(String host, int port, String user, String pass) throws IOException {
-        String pluginPath = BASE_DIR + File.separator + "proxy_auth_plugin_%s_%s.zip".formatted(host, port);
+    public static String createProxyAuthExtension(SeleniumProxy seleniumProxy) throws IOException {
+        String pluginPath = BASE_DIR + File.separator + "proxy_auth_plugin_%s_%s.zip".formatted(
+                seleniumProxy.getHost(), seleniumProxy.getPort()
+        );
 
         if (new File(pluginPath).exists()) {
             return pluginPath;
         }
 
         String manifestJson = """
-                {
-                    "version": "1.0.0",
-                    "manifest_version": 2,
-                    "name": "Chrome Proxy",
-                    "permissions": [
-                        "proxy",
-                        "tabs",
-                        "unlimitedStorage",
-                        "storage",
-                        "<all_urls>",
-                        "webRequest",
-                        "webRequestBlocking"
-                    ],
-                    "background": {
-                        "scripts": ["background.js"]
-                    },
-                    "minimum_chrome_version":"22.0.0"
-                }
-                """;
+            {
+                "version": "1.0.0",
+                "manifest_version": 2,
+                "name": "Chrome Proxy",
+                "permissions": [
+                    "proxy",
+                    "tabs",
+                    "unlimitedStorage",
+                    "storage",
+                    "<all_urls>",
+                    "webRequest",
+                    "webRequestBlocking"
+                ],
+                "background": {
+                    "scripts": ["background.js"]
+                },
+                "minimum_chrome_version":"22.0.0"
+            }
+            """;
 
         String backgroundJs =
                 """
-                        var config = {
-                                mode: "fixed_servers",
-                                rules: {
-                                  singleProxy: {
-                                    scheme: "http",
-                                    host: "%s",
-                                    port: parseInt(%s)
-                                  },
-                                  bypassList: ["foobar.com"]
-                                }
-                              };
-                        chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
-                        function callbackFn(details) {
-                            return {
-                                authCredentials: {
-                                    username: "%s",
-                                    password: "%s"
-                                }
-                            };
-                        }
-                        chrome.webRequest.onAuthRequired.addListener(
-                                    callbackFn,
-                                    {urls: ["<all_urls>"]},
-                                    ['blocking']
-                        );
-                        """.formatted(host, port, user, pass);
+                    var config = {
+                            mode: "fixed_servers",
+                            rules: {
+                              singleProxy: {
+                                scheme: "%s",
+                                host: "%s",
+                                port: parseInt(%s)
+                              },
+                              bypassList: ["foobar.com"]
+                            }
+                          };
+                    chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
+                    function callbackFn(details) {
+                        return {
+                            authCredentials: {
+                                username: "%s",
+                                password: "%s"
+                            }
+                        };
+                    }
+                    chrome.webRequest.onAuthRequired.addListener(
+                                callbackFn,
+                                {urls: ["<all_urls>"]},
+                                ['blocking']
+                    );
+                    """.formatted(
+                        seleniumProxy.getProxyProtocol().name().toLowerCase(),
+                        seleniumProxy.getHost(),
+                        seleniumProxy.getPort(),
+                        seleniumProxy.getUsername(),
+                        seleniumProxy.getPassword()
+                );
 
-        Path dirPath = Paths.get(BASE_DIR + File.separator + "proxy_auth_extension_%s_%s".formatted(host, port));
+        Path dirPath = Paths.get(BASE_DIR + File.separator + "proxy_auth_extension_%s_%s".formatted(
+                seleniumProxy.getHost(),
+                seleniumProxy.getPort()
+        ));
 
         if (!Files.exists(dirPath)) {
             Files.createDirectories(dirPath);
@@ -87,7 +101,6 @@ public class SeleniumProxyAuth {
         }
 
         return pluginPath;
-
     }
 
     private static void writeToFile(File file, String content) throws IOException {

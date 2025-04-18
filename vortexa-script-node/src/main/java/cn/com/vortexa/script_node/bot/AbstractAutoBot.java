@@ -297,6 +297,41 @@ public abstract class AbstractAutoBot {
      * @param body    body
      * @return CompletableFuture<Response> String
      */
+    public CompletableFuture<JSONObject> syncJSONRequest(
+            ProxyInfo proxy,
+            String url,
+            HttpMethod method,
+            Map<String, String> headers,
+            JSONObject params,
+            JSONObject body,
+            Supplier<String> requestStart
+    ) {
+        return syncRequest(
+                proxy,
+                url,
+                method,
+                headers,
+                params,
+                body,
+                requestStart,
+                1
+        ).thenApply(responseStr -> {
+            if (responseStr == null) return null;
+            return JSONObject.parseObject(responseStr);
+        });
+    }
+
+    /**
+     * 同步请求，使用syncController控制并发
+     *
+     * @param proxy   proxy
+     * @param url     url
+     * @param method  method
+     * @param headers headers
+     * @param params  params
+     * @param body    body
+     * @return CompletableFuture<Response> String
+     */
     public CompletableFuture<String> syncRequest(
             ProxyInfo proxy,
             String url,

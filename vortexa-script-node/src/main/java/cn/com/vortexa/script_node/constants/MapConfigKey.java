@@ -20,9 +20,11 @@ public class MapConfigKey {
 
     public static final String PASSWORD_KEY = "password";
 
+    public static final String WALLET_PRIMARY_KEY_KEY = "wallet_primary_key";
+    public static final String WALLET_ADDRESS_KEY = "wallet_address";
+
     public static final String ACCESS_TOKEN_KEY_V1 = "access_token";
     public static final String ACCESS_TOKEN_KEY_V2 ="accessToken";
-
     public static final String REFRESH_TOKEN_KEY_V1 = "refresh_token";
     public static final String REFRESH_TOKEN_KEY_V2 = "refreshToken";
 }
