@@ -596,6 +596,9 @@ public abstract class AbstractAutoBot {
             AutoBotJobParam param = entry.getValue();
             AutoBotJobParam instanceParam = botInstanceParam.get(jobName);
 
+            if (param.getParams() == null) {
+                param.setParams(new HashMap<>());
+            }
             if (!param.equals(instanceParam)) {
                 return true;
             }

@@ -8,6 +8,7 @@
         <result column="bot_id" property="botId"/>
         <result column="bot_key" property="botKey"/>
         <result column="account_table_name" property="accountTableName"/>
+        <result column="job_params" property="jobParams"/>
         <result column="params" property="params"/>
         <result column="insert_datetime" property="insertDatetime"/>
         <result column="update_datetime" property="updateDatetime"/>
@@ -18,7 +19,7 @@
         INSERT INTO t_bot_instance
         (bot_id, bot_name, bot_key, account_table_name, job_params, params, update_datetime, valid)
         VALUES (
-        #{botId}, #{botName}, #{botKey}, #{accountTableName}, #{jobParams}, #{params}, current_timestamp, 1
+        #{botId}, #{botName}, #{botKey}, #{accountTableName}, #{jobParams}, #{params}, now(), 1
         )
         ON DUPLICATE KEY UPDATE
         <trim suffixOverrides=",">
