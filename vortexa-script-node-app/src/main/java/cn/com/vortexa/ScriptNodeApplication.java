@@ -1,7 +1,8 @@
-package cn.com.vortexa.script_node;
+package cn.com.vortexa;
 
 
 import cn.com.vortexa.common.util.BannerUtil;
+import cn.com.vortexa.script_node.ScriptNodeAutoConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

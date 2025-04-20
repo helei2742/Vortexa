@@ -66,7 +66,7 @@ public class BrowserEnvServiceImpl extends AbstractBaseService<BrowserEnvMapper,
 
     @Override
     public Integer importFromExcel(String fileBotConfigPath) throws SQLException {
-        String proxyFilePath = FileUtil.getAppResourceSystemConfigPath() + File.separator + fileBotConfigPath;
+        String proxyFilePath = FileUtil.getAppResourceSystemConfigDir() + File.separator + fileBotConfigPath;
 
         List<Map<String, Object>> headerList = ExcelReadUtil.readExcelToMap(proxyFilePath);
 

@@ -22,7 +22,7 @@ public class ImageController {
 
     @GetMapping("/app")
     public ResponseEntity<Resource> getImage(@RequestParam(name = "name") String name) throws IOException {
-        String filePath = FileUtil.getAppResourceAppConfigPath() + File.separator + name;
+        String filePath = FileUtil.getAppResourceAppConfigDir() + File.separator + name;
         log.info("request app dir image [{}]", filePath);
 
         Path path = Paths.get(filePath);

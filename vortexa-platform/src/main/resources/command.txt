@@ -1,0 +1,8 @@
+docker run --name vortexa-platform \
+  -p 10110:10110 \
+  -p 18848:18848 \
+  -v $(pwd)/config/application.yaml:/app/config/application.yaml \
+  vortexa-platform
+
+
+java -jar vortexa-platform-1.0-SNAPSHOT.jar --spring.config.location=./config/application.yaml

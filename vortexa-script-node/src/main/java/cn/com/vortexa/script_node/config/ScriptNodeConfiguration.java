@@ -4,6 +4,7 @@ import cn.com.vortexa.common.dto.config.AutoBotAccountConfig;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.YamlConfigLoadUtil;
+import cn.hutool.core.collection.CollUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
@@ -37,19 +38,14 @@ public class ScriptNodeConfiguration implements InitializingBean {
     private String scriptNodeName;
 
     /**
-     * bot-instance 配置文件位置
+     * bot-instance jar包名字
      */
-    private String botInstanceLocations;
+    private List<String> botInstanceJarNames;
 
     /**
      * Script node 基础路径
      */
     private String scriptNodeBasePath;
-
-    /**
-     * 解析后的botInstance配置文件绝对路径
-     */
-    private String resolvedInstanceLocations;
 
     /**
      * 是否开启命令行菜单
@@ -76,37 +72,49 @@ public class ScriptNodeConfiguration implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         botKeyConfigMap = new HashMap<>();
         // 解析地址，
-        scriptNodeBasePath = FileUtil.getAppResourceAppConfigPath() + File.separator + scriptNodeName;
+        scriptNodeBasePath = FileUtil.getAppResourceAppConfigDir() + File.separator + scriptNodeName;
 
-        resolvedInstanceLocations = FileUtil.generateAbsPath(botInstanceLocations, null);
+        if (CollUtil.isNotEmpty(botInstanceJarNames)) {
+            for (String botInstanceJarName : botInstanceJarNames) {
+                String jarLibraryPath = FileUtil.getLibraryPath(botInstanceJarName);
+                String jarFilePath = FileUtil.getJarFilePath(botInstanceJarName);
+                FileUtil.extractJar(
+                        jarLibraryPath,
+                        jarFilePath
+                );
 
-        // 解析文件夹
-        log.info("start resolve bot instance config from dir[{}]", resolvedInstanceLocations);
-        Path botInstanceDirsPath = Paths.get(resolvedInstanceLocations);
-        try (Stream<Path> walk = Files.walk(botInstanceDirsPath, 3)) {
-            walk.filter(Files::isDirectory).forEach(dir -> {
-                Path configFilePath = dir.resolve(BOT_INSTANCE_CONFIG_FILE_NAME);
-                if (Files.exists(configFilePath)) {
-                    AutoBotConfig config = YamlConfigLoadUtil.load(configFilePath.toFile(), BOT_INSTANCE_CONFIG_PREFIX, AutoBotConfig.class);
+                // 解析文件夹
+                log.info("start resolve bot instance config from dir[{}]", jarFilePath);
+                try (Stream<Path> walk = Files.walk(Paths.get(jarFilePath), 3)) {
+                    walk.filter(Files::isDirectory).forEach(dir -> {
+                        Path configFilePath = dir.resolve(BOT_INSTANCE_CONFIG_FILE_NAME);
+                        if (Files.exists(configFilePath)) {
+                            AutoBotConfig config = YamlConfigLoadUtil.load(configFilePath.toFile(), BOT_INSTANCE_CONFIG_PREFIX, AutoBotConfig.class);
 
-                    // 配置文件校验
-                    if (config == null) {
-                        throw new IllegalArgumentException("bot instance config file [" + BOT_INSTANCE_CONFIG_FILE_NAME + "] illegal");
-                    }
-                    // 路径转换
-                    reactivePathConfigConvert(config, dir.toString());
+                            // 配置文件校验
+                            if (config == null) {
+                                throw new IllegalArgumentException("bot instance config file [" + BOT_INSTANCE_CONFIG_FILE_NAME + "] illegal");
+                            }
+                            // 路径转换
+                            reactivePathConfigConvert(config, dir.toString());
 
-                    config.setResourceDir(dir.toString());
-                    // 填充公共配置
-                    if (config.getCustomConfig() == null) {
-                        config.setCustomConfig(new HashMap<>(botCommonConfig));
-                    } else {
-                        config.getCustomConfig().putAll(botCommonConfig);
-                    }
-                    botKeyConfigMap.put(config.getBotKey(), config);
-                    log.info("botKey[{}] config loaded", config.getBotKey());
+                            // 设置bot资源目录
+                            config.setResourceDir(dir.toString());
+                            // 设置所在jar包路径
+                            config.setClassJarPath(jarLibraryPath);
+
+                            // 填充公共配置
+                            if (config.getCustomConfig() == null) {
+                                config.setCustomConfig(new HashMap<>(botCommonConfig));
+                            } else {
+                                config.getCustomConfig().putAll(botCommonConfig);
+                            }
+                            botKeyConfigMap.put(config.getBotKey(), config);
+                            log.info("botKey[{}] config loaded", config.getBotKey());
+                        }
+                    });
                 }
-            });
+            }
         }
     }
 

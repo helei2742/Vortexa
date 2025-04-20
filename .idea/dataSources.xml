@@ -68,5 +68,12 @@
         </library>
       </libraries>
     </data-source>
+    <data-source source="LOCAL" name="job_store@192.168.1.98" uuid="07adab7f-1609-4108-a153-342a9998bd83">
+      <driver-ref>mysql.8</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://192.168.1.98:3306/job_store</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

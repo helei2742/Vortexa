@@ -2,7 +2,6 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.bot_platform.service.IAccountBaseInfoService;
 import cn.com.vortexa.rpc.api.platform.IAccountBaseInfoRPC;
-import cn.com.vortexa.common.config.SystemConfig;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.util.FileUtil;
@@ -83,7 +82,7 @@ public class AccountBaseInfoServiceImpl extends AbstractBaseService<AccountBaseI
 
     @Override
     public Integer importFromExcel(String botConfigPath) {
-        String proxyFilePath = FileUtil.getAppResourceSystemConfigPath() + File.separator +  botConfigPath;
+        String proxyFilePath = FileUtil.getAppResourceSystemConfigDir() + File.separator +  botConfigPath;
         AtomicInteger total = new AtomicInteger();
         try {
             ExcelReadUtil.readExcelAsMap(

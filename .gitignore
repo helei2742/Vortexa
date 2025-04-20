@@ -12,6 +12,7 @@ target/
 *.iml
 *.ipr
 *.class
+*.jar
 bot-instance-config.yaml
 
 **/.xlsx
@@ -47,6 +48,8 @@ nameserver/
 proxy_auth_extension
 selenium_data/
 A_back/
+lib/
+vortexa-data/
 
 **/.db
 

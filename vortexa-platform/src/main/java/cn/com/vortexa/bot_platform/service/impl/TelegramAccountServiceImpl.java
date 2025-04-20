@@ -48,7 +48,7 @@ public class TelegramAccountServiceImpl extends AbstractBaseService<TelegramAcco
 
     @Override
     public Integer importFromExcel(String fileBotConfigPath) throws SQLException {
-        String dirResourcePath = FileUtil.getAppResourceSystemConfigPath() + File.separator + fileBotConfigPath;
+        String dirResourcePath = FileUtil.getAppResourceSystemConfigDir() + File.separator + fileBotConfigPath;
 
         try {
             List<Map<String, Object>> rawLines = ExcelReadUtil.readExcelToMap(dirResourcePath);

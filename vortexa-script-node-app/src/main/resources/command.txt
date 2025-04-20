@@ -1,0 +1,14 @@
+java  --add-opens java.base/java.lang=ALL-UNNAMED \
+     -Dremote.config-url=http://localhost:10110/script-node/remote-config \
+     -Dnode-id=macbook-test \
+     -jar vortexa-script-node-app-1.0-SNAPSHOT.jar
+
+
+docker run -it --name vortexa-script-node \
+  -v $(pwd)/config:/app/config \
+  -v $(pwd)/lib:/app/lib \
+  -v $(pwd)/vortexa-data:/app/vortexa-data \
+  vortexa-script-node-app \
+  --add-opens java.base/java.lang=ALL-UNNAMED \
+  -Dremote.config-url=http://localhost:10110/script-node/remote-config \
+  -Dnode-id=macbook-test

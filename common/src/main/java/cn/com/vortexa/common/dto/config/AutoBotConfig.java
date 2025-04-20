@@ -36,10 +36,18 @@ public class AutoBotConfig implements Serializable {
     private String resourceDir;
 
     /**
+     * class文件所在的jar包路径，运行时写入
+     */
+    private String classJarPath;
+
+    /**
      * 类名， 必填，还需包含包路径
      */
     private String className;
 
+    /**
+     * 其它需加载的类名
+     */
     private List<String> extraClassNameList;
 
     /**

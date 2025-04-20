@@ -479,7 +479,7 @@ public abstract class AbstractAutoBot {
      * @return String
      */
     public String getAppConfigDir() {
-        return FileUtil.getAppResourceAppConfigPath() + File.separator + getBotInstance().getBotKey();
+        return FileUtil.getAppResourceAppConfigDir() + File.separator + getBotInstance().getBotKey();
     }
 
     /**

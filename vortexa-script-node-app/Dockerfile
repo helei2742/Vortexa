@@ -4,10 +4,14 @@ FROM openjdk:21-jdk-slim
 WORKDIR /app
 
 # 复制 jar 包到容器里
-COPY ./target/vortexa-platform-1.0-SNAPSHOT.jar /app/vortexa-platform.jar
+COPY ./target/vortexa-script-node-app-1.0-SNAPSHOT.jar /app/app.jar
+
+
 
 # 暴露端口
 EXPOSE 10110 18848
 
 # 启动命令，指定 config 目录
-ENTRYPOINT ["java", "-jar", "vortexa-platform.jar", "--spring.config.location=./config/application.yaml"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -cp \"lib/*:app.jar\" -jar app.jar $@"]
+
+CMD ["--help"]

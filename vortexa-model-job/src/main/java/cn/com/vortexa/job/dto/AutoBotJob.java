@@ -24,7 +24,7 @@ public class AutoBotJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         JobKey key = context.getJobDetail().getKey();
 
-        AutoBotJobParam params = (AutoBotJobParam) context.getJobDetail().getJobDataMap().remove(BOT_JOB_PARAM_KEY);
+        AutoBotJobParam params = (AutoBotJobParam) context.getJobDetail().getJobDataMap().get(BOT_JOB_PARAM_KEY);
         // 获取job调用者
         AutoBotJobInvoker invoker = botJobService.getJobInvoker(key);
 

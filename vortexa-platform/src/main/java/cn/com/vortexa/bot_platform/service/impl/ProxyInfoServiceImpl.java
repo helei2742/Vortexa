@@ -49,7 +49,7 @@ public class ProxyInfoServiceImpl extends AbstractBaseService<ProxyInfoMapper, P
 
     @Override
     public Integer importFromExcel(String botConfigPath) {
-        String proxyFilePath = FileUtil.getAppResourceSystemConfigPath() + File.separator + botConfigPath;
+        String proxyFilePath = FileUtil.getAppResourceSystemConfigDir() + File.separator + botConfigPath;
 
         int total = 0;
 

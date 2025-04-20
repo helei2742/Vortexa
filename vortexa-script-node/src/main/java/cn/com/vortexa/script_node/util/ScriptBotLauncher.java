@@ -1,7 +1,6 @@
 package cn.com.vortexa.script_node.util;
 
-import cn.com.vortexa.common.util.FileUtil;
-import cn.com.vortexa.script_node.util.classloader.DynamicJavaLoader;
+import cn.com.vortexa.script_node.util.classloader.DynamicJarLoader;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
@@ -91,10 +90,9 @@ public class ScriptBotLauncher {
             // 1 编译为class
             // 2 加载class
             Class<?> aClass = loadScriptNodeResourceClass(
-                    botConfig.getResourceDir(),
+                    botConfig.getClassJarPath(),
                     className,
-                    botConfig.getExtraClassNameList(),
-                    botKey
+                    botConfig.getExtraClassNameList()
             );
 
             log.info("[{}] class load success ", botKey);
@@ -226,20 +224,18 @@ public class ScriptBotLauncher {
     /**
      * 加载script bot的class文件
      *
-     * @param sourceDir sourceDir
-     * @param className className
+     * @param jarPath            jarPath
+     * @param className          className
+     * @param extraClassNameList extraClassNameList
      * @return 已加载的BotClass文件
      * @throws Exception Exception
      */
     private static Class<?> loadScriptNodeResourceClass(
-            String sourceDir, String className, List<String> extraClassName, String botKey
+            String jarPath,
+            String className,
+            List<String> extraClassNameList
     ) throws Exception {
-        String classOutputDir = FileUtil.getCompileClassResource(botKey);
-        if (!DynamicJavaLoader.compileJavaDir(sourceDir, classOutputDir)) {
-            throw new RuntimeException(sourceDir + " compile to class error");
-        }
-        log.info("{} compile finish, start output dir {}", sourceDir, classOutputDir);
-        return DynamicJavaLoader.loadClassFromDir(classOutputDir, className, extraClassName);
+        return DynamicJarLoader.loadClassFromJar(jarPath, className, extraClassNameList);
     }
 
     public static boolean isClassInInheritanceChain(Class<?> subclass, Class<?> superclass) {

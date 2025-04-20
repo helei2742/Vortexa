@@ -86,7 +86,7 @@ public class BotAccountContextServiceImpl extends AbstractBaseService<BotAccount
         if (Paths.get(fileBotConfigPath).isAbsolute()) {
             proxyFilePath = fileBotConfigPath;
         } else {
-            proxyFilePath = FileUtil.getAppResourceAppConfigPath() + File.separator + fileBotConfigPath;
+            proxyFilePath = FileUtil.getAppResourceAppConfigDir() + File.separator + fileBotConfigPath;
         }
 
         try {

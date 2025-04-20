@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url:
+    username:
+    password:
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      table-prefix: QRTZ_
+      driver-class: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/job_store
+      user: helei
+      password: 123456
+      scheduler:
+        instance-name: QuartzScheduler
+
+
+vortexa:
+  script-node:
+    script-node-name: helei-macbook
+    auto-launch-bot-keys:
+      # - optim_ai_test
+#      - klok_test
+      # - flow3_bot_test
+      - taker_google
+      - magic_newton_v2
+#      - beamable_test
+  #    bot-instance-locations: "reactive:"
+    bot-common-config:
+      two_captcha_api_key: ''
+    bot-instance-jar-names:
+      - vortexa-script-bot
+
+  script-agent:
+    registryCenterUrl: ws://localhost:18848
+    nio-thread-count: 1
+    service-offline-ttl: 60
+    serviceInstance:
+      host: localhost
+      port: 20001
+      groupId: default
+      serviceId: script-node
+      instanceId: script-node-macbook
+

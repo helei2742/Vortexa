@@ -47,7 +47,7 @@ public class DiscordAccountServiceImpl extends AbstractBaseService<DiscordAccoun
 
     @Override
     public Integer importFromExcel(String fileBotConfigPath) {
-        String dirResourcePath = FileUtil.getAppResourceSystemConfigPath() + File.separator +  fileBotConfigPath;
+        String dirResourcePath = FileUtil.getAppResourceSystemConfigDir() + File.separator +  fileBotConfigPath;
 
         try {
             List<Map<String, Object>> rawLines = ExcelReadUtil.readExcelToMap(dirResourcePath);

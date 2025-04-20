@@ -57,7 +57,7 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
 
     @Override
     public String loadScriptNodeConfig(String nodeId) throws IOException {
-        Path dir = Paths.get(FileUtil.getScriptNodeConfigPath(), nodeId);
+        Path dir = Paths.get(FileUtil.getScriptNodeConfigDir(), nodeId);
         if (Files.notExists(dir)) {
             Files.createDirectories(dir);
         }

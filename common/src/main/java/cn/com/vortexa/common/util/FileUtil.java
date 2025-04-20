@@ -6,21 +6,24 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 public class FileUtil {
 
-    public static final String BASE_DIR_NAME = "botData";
+    public static final String BASE_DIR_NAME = "vortexa-data";
 
     public static final List<String> CONFIG_DIR_BOT_PATH = List.of("config", "bot");
 
     public static final List<String> CONFIG_DIR_APP_PATH = List.of("config", "app");
 
-
+    public static final String USER_DIR = System.getProperty("user.dir");
     /**
      * app资源根目录
      */
-    public static final String RESOURCE_ROOT_DIR = System.getProperty("user.dir") + File.separator + BASE_DIR_NAME;
+    public static final String RESOURCE_ROOT_DIR = USER_DIR + File.separator + BASE_DIR_NAME;
 
     /**
      * class资源
@@ -81,7 +84,7 @@ public class FileUtil {
      *
      * @return 配置目录绝对路径
      */
-    public static String getAppResourceConfigPath() {
+    public static String getAppResourceConfigDir() {
         return RESOURCE_ROOT_DIR + File.separator + "config";
     }
 
@@ -90,7 +93,7 @@ public class FileUtil {
      *
      * @return 配置目录绝对路径
      */
-    public static String getAppResourceAppConfigPath() {
+    public static String getAppResourceAppConfigDir() {
         return RESOURCE_ROOT_DIR + File.separator + String.join(File.separator, CONFIG_DIR_APP_PATH);
     }
 
@@ -99,7 +102,7 @@ public class FileUtil {
      *
      * @return 配置目录绝对路径
      */
-    public static String getAppResourceSystemConfigPath() {
+    public static String getAppResourceSystemConfigDir() {
         return RESOURCE_ROOT_DIR + File.separator + String.join(File.separator, CONFIG_DIR_BOT_PATH);
     }
 
@@ -108,8 +111,17 @@ public class FileUtil {
      *
      * @return 配置目录绝对路径
      */
-    public static String getAppResourceDataPath() {
+    public static String getAppResourceDataDir() {
         return RESOURCE_ROOT_DIR + File.separator + "data";
+    }
+
+    /**
+     * 获取data目录
+     *
+     * @return 配置目录绝对路径
+     */
+    public static String getAppResourceDataPath(String fileName) {
+        return getAppResourceDataDir() + File.separator + fileName;
     }
 
     /**
@@ -117,8 +129,8 @@ public class FileUtil {
      *
      * @return 配置目录绝对路径
      */
-    public static String getScriptNodeConfigPath() {
-        return getAppResourceConfigPath() + File.separator + "script_node";
+    public static String getScriptNodeConfigDir() {
+        return getAppResourceConfigDir() + File.separator + "script_node";
     }
 
     /**
@@ -126,11 +138,36 @@ public class FileUtil {
      *
      * @return String
      */
-    public static String getLibraryPath() {
-        return System.getProperty("user.dir") + File.separator + "lib";
+    public static String getLibraryDir() {
+        return USER_DIR + File.separator + "lib";
     }
 
+    /**
+     * 依赖文件
+     *
+     * @return String
+     */
+    public static String getLibraryPath(String fileName) {
+        return getLibraryDir() + File.separator + fileName + (fileName.endsWith(".jar") ? "" : ".jar");
+    }
 
+    /**
+     * 依赖目录
+     *
+     * @return String
+     */
+    public static String getJarFileDir() {
+        return RESOURCE_ROOT_DIR + File.separator + "jarFile";
+    }
+
+    /**
+     * 依赖文件
+     *
+     * @return String
+     */
+    public static String getJarFilePath(String ...fileName) {
+        return getJarFileDir() + File.separator + String.join(File.separator, fileName);
+    }
     /**
      * 生成绝对路径
      *
@@ -151,9 +188,9 @@ public class FileUtil {
                     patternPath.replace("instance_resource:", botInstanceResourcePath + File.separator);
             case app_resource -> patternPath.replace("app_resource:", RESOURCE_ROOT_DIR + File.separator);
             case app_resource_config ->
-                    patternPath.replace("app_resource_config:", getAppResourceAppConfigPath() + File.separator);
+                    patternPath.replace("app_resource_config:", getAppResourceAppConfigDir() + File.separator);
             case app_resource_data ->
-                    patternPath.replace("app_resource_data:", getAppResourceDataPath() + File.separator);
+                    patternPath.replace("app_resource_data:", getAppResourceDataDir() + File.separator);
         };
     }
 
@@ -181,5 +218,54 @@ public class FileUtil {
             Files.createDirectories(path);
         }
         return path.toString();
+    }
+
+
+    /**
+     * 解压 JAR 文件到指定目录
+     *
+     * @param jarFilePath jarFilePath
+     * @param outputDir   outputDir
+     * @throws IOException  IOException
+     */
+    public static void extractJar(String jarFilePath, String outputDir) throws IOException {
+        // 打开 JAR 文件
+        try (JarFile jarFile = new JarFile(jarFilePath);) {
+            // 创建目标目录，如果不存在则创建
+            File outputDirFile = new File(outputDir);
+            if (!outputDirFile.exists()) {
+                outputDirFile.mkdirs();
+            }
+            // 获取 JAR 文件中的所有条目
+            Enumeration<JarEntry> entries = jarFile.entries();
+
+            // 遍历所有条目
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+
+                // 获取条目的名称（路径）
+                String entryName = entry.getName();
+                File entryFile = new File(outputDirFile, entryName);
+
+                // 如果条目是目录，则创建该目录
+                if (entry.isDirectory()) {
+                    entryFile.mkdirs();
+                } else if (!entryName.endsWith(".class")){
+                    // 如果条目是文件，则解压文件内容
+                    try (InputStream inputStream = jarFile.getInputStream(entry);
+                         OutputStream outputStream = new FileOutputStream(entryFile)) {
+
+                        // 缓冲区
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+
+                        // 读取 JAR 文件内容并写入目标文件
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

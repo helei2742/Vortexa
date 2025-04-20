@@ -65,7 +65,7 @@ public class TwitterAccountServiceImpl extends AbstractBaseService<TwitterAccoun
 
     @Override
     public Integer importFromExcel(String fileBotConfigPath) throws SQLException {
-        String proxyFilePath = FileUtil.getAppResourceSystemConfigPath() + File.separator + fileBotConfigPath;
+        String proxyFilePath = FileUtil.getAppResourceSystemConfigDir() + File.separator + fileBotConfigPath;
 
         try {
             List<Map<String, Object>> rawLines = ExcelReadUtil.readExcelToMap(proxyFilePath);

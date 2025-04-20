@@ -148,7 +148,7 @@ public abstract class CommandLineMenu {
     public void doExecute() throws IOException {
         //Step 1 获取输入
         CommandMenuNode mainMenuNode = getMenuNode();
-        Terminal terminal = TerminalBuilder.builder().system(true).build();
+        Terminal terminal = TerminalBuilder.builder().system(true).jna(false).build();
         LineReader reader = LineReaderBuilder.builder().terminal(terminal).parser(new DefaultParser()).build();
 
         Stack<CommandMenuNode> menuNodeStack = new Stack<>();
