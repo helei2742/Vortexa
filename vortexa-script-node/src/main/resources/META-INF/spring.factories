@@ -1,2 +1,8 @@
+
+# ??????
+org.springframework.boot.env.EnvironmentPostProcessor=\
+cn.com.vortexa.script_node.config.RemoteConfigLoader
+
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 cn.com.vortexa.script_node.scriptagent.config.BotScriptAgentConfig
+

@@ -7,8 +7,13 @@ WORKDIR /app
 # 复制 jar 包到容器里
 COPY vortexa-platform.jar /app/
 
-# 复制 config 配置目录到容器里
+
+# 复制 jar 包 和 config 目录进去
+COPY your-app.jar /app/
 COPY config /app/config/
+
+# 创建 botData 目录
+RUN mkdir -p /app/data
 
 # 暴露端口
 EXPOSE 10110 18848

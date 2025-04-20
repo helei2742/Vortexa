@@ -17,6 +17,10 @@ public class RestApiClientFactory {
 
     public static final RestApiClient DEFAULT = new RestApiClient(null, executor);
 
+    public static RestApiClient getClient() {
+       return DEFAULT;
+    }
+
     public static RestApiClient getClient(ProxyInfo proxy) {
         if (proxy == null) {
             return DEFAULT;

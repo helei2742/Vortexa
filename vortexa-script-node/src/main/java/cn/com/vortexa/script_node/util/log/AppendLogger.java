@@ -1,5 +1,6 @@
 package cn.com.vortexa.script_node.util.log;
 
+import cn.com.vortexa.common.util.AnsiColor;
 import cn.com.vortexa.common.util.DiscardingBlockingQueue;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import lombok.AllArgsConstructor;
@@ -28,6 +29,9 @@ public class AppendLogger {
 
     public AppendLogger(String scriptNodeName, String botName, String botKey) throws IOException {
         log = ScriptLoggerFactory.getScriptLogger(scriptNodeName, botKey);
+        append(AnsiColor.colorize("scriptNode{%s}botName{%s}botKey{%s}".formatted(
+                scriptNodeName, botName, botKey
+        ), AnsiColor.CYAN));
     }
 
     public AppendLogger append(Object context) {
@@ -41,19 +45,19 @@ public class AppendLogger {
     }
 
     public void info(Object context) {
-        log.info("\033[32m" + getPrefix(LogType.INFO, context) + "\033[0m");
+        log.info(getPrefix(LogType.INFO, AnsiColor.colorize(context.toString(), AnsiColor.GREEN)));
     }
 
     public void debug(Object context) {
-        log.info("\033[90m" + getPrefix(LogType.DEBUG, context) + "\033[0m");
+        log.info(getPrefix(LogType.DEBUG, AnsiColor.colorize(context.toString(), AnsiColor.GRAY)));
     }
 
     public void warn(Object context) {
-        log.warn("\033[33m" + getPrefix(LogType.WARNING, context) + "\033[0m");
+        log.warn(getPrefix(LogType.WARNING, AnsiColor.colorize(context.toString(), AnsiColor.YELLOW)));
     }
 
     public void error(Object context) {
-        log.error("\033[31m" + getPrefix(LogType.ERROR, context) + "\033[0m");
+        log.error(getPrefix(LogType.ERROR, AnsiColor.colorize(context.toString(), AnsiColor.RED)));
     }
 
     public void error(Object context, Throwable e) {

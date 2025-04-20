@@ -112,4 +112,11 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
             lock.unlock();
         }
     }
+
+    @Override
+    protected void doClose() {
+        super.doClose();
+        executeInfoList.clear();
+        addedBotExecutionSet.clear();
+    }
 }

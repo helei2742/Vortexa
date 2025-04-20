@@ -301,11 +301,18 @@ public abstract class SeleniumInstance implements SeleniumOperate {
     public void close() {
         if (StrUtil.isNotBlank(targetHandle)) {
             try {
+                doClose();
                 webDriver.switchTo().window(targetHandle);
                 webDriver.close();
+                seleniumExecuteChain.clear();
+                webDriver = null;
             } catch (Exception e) {
                 log.error("{} close exception", instanceId, e);
             }
         }
+    }
+
+    protected void doClose() {
+
     }
 }

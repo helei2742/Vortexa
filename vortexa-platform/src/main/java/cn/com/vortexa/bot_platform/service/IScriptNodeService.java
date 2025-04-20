@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 
 import cn.com.vortexa.common.entity.ScriptNode;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -25,4 +26,12 @@ public interface IScriptNodeService extends IService<ScriptNode> {
      * @return List<RegisteredScriptNode>
      */
     List<RegisteredScriptNode> queryAllScriptNode();
+
+    /**
+     * 加载script node 配置
+     *
+     * @param nodeId nodeId
+     * @return String
+     */
+    String loadScriptNodeConfig(String nodeId) throws IOException;
 }

@@ -5,7 +5,7 @@ import cn.com.vortexa.common.dto.BotACJobResult;
 import cn.com.vortexa.job.constants.JobStatus;
 import cn.com.vortexa.job.core.AutoBotJobInvoker;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
-import cn.com.vortexa.job.AutoBotJob;
+import cn.com.vortexa.job.dto.AutoBotJob;
 import cn.com.vortexa.job.service.BotJobService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static cn.com.vortexa.common.dto.job.AutoBotJobParam.START_AT;
-import static cn.com.vortexa.job.AutoBotJob.BOT_JOB_PARAM_KEY;
+import static cn.com.vortexa.job.dto.AutoBotJob.BOT_JOB_PARAM_KEY;
 
 
 @Slf4j

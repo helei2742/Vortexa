@@ -1,7 +1,7 @@
 package cn.com.vortexa.script_node.util;
 
 import cn.com.vortexa.common.util.FileUtil;
-import cn.com.vortexa.common.util.classloader.DynamicJavaLoader;
+import cn.com.vortexa.script_node.util.classloader.DynamicJavaLoader;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
@@ -74,6 +74,12 @@ public class ScriptBotLauncher {
      */
     public void loadAndLaunchBot(AutoBotConfig botConfig) {
         String botKey = botConfig.getBotKey();
+        ScriptBotMetaInfo rowBotMetaInfo = botMetaInfoMap.get(botKey);
+        if (rowBotMetaInfo != null) {
+            if (rowBotMetaInfo.getBot().getStatus() == BotStatus.RUNNING) {
+                throw new IllegalArgumentException(botKey + " in running..please stop it first");
+            }
+        }
 
         log.info("[{}] start launch...", botKey);
         String className = botConfig.getClassName();

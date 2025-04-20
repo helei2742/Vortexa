@@ -17,7 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,6 +45,19 @@ public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
     private static String fingerBrowserApiUrl;
 
     private String openUrl = DEFAULT_WEB_SITE_URL;
+
+    @Override
+    protected void botStopped() {
+        super.botStopped();
+        Iterator<Map.Entry<AccountContext, AccountFingerBrowserSelenium>> iterator = accountFBSeleniumMap.entrySet()
+                .iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<AccountContext, AccountFingerBrowserSelenium> entry = iterator.next();
+            entry.getValue().close();
+            iterator.remove();
+        }
+        acExecuteInfos.clear();
+    }
 
     @Override
     protected void botInitialized(AutoBotConfig botConfig, BotApi botApi) {

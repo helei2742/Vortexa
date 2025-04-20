@@ -36,7 +36,7 @@ public class ScriptLoggerFactory {
         // ===== 公用 encoder =====
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
         encoder.setContext(context);
-        encoder.setPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n");
+        encoder.setPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level - %msg%n");
         encoder.start();
 
         // ===== ConsoleAppender 控制台输出 =====

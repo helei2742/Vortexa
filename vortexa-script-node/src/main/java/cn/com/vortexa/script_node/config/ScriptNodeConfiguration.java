@@ -14,10 +14,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -69,6 +66,12 @@ public class ScriptNodeConfiguration implements InitializingBean {
      */
     private Set<String> autoLaunchBotKeys;
 
+    /**
+     * bot公共配置，会加载到每个bot的 customConfig下
+     * @see AutoBotConfig
+     */
+    private Map<String, Object> botCommonConfig;
+
     @Override
     public void afterPropertiesSet() throws Exception {
         botKeyConfigMap = new HashMap<>();
@@ -94,6 +97,12 @@ public class ScriptNodeConfiguration implements InitializingBean {
                     reactivePathConfigConvert(config, dir.toString());
 
                     config.setResourceDir(dir.toString());
+                    // 填充公共配置
+                    if (config.getCustomConfig() == null) {
+                        config.setCustomConfig(new HashMap<>(botCommonConfig));
+                    } else {
+                        config.getCustomConfig().putAll(botCommonConfig);
+                    }
                     botKeyConfigMap.put(config.getBotKey(), config);
                     log.info("botKey[{}] config loaded", config.getBotKey());
                 }

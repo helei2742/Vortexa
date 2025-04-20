@@ -1,19 +1,17 @@
-package cn.com.vortexa.common.util.classloader;
+package cn.com.vortexa.script_node.util.classloader;
 
 import lombok.extern.slf4j.Slf4j;
 
 import javax.tools.*;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 public class DynamicJavaLoader {
-
     /**
      * 编译java文件夹
      *

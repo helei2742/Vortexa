@@ -21,17 +21,21 @@ vortexa:
     script-node-name: helei-macbook
     bot-instance-locations: /Users/helei/develop/ideaworkspace/BotFramework/vortexa-script-bot/src/main/java/cn/com/vortexa/script_bot
     auto-launch-bot-keys:
-      #      - optim_ai_test
+      # - optim_ai_test
 #      - klok_test
-      #      - flow3_bot_test
+      # - flow3_bot_test
+      - taker_google
       - magic_newton_v2
 #      - beamable_test
   #    bot-instance-locations: "reactive:"
+    bot-common-config:
+      two_captcha_api_key: ''
+
   script-agent:
     registryCenterUrl: ws://localhost:18848
     nio-thread-count: 1
     service-offline-ttl: 60
-    service-instance:
+    serviceInstance:
       host: localhost
       port: 20001
       groupId: default

@@ -10,14 +10,17 @@ import java.util.List;
 
 public class FileUtil {
 
+    public static final String BASE_DIR_NAME = "botData";
+
     public static final List<String> CONFIG_DIR_BOT_PATH = List.of("config", "bot");
 
     public static final List<String> CONFIG_DIR_APP_PATH = List.of("config", "app");
 
+
     /**
      * app资源根目录
      */
-    public static final String RESOURCE_ROOT_DIR = System.getProperty("user.dir") + File.separator + "botData";
+    public static final String RESOURCE_ROOT_DIR = System.getProperty("user.dir") + File.separator + BASE_DIR_NAME;
 
     /**
      * class资源
@@ -60,7 +63,7 @@ public class FileUtil {
     /**
      * 获取资源路径
      *
-     * @param path 子路径
+     * @param path     子路径
      * @param fileName 文件名
      * @return 绝对路径
      */
@@ -110,6 +113,25 @@ public class FileUtil {
     }
 
     /**
+     * 获取script node config目录
+     *
+     * @return 配置目录绝对路径
+     */
+    public static String getScriptNodeConfigPath() {
+        return getAppResourceConfigPath() + File.separator + "script_node";
+    }
+
+    /**
+     * 依赖目录
+     *
+     * @return String
+     */
+    public static String getLibraryPath() {
+        return System.getProperty("user.dir") + File.separator + "lib";
+    }
+
+
+    /**
      * 生成绝对路径
      *
      * @param patternPath             patternPath
@@ -151,7 +173,7 @@ public class FileUtil {
      * 创建日志目录
      *
      * @param scriptNodeName scriptNodeName
-     * @param botKey botKey
+     * @param botKey         botKey
      */
     public static String createLogsDir(String scriptNodeName, String botKey) throws IOException {
         Path path = Paths.get(RESOURCE_ROOT_DIR, "logs", scriptNodeName, botKey);

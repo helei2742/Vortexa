@@ -2,6 +2,7 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
 import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
+import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.control.util.ControlServerUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
@@ -12,6 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -47,5 +53,19 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
                 )))
                 .build()
         ).toList();
+    }
+
+    @Override
+    public String loadScriptNodeConfig(String nodeId) throws IOException {
+        Path dir = Paths.get(FileUtil.getScriptNodeConfigPath(), nodeId);
+        if (Files.notExists(dir)) {
+            Files.createDirectories(dir);
+        }
+        Path applicationConfigFile = dir.resolve("application.yaml");
+        if (Files.exists(applicationConfigFile)) {
+            return Files.readString(applicationConfigFile, StandardCharsets.UTF_8);
+        } else {
+            return null;
+        }
     }
 }

@@ -6,10 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class YamlConfigLoadUtil {
@@ -167,5 +164,22 @@ public class YamlConfigLoadUtil {
             camelCase.append(parts[i].substring(0, 1).toUpperCase()).append(parts[i].substring(1));
         }
         return camelCase.toString();
+    }
+
+    public static Map<String, Object> flattenMap(Map<String, Object> source) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        buildFlattenedMap(result, source, null);
+        return result;
+    }
+
+    private static void buildFlattenedMap(Map<String, Object> result, Map<String, Object> source, String path) {
+        source.forEach((key, value) -> {
+            String newKey = (path != null) ? path + "." + key : key;
+            if (value instanceof Map) {
+                buildFlattenedMap(result, (Map<String, Object>) value, newKey);
+            } else {
+                result.put(newKey, value);
+            }
+        });
     }
 }

@@ -346,16 +346,16 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         try {
             this.accountContexts.clear();
 
-            logger.info("开始加载账户数据");
+            logger.info("start load account data");
             // Step 1 获取持久化的
             List<AccountContext> accountContexts = persistenceManager
                     .loadAccountContexts(botId, getAutoBotConfig().getBotKey());
 
             // Step 2 没有保存的数据
             if (accountContexts == null || accountContexts.isEmpty()) {
-                logger.warn("没有账户数据");
+                logger.warn("no account data...");
             } else {
-                logger.info("使用历史账户数据, 共:" + accountContexts.size());
+                logger.info("use history account, total:" + accountContexts.size());
 
                 // Step 3 加载到bot (字段修改监听)
                 registerAccountsInBot(accountContexts);
@@ -365,7 +365,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
                 this.accountContexts.addAll(accountContexts);
             }
         } catch (Exception e) {
-            throw new BotInitException("初始化账户发生错误", e);
+            throw new BotInitException("init account info error", e);
         }
     }
 

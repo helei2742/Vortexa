@@ -1,0 +1,5 @@
+java -Djava.lang.invoke.MethodHandle.COMPILE_THRESHOLD=0 \
+     -Dremote.config-url=http://localhost:10110/script-node/remote-config \
+     -Dnode-id=macbook-test \
+     -cp /Users/helei/develop/ideaworkspace/BotFramework/vortexa-script-node-app/libs/vortexa-script-node-1.0-SNAPSHOT.jar \
+     -jar vortexa-script-node-app-1.0-SNAPSHOT.jar

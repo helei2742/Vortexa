@@ -1,6 +1,5 @@
 package cn.com.vortexa.script_node.scriptagent.config;
 
-
 import cn.com.vortexa.script_agent.ScriptAgent;
 import cn.com.vortexa.control.dto.RPCServiceInfo;
 import cn.com.vortexa.rpc.api.bot.IScriptAgentRPC;
