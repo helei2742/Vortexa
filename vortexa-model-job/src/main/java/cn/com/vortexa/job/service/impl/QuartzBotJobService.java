@@ -35,6 +35,13 @@ public class QuartzBotJobService implements BotJobService {
     }
 
     @Override
+    public void registerJobInvoker(String scriptNodeName, String botKey, String jobName, AutoBotJobInvoker invoker) {
+        String group = botQuartzGroupBuilder(scriptNodeName, botKey);
+        JobKey jobKey = new JobKey(jobName, group);
+        registerJobInvoker(jobKey, invoker);
+    }
+
+    @Override
     public void registerJobInvoker(JobKey jobKey, AutoBotJobInvoker invoker) {
         this.invokerMap.put(jobKey, invoker);
     }

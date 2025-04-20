@@ -13,6 +13,21 @@ import java.util.List;
 
 public interface BotJobService {
 
+
+    /**
+     * 注册Job的调用者
+     *
+     * @param scriptNodeName scriptNodeName
+     * @param botKey         botKey
+     * @param jobName        jobName
+     * @param invoker        invoker
+     */
+    void registerJobInvoker(
+            String scriptNodeName,
+            String botKey,
+            String jobName, AutoBotJobInvoker invoker
+    );
+
     /**
      * 注册Job的调用者
      *
@@ -24,7 +39,7 @@ public interface BotJobService {
     /**
      * 获取job的调用者
      *
-     * @param jobKey         jobKey
+     * @param jobKey jobKey
      * @return invoker
      */
     AutoBotJobInvoker getJobInvoker(JobKey jobKey);

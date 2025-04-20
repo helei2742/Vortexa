@@ -144,7 +144,12 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
             // Step 4 设置
             setJobParam(jobName, autoBotJobParam);
 
-            getBotApi().getBotJobService().registerJobInvoker(new JobKey(jobName, getAutoBotConfig().getBotKey()), this);
+            getBotApi().getBotJobService().registerJobInvoker(
+                    getScriptNodeName(),
+                    getAutoBotConfig().getBotKey(),
+                    jobName,
+                    this
+            );
 
             return jobName;
         } catch (ParseException e) {
