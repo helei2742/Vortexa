@@ -37,6 +37,9 @@ public class BotInstance implements Serializable {
     @TableField("bot_name")
     private String botName;
 
+    @TableField("script_node_name")
+    private String scriptNodeName;
+
     @TableField("bot_key")
     private String botKey;
 

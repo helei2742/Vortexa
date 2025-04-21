@@ -44,7 +44,6 @@ public abstract class AutoConnectWSService implements IWSService {
     private static volatile EventLoopGroup eventLoopGroup;    //netty线程组
     private final AtomicInteger reconnectTimes = new AtomicInteger(0);  //重链接次数
     private final ReentrantLock reconnectLock = new ReentrantLock();    //重连锁
-    private final AtomicLong lastConnectTime = new AtomicLong(-1);   //  上次启动时间
     private final Condition startingWaitCondition = reconnectLock.newCondition();   //启动中阻塞的condition
     private final String url; //websocket的url字符串
     private Bootstrap bootstrap; //netty bootstrap
@@ -158,14 +157,14 @@ public abstract class AutoConnectWSService implements IWSService {
                 log.info("init Websocket finish，start connect server [{}]", url);
 
                 //Step 4 链接服务器
-                if (reconnectLimit == UN_LIMIT_RECONNECT_MARK || reconnectTimes.incrementAndGet() <= reconnectLimit) {
+                if (reconnectTimes.incrementAndGet() <= reconnectLimit || reconnectLimit == UN_LIMIT_RECONNECT_MARK) {
 
                     //Step 4.1 每进行重连都会先将次数加1并设置定时任务将重连次数减1
                     getEventLoopGroup().schedule(() -> {
                         reconnectTimes.decrementAndGet();
                     }, reconnectCountDownSecond, TimeUnit.SECONDS);
 
-                    long waitingConnectTime = getWaitingConnectTime();
+                    int waitingConnectTime = getWaitingConnectTime();
                     log.info("start connect client [{}], url[{}], current times [{}], start after [{}]s",
                             name, url, reconnectTimes.get(), waitingConnectTime);
 
@@ -224,7 +223,6 @@ public abstract class AutoConnectWSService implements IWSService {
                                 reconnectTimes.get());
 
                         updateClientStatus(WebsocketClientStatus.RUNNING);
-                        reconnectTimes.set(0);
                     }
                 }
             } catch (Exception e) {
@@ -242,15 +240,9 @@ public abstract class AutoConnectWSService implements IWSService {
         }, getCallbackInvoker());
     }
 
-    private long getWaitingConnectTime() {
-        if (reconnectTimes.get() <= 1) {
-            if (lastConnectTime.get() != -1) {
-                return Math.ceilDiv(System.currentTimeMillis() - lastConnectTime.get(), 1000);
-            } else {
-                return 0;
-            }
-        }
-        return NettyConstants.RECONNECT_DELAY_SECONDS;
+    protected int getWaitingConnectTime() {
+        int times = Math.min(Math.max(0, reconnectTimes.get()), NettyConstants.RECONNECT_DELAY_SECONDS.length - 1);
+        return NettyConstants.RECONNECT_DELAY_SECONDS[times];
     }
 
     /**

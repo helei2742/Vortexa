@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.net.Proxy;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -201,9 +202,9 @@ public class RestApiClient {
                 requestBody = RequestBody.create(formData.toString(),
                         MediaType.parse("application/x-www-form-urlencoded"));
             } else if (contentType.startsWith("application/json")) {
-                MediaType JSON = MediaType.parse(contentType);
+                MediaType JSON = MediaType.get(contentType);
 
-                requestBody = RequestBody.create(body.toJSONString(), JSON);
+                requestBody = RequestBody.create(body.toJSONString().getBytes(StandardCharsets.UTF_8), JSON);
             } else {
                 MediaType JSON = MediaType.parse(headers.getOrDefault("Content-Type",
                         headers.getOrDefault("content-type", "application/json; charset=utf-8")));
@@ -220,14 +221,12 @@ public class RestApiClient {
 
         if (HttpMethod.GET.equals(method)) {
             builder.get();
-        } else {
+        } else if(HttpMethod.POST.equals(method)) {
             builder.method(method.name(), requestBody);
         }
 
-        if (headers != null) {
-            for (Map.Entry<String, String> header : headers.entrySet()) {
-                builder.addHeader(header.getKey(), header.getValue());
-            }
+        for (Map.Entry<String, String> header : headers.entrySet()) {
+            builder = builder.addHeader(header.getKey(), header.getValue());
         }
 
         return builder.build();

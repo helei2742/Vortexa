@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
 
-    public static final int BROWSER_BATCH_SIZE = 6; //  浏览器批大小
+    public static final int BROWSER_BATCH_SIZE = 4; //  浏览器批大小
     public static final String DEFAULT_WEB_SITE_URL = "http://www.google.com";   // 默认打开地址Key
     public static final String DEFAULT_WEB_SITE_URL_KEY = "default_web_site_url";   // 默认打开地址Key
     public static final String FINGER_BROWSER_API_URL_KEY = "finger_browser_api_url"; // 指纹浏览器api地址Key
@@ -116,6 +116,7 @@ public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
             if (!browserSelenium.isRunning()) {
                 browserDriver.flexAbleWindowBounds(new ArrayList<>(currentWindowSeq));
                 browserSelenium.startACFBSelenium();
+                accountFBSeleniumMap.remove(accountContext);
             } else {
                 logger.warn(accountContext.getSimpleInfo() + " selenium is running...cancel new start");
             }

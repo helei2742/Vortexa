@@ -163,6 +163,7 @@ public abstract class AbstractAutoBot {
         this.botInstance = BotInstance.builder()
                 .botId(botInfo.getId())
                 .botName(botInfo.getName())
+                .scriptNodeName(scriptNodeConfiguration.getScriptNodeName())
                 .botKey(autoBotConfig.getBotKey())
                 .build();
 

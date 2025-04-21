@@ -15,6 +15,7 @@ import cn.com.vortexa.control.util.DistributeIdMaker;
 import cn.com.vortexa.control.util.RemotingCommandDecoder;
 import cn.com.vortexa.control.util.RemotingCommandEncoder;
 import cn.com.vortexa.websocket.netty.base.AbstractWebsocketClient;
+import cn.com.vortexa.websocket.netty.base.AutoConnectWSService;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import cn.hutool.core.util.StrUtil;
 import io.netty.channel.*;
@@ -54,6 +55,8 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
 
     public ScriptAgent(ScriptAgentConfig clientConfig) {
         this(clientConfig, new ScriptAgentProcessorAdaptor(clientConfig));
+        // 设置无需重连
+        super.setReconnectLimit(AutoConnectWSService.UN_LIMIT_RECONNECT_MARK);
     }
 
     public ScriptAgent(ScriptAgentConfig clientConfig, ScriptAgentProcessorAdaptor scriptAgentProcessorAdaptor) {

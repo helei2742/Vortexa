@@ -166,3 +166,20 @@ create table t_script_node
         unique (group_id, service_id, instance_id)
 );
 
+
+create table t_web3_wallet
+(
+    id              bigint primary key auto_increment,
+    mnemonic        varchar(520),
+    privateKey      varchar(520),
+    eth_address     varchar(520),
+    sol_address     varchar(520),
+    bsc_address     varchar(520),
+    btc_address     varchar(520),
+
+    insert_datetime datetime   default CURRENT_TIMESTAMP null,
+    update_datetime datetime   default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    valid           tinyint(1) default 1                 null,
+    unique (mnemonic),
+    unique (privateKey)
+)

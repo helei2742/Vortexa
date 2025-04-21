@@ -126,8 +126,4 @@ public class EthWalletUtil {
         return hexString.toString();
     }
 
-    public static void main(String[] args) throws MnemonicException.MnemonicLengthException {
-        System.out.println(generateEthWallet());
-    }
-
 }

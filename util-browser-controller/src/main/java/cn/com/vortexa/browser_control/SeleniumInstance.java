@@ -225,25 +225,37 @@ public abstract class SeleniumInstance implements SeleniumOperate {
         // Step 2.2 设置代理
         setProxyAuth();
 
-        // Step 2.3 进入目标页面
-        // 打开初始页面
-        Set<String> windowHandles = webDriver.getWindowHandles();
-        for (String windowHandle : windowHandles) {
-            webDriver.switchTo().window(windowHandle);
-            String title = null;
+        boolean openNewTab = false;
+        if (targetHandle != null) {
             try {
-                // 打开新的标签页并自动切换到这个 tab
-                webDriver.switchTo().newWindow(WindowType.TAB);
-                title = webDriver.getTitle();
+                webDriver.switchTo().window(targetHandle);
                 // 跳转到目标网址
                 webDriver.get(params.getTargetWebSite());
-                targetHandle = webDriver.getWindowHandle();
-                TimeUnit.SECONDS.sleep(5);
-                break;
-            } catch (WebDriverException e) {
-                webDriver.close();
             } catch (Exception e) {
-                log.warn("{} cannot open tab, try next", title);
+                openNewTab = true;
+            }
+        }
+        if (openNewTab) {
+            // Step 2.3 进入目标页面
+            // 打开初始页面
+            Set<String> windowHandles = webDriver.getWindowHandles();
+            for (String windowHandle : windowHandles) {
+                webDriver.switchTo().window(windowHandle);
+                String title = null;
+                try {
+                    // 打开新的标签页并自动切换到这个 tab
+                    webDriver.switchTo().newWindow(WindowType.TAB);
+                    title = webDriver.getTitle();
+                    // 跳转到目标网址
+                    webDriver.get(params.getTargetWebSite());
+                    targetHandle = webDriver.getWindowHandle();
+                    TimeUnit.SECONDS.sleep(5);
+                    break;
+                } catch (WebDriverException e) {
+                    webDriver.close();
+                } catch (Exception e) {
+                    log.warn("{} cannot open tab, try next", title);
+                }
             }
         }
     }

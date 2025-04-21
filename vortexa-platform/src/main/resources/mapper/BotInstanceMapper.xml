@@ -6,6 +6,8 @@
     <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.BotInstance">
         <id column="id" property="id"/>
         <result column="bot_id" property="botId"/>
+        <result column="bot_name" property="botName"/>
+        <result column="script_node_name" property="scriptNodeName"/>
         <result column="bot_key" property="botKey"/>
         <result column="account_table_name" property="accountTableName"/>
         <result column="job_params" property="jobParams"/>
@@ -17,9 +19,9 @@
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.BotInstance">
         INSERT INTO t_bot_instance
-        (bot_id, bot_name, bot_key, account_table_name, job_params, params, update_datetime, valid)
+        (bot_id, bot_name, script_node_name, bot_key, account_table_name, job_params, params, update_datetime, valid)
         VALUES (
-        #{botId}, #{botName}, #{botKey}, #{accountTableName}, #{jobParams}, #{params}, now(), 1
+        #{botId}, #{botName}, #{scriptNodeName}, #{botKey}, #{accountTableName}, #{jobParams}, #{params}, now(), 1
         )
         ON DUPLICATE KEY UPDATE
         <trim suffixOverrides=",">
@@ -46,10 +48,11 @@
 
     <insert id="insertOrUpdateBatch" parameterType="java.util.List">
         INSERT INTO t_bot_instance
-        (bot_id, bot_name, bot_key, account_table_name, job_params, params, update_datetime, valid)
+        (bot_id, bot_name, script_node_name, bot_key, account_table_name, job_params, params, update_datetime, valid)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.botId}, #{item.botName}, #{item.botKey}, #{item.accountTableName}, #{item.jobParams},
+            (#{item.botId}, #{item.botName}, #{item.scriptNodeName}, #{item.botKey}, #{item.accountTableName},
+            #{item.jobParams},
             #{item.params}, current_timestamp, 1)
         </foreach>
         ON DUPLICATE KEY UPDATE
@@ -68,8 +71,9 @@
         select
         t.id as id,
         t.bot_id as botId,
-        t.bot_key as botKey,
         t.bot_name as botName,
+        t.script_node_name as scriptNodeName,
+        t.bot_key as botKey,
         t.account_table_name as accountTableName,
         t.job_params as jobParams,
         t.params,
@@ -82,6 +86,9 @@
             valid = 1
             <if test="botId != null">
                 and t.bot_id = #{botId}
+            </if>
+            <if test="scriptNodeName != null">
+                and t.script_node_name = #{scriptNodeName}
             </if>
             <if test="botKey != null">
                 and t.bot_key = #{botKey}
