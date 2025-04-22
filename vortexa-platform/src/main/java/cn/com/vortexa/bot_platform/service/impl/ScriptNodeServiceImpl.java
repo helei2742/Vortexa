@@ -68,4 +68,18 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
             return null;
         }
     }
+
+    @Override
+    public String loadScriptNodeBotConfig(String nodeId, String botKey) throws IOException {
+        Path dir = Paths.get(FileUtil.getScriptNodeConfigDir(), nodeId, botKey);
+        if (Files.notExists(dir)) {
+            Files.createDirectories(dir);
+        }
+        Path applicationConfigFile = dir.resolve("bot-instance-config.yaml");
+        if (Files.exists(applicationConfigFile)) {
+            return Files.readString(applicationConfigFile, StandardCharsets.UTF_8);
+        } else {
+            return null;
+        }
+    }
 }

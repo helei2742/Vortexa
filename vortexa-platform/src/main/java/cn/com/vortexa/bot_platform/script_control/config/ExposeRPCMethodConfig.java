@@ -109,4 +109,14 @@ public class ExposeRPCMethodConfig {
                 .ref(ref)
                 .build();
     }
+
+    @Bean
+    @ConditionalOnBean(IWeb3WalletRPC.class)
+    public RPCServiceInfo<IWeb3WalletRPC> web3WalletRPCRPCServiceInfo(IWeb3WalletRPC ref) {
+        return RPCServiceInfo
+                .<IWeb3WalletRPC>builder()
+                .interfaces(IWeb3WalletRPC.class)
+                .ref(ref)
+                .build();
+    }
 }

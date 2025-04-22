@@ -1,5 +1,6 @@
 package cn.com.vortexa.script_node.util;
 
+import cn.com.vortexa.common.dto.BotMetaInfo;
 import cn.com.vortexa.script_node.util.classloader.DynamicJarLoader;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
@@ -59,11 +60,11 @@ public class ScriptBotLauncher {
      * @param botKey botKey
      */
     public void loadAndLaunchBot(String botKey) {
-        AutoBotConfig botConfig = scriptNodeConfiguration.getBotKeyConfigMap().get(botKey);
-        if (botConfig == null) {
-            throw new IllegalArgumentException("no bot in script node" + botKey);
-        }
-        loadAndLaunchBot(botConfig);
+         AutoBotConfig botConfig = scriptNodeConfiguration.getBotKeyConfigMap().get(botKey);
+         if (botConfig == null) {
+             throw new IllegalArgumentException("no bot in script node" + botKey);
+         }
+         loadAndLaunchBot(botConfig);
     }
 
     /**
@@ -80,8 +81,10 @@ public class ScriptBotLauncher {
             }
         }
 
+        BotMetaInfo metaInfo = botConfig.getMetaInfo();
+
         log.info("[{}] start launch...", botKey);
-        String className = botConfig.getClassName();
+        String className = metaInfo.getClassName();
         if (StrUtil.isBlank(className)) {
             throw new IllegalArgumentException(botKey + " config class name is null");
         }
@@ -90,9 +93,9 @@ public class ScriptBotLauncher {
             // 1 编译为class
             // 2 加载class
             Class<?> aClass = loadScriptNodeResourceClass(
-                    botConfig.getClassJarPath(),
+                    metaInfo.getClassJarPath(),
                     className,
-                    botConfig.getExtraClassNameList()
+                    metaInfo.getExtraClassNameList()
             );
 
             log.info("[{}] class load success ", botKey);

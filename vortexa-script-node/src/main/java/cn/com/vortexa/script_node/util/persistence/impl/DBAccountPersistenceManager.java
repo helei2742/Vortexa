@@ -1,15 +1,14 @@
 package cn.com.vortexa.script_node.util.persistence.impl;
 
 import cn.com.vortexa.common.entity.*;
-import cn.com.vortexa.script_node.service.BotApi;
-import cn.com.vortexa.script_node.service.IRewordInfoService;
+        import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.script_node.util.persistence.AbstractPersistenceManager;
 import cn.com.vortexa.common.util.propertylisten.PropertyChangeInvocation;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+        import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -91,6 +90,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
         Set<Integer> browserIds = new HashSet<>();
         Set<Integer> telegramIds = new HashSet<>();
         Set<Integer> rewordInfoIds = new HashSet<>();
+        Set<Integer> walletIds = new HashSet<>();
 
         accountContexts.forEach(accountContext -> {
             baseAccountIds.add(accountContext.getAccountBaseInfoId());
@@ -99,6 +99,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
             proxyIds.add(accountContext.getProxyId());
             browserIds.add(accountContext.getBrowserEnvId());
             telegramIds.add(accountContext.getTelegramId());
+            walletIds.add(accountContext.getWalletId());
             rewordInfoIds.add(accountContext.getId());
         });
 
@@ -150,6 +151,14 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
                     .collect(Collectors.toMap(TelegramAccount::getId, account -> account));
         }, executorService);
 
+        CompletableFuture<Map<Integer, Web3Wallet>> walletMapFuture = CompletableFuture.supplyAsync(() -> {
+            walletIds.remove(null);
+            return botApi.getWeb3WalletRPC()
+                    .batchQueryByIdsRPC(new ArrayList<>(walletIds))
+                    .stream()
+                    .collect(Collectors.toMap(Web3Wallet::getId, account -> account));
+        }, executorService);
+
 //        CompletableFuture<Map<Integer, RewordInfo>> rewordInfoMapFuture = CompletableFuture.supplyAsync(() -> {
 //            rewordInfoIds.remove(null);
 //            IRewordInfoService rewordInfoService = botApi.getRewordInfoService();
@@ -165,6 +174,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
         Map<Integer, ProxyInfo> proxyInfoMap = proxyInfoMapFuture.get();
         Map<Integer, BrowserEnv> browserEnvMap = browserEnvMapFuture.get();
         Map<Integer, TelegramAccount> telegramAccountMap = telegramAccountMapFuture.get();
+        Map<Integer, Web3Wallet> walletMap = walletMapFuture.get();
 //        Map<Integer, RewordInfo> rewordInfoMap = rewordInfoMapFuture.get();
 
         accountContexts.forEach(accountContext -> {
@@ -174,6 +184,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
             accountContext.setProxy(proxyInfoMap.get(accountContext.getProxyId()));
             accountContext.setBrowserEnv(browserEnvMap.get(accountContext.getBrowserEnvId()));
             accountContext.setTelegram(telegramAccountMap.get(accountContext.getTelegramId()));
+            accountContext.setWallet(walletMap.get(accountContext.getWalletId()));
 //            accountContext.setRewordInfo(rewordInfoMap.get(accountContext.getId()));
         });
     }

@@ -59,7 +59,7 @@ public class CustomCommandProcessor {
         CustomRequestHandler handler = null;
 
         if (StrUtil.isBlank(commandKey) || (handler = customCMDHandlerMap.get(commandKey)) == null) {
-            throw new CustomCommandException("custom request[%s] didn't exist".formatted(CUSTOM_COMMAND_HANDLER_KEY));
+            throw new CustomCommandException("custom request[%s] didn't exist".formatted(commandKey));
         }
         log.debug("client[{}] start invoke [{}]", clientName, handler);
 

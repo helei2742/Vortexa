@@ -4,16 +4,122 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.com.vortexa.common.entity.Web3Wallet">
-        <id column="id" property="id" />
-        <result column="mnemonic" property="mnemonic" />
-        <result column="privateKey" property="privateKey" />
-        <result column="eth_address" property="ethAddress" />
-        <result column="sol_address" property="solAddress" />
-        <result column="bsc_address" property="bscAddress" />
-        <result column="btc_address" property="btcAddress" />
-        <result column="insert_datetime" property="insertDatetime" />
-        <result column="update_datetime" property="updateDatetime" />
-        <result column="valid" property="valid" />
+        <id column="id" property="id"/>
+        <result column="mnemonic" property="mnemonic"/>
+
+        <result column="eth_private_key" property="ethPrivateKey"/>
+        <result column="eth_address" property="ethAddress"/>
+
+        <result column="sol_private_key" property="solPrivateKey"/>
+        <result column="sol_address" property="solAddress"/>
+
+        <result column="btc_private_key" property="btcPrivateKey"/>
+        <result column="btc_address" property="btcAddress"/>
+
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="valid" property="valid"/>
     </resultMap>
 
+    <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.Web3Wallet">
+        INSERT INTO t_web3_wallet
+        (mnemonic, eth_private_key, eth_address, sol_private_key, sol_address, btc_private_key, btc_address,
+        update_datetime, valid)
+        VALUES (#{mnemonic}, #{ethPrivateKey}, #{ethAddress}, #{solPrivateKey}, #{solAddress}, #{btcPrivateKey},
+        #{btcAddress}, current_timestamp, 1)
+        ON DUPLICATE KEY
+        UPDATE
+        <trim suffixOverrides=",">
+            <if test="ethPrivateKey != null">
+                eth_private_key = values(eth_private_key),
+            </if>
+            <if test="ethAddress != null">
+                eth_address = values(eth_address),
+            </if>
+            <if test="solPrivateKey != null">
+                sol_private_key = values(sol_private_key),
+            </if>
+            <if test="solAddress != null">
+                sol_address = values(sol_address),
+            </if>
+            <if test="btcPrivateKey != null">
+                btc_private_key = values(btc_private_key),
+            </if>
+            <if test="btcAddress != null">
+                btc_address = values(btc_address),
+            </if>
+            <if test="updateDatetime != null">
+                update_datetime = values(update_datetime),
+            </if>
+            <if test="valid != null">
+                valid = values(valid),
+            </if>
+        </trim>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" parameterType="java.util.List">
+        INSERT INTO t_twitter_account
+        (mnemonic, eth_private_key, eth_address, sol_private_key, sol_address, btc_private_key, btc_address,
+        update_datetime, valid)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{mnemonic}, #{ethPrivateKey}, #{ethAddress}, #{solPrivateKey}, #{solAddress}, #{btcPrivateKey},
+            #{btcAddress}, current_timestamp, 1)
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        eth_private_key = values (eth_private_key),
+        eth_address =values (eth_address),
+        sol_private_key = values (sol_private_key),
+        sol_address =values (sol_address),
+        btc_private_key = values (btc_private_key),
+        btc_address = values (btc_address),
+        update_datetime =values (update_datetime),
+        valid =values (valid)
+    </insert>
+
+    <select id="multipleConditionQuery"
+            parameterType="cn.com.vortexa.common.entity.Web3Wallet"
+            resultType="cn.com.vortexa.common.entity.Web3Wallet">
+        select
+        t.id,
+        t.mnemonic,
+        t.eth_private_key as ethPrivateKey,
+        t.eth_address as ethAddress,
+        t.sol_private_key as solPrivateKey,
+        t.sol_address as solAddress,
+        t.btc_private_key as btcPrivateKey,
+        t.btc_address as btcAddress,
+        t.insert_datetime as insertDatetime,
+        t.update_datetime as updateDatetime,
+        t.valid as valid
+        from
+        t_twitter_account as t
+        <where>
+            valid = 1
+            <if test="id != null">
+                and t.id = #{id}
+            </if>
+            <if test="mnemonic != null">
+                and t.mnemonic = #{mnemonic}
+            </if>
+            <if test="ethPrivateKey != null">
+                and t.eth_private_key = #{ethPrivateKey}
+            </if>
+            <if test="ethAddress != null">
+                and t.eth_address = #{ethAddress}
+            </if>
+            <if test="solPrivateKey != null">
+                and t.sol_private_key = #{solPrivateKey}
+            </if>
+            <if test="solAddress != null">
+                and t.sol_address = #{solAddress}
+            </if>
+            <if test="btcPrivateKey != null">
+                and t.btc_private_key = #{btcPrivateKey}
+            </if>
+            <if test="btcAddress != null">
+                and t.btc_address = #{btcAddress}
+            </if>
+        </where>
+    </select>
 </mapper>

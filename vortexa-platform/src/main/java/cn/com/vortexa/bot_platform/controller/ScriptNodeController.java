@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * <p>
- *  前端控制器
+ * 前端控制器
  * </p>
  *
  * @author com.helei
@@ -32,6 +32,23 @@ public class ScriptNodeController {
             configStr = scriptNodeService.loadScriptNodeConfig(nodeId);
             if (StrUtil.isBlank(configStr)) {
                 return Result.fail(nodeId + " config is empty");
+            }
+            return Result.ok(configStr);
+        } catch (IOException e) {
+            return Result.fail(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
+        }
+    }
+
+    @PostMapping("/remote-config")
+    public Result botRemoteConfig(
+            @RequestParam("nodeId") String nodeId,
+            @RequestParam("botKey") String botKey
+    ) {
+        String configStr = null;
+        try {
+            configStr = scriptNodeService.loadScriptNodeBotConfig(nodeId, botKey);
+            if (StrUtil.isBlank(configStr)) {
+                return Result.fail(" config is empty");
             }
             return Result.ok(configStr);
         } catch (IOException e) {

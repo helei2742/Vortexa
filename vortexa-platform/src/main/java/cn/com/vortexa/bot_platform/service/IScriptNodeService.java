@@ -1,6 +1,7 @@
 package cn.com.vortexa.bot_platform.service;
 
 import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
+
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import cn.com.vortexa.common.entity.ScriptNode;
@@ -34,4 +35,13 @@ public interface IScriptNodeService extends IService<ScriptNode> {
      * @return String
      */
     String loadScriptNodeConfig(String nodeId) throws IOException;
+
+    /**
+     * 加载script node 下运行的bot配置
+     *
+     * @param scriptNodeName scriptNodeName
+     * @param botKey botKey
+     * @return String
+     */
+    String loadScriptNodeBotConfig(String scriptNodeName, String botKey) throws IOException;
 }

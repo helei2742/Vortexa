@@ -61,7 +61,7 @@ public class AppendLogger {
     }
 
     public void error(Object context, Throwable e) {
-        log.error("\033[31m" + getPrefix(LogType.ERROR, context) + "\033[0m", e);
+        log.error(getPrefix(LogType.ERROR, AnsiColor.colorize(context.toString(), AnsiColor.RED)), e);
     }
 
     private @NotNull String getPrefix(LogType type, Object context) {

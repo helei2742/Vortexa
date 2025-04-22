@@ -23,6 +23,10 @@ public class EthWalletUtil {
     private static final SecureRandom secureRandom = new SecureRandom();
 
     public static WalletInfo generateEthWallet() {
+        return generateWalletInfoFromMnemonic(generateMnemonic());
+    }
+
+    public static String generateMnemonic() {
         // 1. 生成助记词
         SecureRandom secureRandom = new SecureRandom();
         byte[] entropy = new byte[16]; // 128 bits entropy
@@ -36,7 +40,10 @@ public class EthWalletUtil {
         } catch (MnemonicException.MnemonicLengthException e) {
             throw new RuntimeException(e);
         }
-        String mnemonic = String.join(" ", mnemonicWords);
+        return String.join(" ", mnemonicWords);
+    }
+
+    public static WalletInfo generateWalletInfoFromMnemonic(String mnemonic) {
         // 2. 生成 seed
         byte[] seed = MnemonicUtils.generateSeed(mnemonic, ""); // passphrase 可设置
 
@@ -124,6 +131,11 @@ public class EthWalletUtil {
             hexString.append(String.format("%02x", b));  // 格式化为两位十六进制
         }
         return hexString.toString();
+    }
+
+    public static void main(String[] args) throws MnemonicException.MnemonicLengthException {
+
+
     }
 
 }

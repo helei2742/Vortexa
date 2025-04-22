@@ -1,5 +1,7 @@
 package cn.com.vortexa.script_node.bot;
 
+import cn.com.vortexa.common.constants.ChainType;
+import cn.com.vortexa.common.dto.web3.SignatureMessage;
 import cn.com.vortexa.script_node.util.persistence.AccountPersistenceManager;
 import cn.com.vortexa.script_node.util.persistence.impl.DBAccountPersistenceManager;
 import cn.com.vortexa.common.dto.ACListOptResult;
@@ -8,10 +10,12 @@ import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.exception.BotInitException;
+import cn.com.vortexa.web3.exception.SignatureException;
 import cn.hutool.core.util.BooleanUtil;
 
 import com.alibaba.fastjson.JSONArray;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 
 import java.util.*;
@@ -394,4 +398,37 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         });
     }
 
+    /**
+     * 账户消息签名
+     * <p>账户的钱包是不包含私钥的，签名需通过script-node发送RPC请求</p>
+     *
+     * @param accountContext accountContext
+     * @param message        String
+     * @return String
+     */
+    public String signatureAccountMessage(
+            AccountContext accountContext,
+            ChainType chainType,
+            String message
+    ) throws SignatureException {
+        if (accountContext.getWalletId() == null) {
+            throw new SignatureException("account didn't have bind wallet");
+        }
+        if (StrUtil.isBlank(message)) {
+            throw new SignatureException("signature message is empty");
+        }
+
+        try {
+            Result result = getBotApi().getWeb3WalletRPC().signatureMessageRPC(
+                    new SignatureMessage(accountContext.getWalletId(), chainType, message)
+            );
+            if (result.getSuccess()) {
+                return String.valueOf(result.getData());
+            } else {
+                throw new SignatureException("signature fail, " + result.getErrorMsg());
+            }
+        } catch (Exception e) {
+            throw new SignatureException("signature fail", e);
+        }
+    }
 }

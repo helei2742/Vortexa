@@ -157,6 +157,22 @@ public class YamlConfigLoadUtil {
         return (T) compute;
     }
 
+    public static <T> T load(String content, List<String> prefixList, Class<T> tClass) {
+        Yaml yaml = new Yaml();
+        Map<String, Object> yamlData = yaml.load(String.valueOf(content));
+        if (prefixList != null) {
+            for (String prefix : prefixList) {
+                yamlData = (Map<String, Object>) yamlData.get(prefix);
+                Map<String, Object> target = new HashMap<>();
+                for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
+                    target.put(toCamelCase(entry.getKey()), entry.getValue());
+                }
+                yamlData = target;
+            }
+        }
+        return yaml.loadAs(yaml.dump(yamlData), tClass);
+    }
+
     private static String toCamelCase(String name) {
         String[] parts = name.split("-");
         StringBuilder camelCase = new StringBuilder(parts[0]);

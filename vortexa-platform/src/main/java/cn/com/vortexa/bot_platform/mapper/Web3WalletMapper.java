@@ -1,8 +1,9 @@
 package cn.com.vortexa.bot_platform.mapper;
 
-import cn.com.vortexa.db_layer.mapper.IBaseMapper;
 
 import cn.com.vortexa.common.entity.Web3Wallet;
+import cn.com.vortexa.db_layer.mapper.IBaseMapper;
+
 
 /**
  * <p>

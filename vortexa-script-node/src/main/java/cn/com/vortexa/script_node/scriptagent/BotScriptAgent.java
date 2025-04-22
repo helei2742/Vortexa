@@ -57,7 +57,7 @@ public class BotScriptAgent extends ScriptAgent {
 
             ScriptNode scriptNode = ScriptNode.generateFromServiceInstance(serviceInstance);
             scriptNode.setScriptNodeName(scriptNodeConfiguration.getScriptNodeName());
-            scriptNode.setBotConfigMap(scriptNodeConfiguration.getBotKeyConfigMap());
+            // scriptNode.setBotConfigMap(scriptNodeConfiguration.getBotNameMetaInfoMap());
 
             return scriptNode;
         });

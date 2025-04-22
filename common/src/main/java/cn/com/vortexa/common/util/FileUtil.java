@@ -165,17 +165,27 @@ public class FileUtil {
      *
      * @return String
      */
-    public static String getJarFilePath(String ...fileName) {
+    public static String getJarFilePath(String... fileName) {
         return getJarFileDir() + File.separator + String.join(File.separator, fileName);
     }
+
+    /**
+     * bot实例配置目录
+     *
+     * @return String
+     */
+    public static String getBotInstanceConfigDir() {
+        return USER_DIR + File.separator + "instance";
+    }
+
     /**
      * 生成绝对路径
      *
-     * @param patternPath             patternPath
-     * @param botInstanceResourcePath botInstanceResourcePath
+     * @param patternPath     patternPath
+     * @param botResourcePath botResourcePath
      * @return 绝对路径
      */
-    public static String generateAbsPath(String patternPath, String botInstanceResourcePath) {
+    public static String generateAbsPath(String patternPath, String botResourcePath) {
         FilePathType filePathType = FilePathType.resolveFilePathType(patternPath);
         return switch (filePathType) {
             case absolute -> {
@@ -184,8 +194,7 @@ public class FileUtil {
                 }
                 yield patternPath;
             }
-            case instance_resource ->
-                    patternPath.replace("instance_resource:", botInstanceResourcePath + File.separator);
+            case instance_resource -> patternPath.replace("instance_resource:", botResourcePath + File.separator);
             case app_resource -> patternPath.replace("app_resource:", RESOURCE_ROOT_DIR + File.separator);
             case app_resource_config ->
                     patternPath.replace("app_resource_config:", getAppResourceAppConfigDir() + File.separator);
@@ -226,7 +235,7 @@ public class FileUtil {
      *
      * @param jarFilePath jarFilePath
      * @param outputDir   outputDir
-     * @throws IOException  IOException
+     * @throws IOException IOException
      */
     public static void extractJar(String jarFilePath, String outputDir) throws IOException {
         // 打开 JAR 文件
@@ -250,7 +259,7 @@ public class FileUtil {
                 // 如果条目是目录，则创建该目录
                 if (entry.isDirectory()) {
                     entryFile.mkdirs();
-                } else if (!entryName.endsWith(".class")){
+                } else if (!entryName.endsWith(".class")) {
                     // 如果条目是文件，则解压文件内容
                     try (InputStream inputStream = jarFile.getInputStream(entry);
                          OutputStream outputStream = new FileOutputStream(entryFile)) {

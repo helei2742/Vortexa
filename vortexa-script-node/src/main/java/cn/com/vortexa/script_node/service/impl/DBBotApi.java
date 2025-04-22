@@ -1,5 +1,6 @@
 package cn.com.vortexa.script_node.service.impl;
 
+import cn.com.vortexa.rpc.api.platform.IWeb3WalletRPC;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.script_node.service.IBotAccountContextService;
 import cn.com.vortexa.script_node.service.IRewordInfoService;
@@ -57,6 +58,9 @@ public class DBBotApi implements BotApi {
 
     @RPCReference
     private IDiscordAccountRPC discordAccountRPC;
+
+    @RPCReference
+    private IWeb3WalletRPC web3WalletRPC;
 
     @Autowired
     private IScriptAgentRPC scriptAgentRPC;

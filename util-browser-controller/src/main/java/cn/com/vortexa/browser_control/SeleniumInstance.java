@@ -235,7 +235,7 @@ public abstract class SeleniumInstance implements SeleniumOperate {
                 openNewTab = true;
             }
         }
-        if (openNewTab) {
+        if (targetHandle == null || openNewTab) {
             // Step 2.3 进入目标页面
             // 打开初始页面
             Set<String> windowHandles = webDriver.getWindowHandles();

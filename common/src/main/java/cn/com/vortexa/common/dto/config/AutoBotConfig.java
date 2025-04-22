@@ -1,12 +1,12 @@
 package cn.com.vortexa.common.dto.config;
 
+import cn.com.vortexa.common.dto.BotMetaInfo;
 import lombok.Data;
 import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Data
@@ -18,37 +18,20 @@ public class AutoBotConfig implements Serializable {
 
     public static int LOG_CACHE_COUNT = 50; // 日志缓存数量
 
+    /**
+     * bot名
+     */
     private String botName;
 
     /**
-     * 标识bot，不同于bot id， botKey是由用户定义的
+     * bot实例key， botKey是由用户定义的
      */
     private String botKey;
 
     /**
-     * 是否开启命令行菜单
+     * bot 元信息
      */
-    private boolean commandMenu = true;
-
-    /**
-     * 资源文件dir, 运行时写入，为class文件所在目录(bot-instance-config所在目录)
-     */
-    private String resourceDir;
-
-    /**
-     * class文件所在的jar包路径，运行时写入
-     */
-    private String classJarPath;
-
-    /**
-     * 类名， 必填，还需包含包路径
-     */
-    private String className;
-
-    /**
-     * 其它需加载的类名
-     */
-    private List<String> extraClassNameList;
+    private BotMetaInfo metaInfo;
 
     /**
      * 账户配置

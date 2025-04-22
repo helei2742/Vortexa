@@ -137,6 +137,9 @@ public class AccountContext implements Serializable {
     private BrowserEnv browserEnv;
 
     @TableField(exist = false)
+    private Web3Wallet wallet;
+
+    @TableField(exist = false)
     private final ConnectStatusInfo connectStatusInfo = new ConnectStatusInfo();
 
     public String getParam(String key) {

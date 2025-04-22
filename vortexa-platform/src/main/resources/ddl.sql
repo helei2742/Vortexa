@@ -167,19 +167,19 @@ create table t_script_node
 );
 
 
-create table t_web3_wallet
+CREATE TABLE `t_web3_wallet`
 (
-    id              bigint primary key auto_increment,
-    mnemonic        varchar(520),
-    privateKey      varchar(520),
-    eth_address     varchar(520),
-    sol_address     varchar(520),
-    bsc_address     varchar(520),
-    btc_address     varchar(520),
-
-    insert_datetime datetime   default CURRENT_TIMESTAMP null,
-    update_datetime datetime   default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
-    valid           tinyint(1) default 1                 null,
-    unique (mnemonic),
-    unique (privateKey)
-)
+    `id`              bigint NOT NULL AUTO_INCREMENT,
+    `mnemonic`        varchar(520)                                                  DEFAULT NULL,
+    `eth_private_key` varchar(520) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+    `eth_address`     varchar(520)                                                  DEFAULT NULL,
+    `sol_address`     varchar(520)                                                  DEFAULT NULL,
+    `sol_private_key` varchar(520) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+    `btc_address`     varchar(520)                                                  DEFAULT NULL,
+    `insert_datetime` datetime                                                      DEFAULT CURRENT_TIMESTAMP,
+    `update_datetime` datetime                                                      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `valid`           tinyint(1) DEFAULT '1',
+    `btc_private_key` varchar(520) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `mnemonic` (`mnemonic`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
