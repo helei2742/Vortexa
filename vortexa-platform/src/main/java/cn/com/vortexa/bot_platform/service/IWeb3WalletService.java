@@ -6,6 +6,9 @@ import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.web3.SignatureMessage;
 import cn.com.vortexa.common.entity.Web3Wallet;
 import cn.com.vortexa.db_layer.service.ImportService;
+import cn.com.vortexa.web3.dto.SCInvokeParams;
+
+import java.io.IOException;
 
 /**
  * <p>
@@ -18,4 +21,12 @@ import cn.com.vortexa.db_layer.service.ImportService;
 public interface IWeb3WalletService extends IService<Web3Wallet>, ImportService {
 
     Result signatureMessage(SignatureMessage signatureMessage);
+
+    /**
+     * 智能合约交互
+     *
+     * @param invokeParams invokeParams
+     * @return Result
+     */
+    Result smartContractInvoke(SCInvokeParams invokeParams) throws IOException;
 }

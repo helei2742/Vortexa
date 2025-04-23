@@ -1,11 +1,22 @@
 package cn.com.vortexa.web3;
 
 import cn.com.vortexa.web3.dto.WalletInfo;
+import cn.com.vortexa.web3.util.ABIFunctionBuilder;
+
 import org.bitcoinj.crypto.*;
+import org.web3j.abi.FunctionEncoder;
+import org.web3j.abi.FunctionReturnDecoder;
+import org.web3j.abi.datatypes.Function;
+import org.web3j.abi.datatypes.Type;
 import org.web3j.crypto.*;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.methods.request.Transaction;
+import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthGetTransactionCount;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.utils.Numeric;
 
 import java.io.IOException;
@@ -55,7 +66,8 @@ public class EthWalletUtil {
         DeterministicKey coinTypeKey = HDKeyDerivation.deriveChildKey(purposeKey, new ChildNumber(60, true));
         DeterministicKey accountKey = HDKeyDerivation.deriveChildKey(coinTypeKey, new ChildNumber(0, true));
         DeterministicKey externalKey = HDKeyDerivation.deriveChildKey(accountKey, ChildNumber.ZERO); // change = 0
-        DeterministicKey addressKey = HDKeyDerivation.deriveChildKey(externalKey, ChildNumber.ZERO); // address index = 0
+        DeterministicKey addressKey = HDKeyDerivation.deriveChildKey(externalKey,
+                ChildNumber.ZERO); // address index = 0
 
         byte[] privateKeyBytes = addressKey.getPrivKeyBytes();
 
@@ -90,7 +102,6 @@ public class EthWalletUtil {
         System.arraycopy(s, 0, signByte, r.length, s.length);
         System.arraycopy(v, 0, signByte, r.length + s.length, v.length);
 
-
         return Numeric.toHexString(signByte);
     }
 
@@ -103,7 +114,6 @@ public class EthWalletUtil {
         // 将地址转换为区分大小写的 Checksum 地址
         return Keys.toChecksumAddress(rawAddress);
     }
-
 
     public static BigInteger getNonce(String rpcUrl, String address) throws IOException {
         Web3j web3j = Web3j.build(new HttpService(rpcUrl));
@@ -133,9 +143,67 @@ public class EthWalletUtil {
         return hexString.toString();
     }
 
-    public static void main(String[] args) throws MnemonicException.MnemonicLengthException {
+    /**
+     * 制度的智能合约调用
+     *
+     * @param rpcUrl          rpcUrl
+     * @param contractAddress contractAddress
+     * @param address         address
+     * @param functionBuilder functionBuilder
+     * @return List<Type>
+     * @throws IOException IOException
+     */
+    public static List<Type> smartContractCallInvoke(
+            String rpcUrl,
+            String contractAddress,
+            String address,
+            ABIFunctionBuilder functionBuilder
+    ) throws IOException {
+        Web3j web3j = Web3j.build(new HttpService(rpcUrl));
 
+        Function function = functionBuilder.build();
+        Transaction transaction = Transaction.createEthCallTransaction(
+                address,
+                contractAddress,
+                FunctionEncoder.encode(function)
+        );
 
+        EthCall response = web3j.ethCall(
+                transaction,
+                DefaultBlockParameterName.LATEST
+        ).send();
+        return FunctionReturnDecoder.decode(response.getValue(), function.getOutputParameters());
     }
 
+    /**
+     * 制度的智能合约调用
+     *
+     * @param rpcUrl          rpcUrl
+     * @param contractAddress contractAddress
+     * @param address         address
+     * @param functionBuilder functionBuilder
+     * @return String   ethSendTransaction
+     * @throws IOException IOException
+     */
+    public static String smartContractTransactionInvoke(
+            String rpcUrl,
+            String contractAddress,
+            String address,
+            ABIFunctionBuilder functionBuilder
+    ) throws IOException {
+        Web3j web3j = Web3j.build(new HttpService(rpcUrl));
+
+        Function function = functionBuilder.build();
+
+        Transaction transaction = Transaction.createFunctionCallTransaction(
+                address,
+                null,
+                DefaultGasProvider.GAS_PRICE,
+                DefaultGasProvider.GAS_LIMIT,
+                contractAddress,
+                FunctionEncoder.encode(function)
+        );
+        EthSendTransaction ethSendTransaction = web3j.ethSendTransaction(transaction).send();
+        return ethSendTransaction.getTransactionHash();
+    }
 }

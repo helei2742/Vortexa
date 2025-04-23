@@ -19,6 +19,7 @@ spring:
 vortexa:
   script-node:
     script-node-name: helei-macbook
+    remote-rest-url: http://localhost:10110
     auto-launch-bot-keys:
       # - optim_ai_test
 #      - klok_test
@@ -26,7 +27,6 @@ vortexa:
       - taker_google
       - magic_newton_v2
 #      - beamable_test
-  #    bot-instance-locations: "reactive:"
     bot-common-config:
       two_captcha_api_key: ''
     bot-instance-jar-names:

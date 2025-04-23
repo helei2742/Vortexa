@@ -2,36 +2,42 @@ package cn.com.vortexa.script_node.config;
 
 import cn.com.vortexa.common.constants.HttpMethod;
 import cn.com.vortexa.common.dto.Result;
+import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.YamlConfigLoadUtil;
 import cn.com.vortexa.common.util.http.RestApiClientFactory;
-import cn.com.vortexa.script_node.constants.ScriptNodeConstants;
 import com.alibaba.fastjson.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class RemoteConfigLoader implements EnvironmentPostProcessor {
+
+
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
         try {
-            String configUrl = System.getProperty(ScriptNodeConstants.REMOTE_CONFIG_URL_KEY);
-            String nodeId = System.getProperty(ScriptNodeConstants.NODE_ID_KEH);
-            if (configUrl == null || nodeId == null) {
-                System.err.println("no remote.config-url pr node-id，skip load remote config");
+            final String appConfigPath = FileUtil.USER_DIR + File.separator + "config" + File.separator + "application.yaml";
+            ScriptNodeConfiguration preLoadSNConfig = YamlConfigLoadUtil.load(new File(appConfigPath),
+                    List.of("vortexa", "scriptNode"), ScriptNodeConfiguration.class);
+
+            String configUrl = preLoadSNConfig.buildRemoteConfigRestApi();
+            String scriptNodeName = preLoadSNConfig.getScriptNodeName();
+            if (configUrl == null || scriptNodeName == null) {
+                System.err.println("no remote.config-url or script node name，skip load remote config");
                 return;
             }
 
             // 拉取 YAML 内容
-            String yamlContent = fetchRemoteConfig(configUrl, nodeId);
+            String yamlContent = fetchRemoteConfig(configUrl, scriptNodeName);
             Yaml yaml = new Yaml();
 
             // 使用 SnakeYAML 2.2 解析成 Map
@@ -47,10 +53,10 @@ public class RemoteConfigLoader implements EnvironmentPostProcessor {
         }
     }
 
-    private String fetchRemoteConfig(String configUrl, String nodeId) throws IOException {
+    private String fetchRemoteConfig(String configUrl, String scriptNodeName) throws IOException {
         try {
             String response = RestApiClientFactory.getClient().request(
-                    configUrl + "/" + nodeId,
+                    configUrl + "/script-node/remote-config" + scriptNodeName,
                     HttpMethod.POST,
                     new HashMap<>(),
                     null,

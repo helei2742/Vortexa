@@ -118,6 +118,9 @@ public class ScriptNodeConfiguration implements InitializingBean {
             walk.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".yaml")).forEach(configFile -> {
                 try {
                     AutoBotConfig botConfig = YamlConfigLoadUtil.load(configFile.toFile(), BOT_INSTANCE_CONFIG_PREFIX, AutoBotConfig.class);
+                    if (botConfig.getCustomConfig() == null) {
+                        botConfig.setCustomConfig(new HashMap<>());
+                    }
 
                     // 配置文件校验
                     if (botConfig == null) {
@@ -141,7 +144,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
 
                     // 合并bot公共配置
                     if (botCommonConfig != null) {
-                        botConfig.setCustomConfig(botCommonConfig);
+                        botConfig.getCustomConfig().putAll(botCommonConfig);
                     }
 
                     // 合并远程配置
@@ -261,7 +264,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
             local.setAccountConfig(remote.getAccountConfig());
         }
         if (remote.getCustomConfig() != null) {
-            local.setCustomConfig(remote.getCustomConfig());
+            local.getCustomConfig().putAll(remote.getCustomConfig());
         }
     }
 

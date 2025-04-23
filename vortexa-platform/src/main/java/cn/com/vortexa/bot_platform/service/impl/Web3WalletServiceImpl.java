@@ -2,7 +2,12 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import static cn.com.vortexa.common.entity.Web3Wallet.PUBLIC_FIELDS;
 
+import cn.com.vortexa.bot_platform.web3.SmartContractInvoker;
+import cn.com.vortexa.web3.dto.SCInvokeParams;
+import cn.com.vortexa.web3.dto.SCInvokeResult;
+import cn.com.vortexa.web3.dto.Web3ChainInfo;
 import cn.hutool.core.collection.CollUtil;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import cn.com.vortexa.bot_platform.mapper.Web3WalletMapper;
@@ -24,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -40,8 +46,15 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper, Web3Wallet> implements IWeb3WalletRPC, IWeb3WalletService {
+public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper, Web3Wallet>
+        implements IWeb3WalletRPC, IWeb3WalletService {
 
+    private final Web3WalletMapper web3WalletMapper;
+
+    public Web3WalletServiceImpl(Web3WalletMapper web3WalletMapper) {
+        super();
+        this.web3WalletMapper = web3WalletMapper;
+    }
 
     @Override
     public Result signatureMessageRPC(SignatureMessage message) {
@@ -90,6 +103,30 @@ public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper,
             log.error("{} signature chain[{}] message[{}] fail", walletId, chainType, message, e);
             return Result.fail("signature failed");
         }
+    }
+
+    @Override
+    public Result smartContractInvoke(SCInvokeParams invokeParams) throws IOException {
+        if (invokeParams.getWalletId() == null && invokeParams.getWalletInfo() == null) {
+            return Result.fail("walletId or walletInfo must be provided");
+        }
+
+        Web3ChainInfo chainInfo = invokeParams.getChainInfo();
+        if (chainInfo == null) {
+            return Result.fail("chainInfo must be provided");
+        }
+
+        WalletInfo wallet = invokeParams.getWalletInfo() == null
+                ? new WalletInfo(chainInfo.getChainType(), web3WalletMapper.selectById(invokeParams.getWalletId()))
+                : invokeParams.getWalletInfo();
+
+        SCInvokeResult result = switch (chainInfo.getChainType()) {
+            case ETH -> SmartContractInvoker.CHAIN.ETH.invokeSCFunction(wallet, chainInfo, invokeParams);
+            default ->
+                    throw new IllegalArgumentException("chain type[%s] not support".formatted(chainInfo.getChainType()));
+        };
+
+        return Result.ok(result);
     }
 
     @Override

@@ -25,13 +25,13 @@ public class ScriptNodeController {
     @Autowired
     private IScriptNodeService scriptNodeService;
 
-    @PostMapping("/remote-config/{nodeId}")
-    public Result remoteConfig(@PathVariable("nodeId") String nodeId) {
+    @PostMapping("/remote-config/{scriptNodeName}")
+    public Result remoteConfig(@PathVariable("scriptNodeName") String scriptNodeName) {
         String configStr = null;
         try {
-            configStr = scriptNodeService.loadScriptNodeConfig(nodeId);
+            configStr = scriptNodeService.loadScriptNodeConfig(scriptNodeName);
             if (StrUtil.isBlank(configStr)) {
-                return Result.fail(nodeId + " config is empty");
+                return Result.fail(scriptNodeName + " config is empty");
             }
             return Result.ok(configStr);
         } catch (IOException e) {
@@ -41,12 +41,12 @@ public class ScriptNodeController {
 
     @PostMapping("/remote-config")
     public Result botRemoteConfig(
-            @RequestParam("nodeId") String nodeId,
+            @RequestParam("scriptNodeName") String scriptNodeName,
             @RequestParam("botKey") String botKey
     ) {
         String configStr = null;
         try {
-            configStr = scriptNodeService.loadScriptNodeBotConfig(nodeId, botKey);
+            configStr = scriptNodeService.loadScriptNodeBotConfig(scriptNodeName, botKey);
             if (StrUtil.isBlank(configStr)) {
                 return Result.fail(" config is empty");
             }

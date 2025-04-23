@@ -1,0 +1,14 @@
+vortexa:
+  web3:
+    chain-info:
+      - name: Monad_Testnet
+        rpcUrl: https://testnet-rpc.monad.xyz/
+        chainId: 10143
+        originTokenSymbol: MON
+        blockExploreUrl: https://testnet.monadexplorer.com
+
+      - name: Eth_Sepora
+        rpcUrl: https://testnet-rpc.monad.xyz/
+        chainId: 10143
+        originTokenSymbol: MON
+        blockExploreUrl: https://testnet.monadexplorer.com
