@@ -20,6 +20,7 @@ import org.quartz.JobKey;
 
 import java.lang.reflect.Method;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -33,7 +34,15 @@ import static cn.com.vortexa.common.dto.job.AutoBotJobParam.START_AT;
 @Getter
 public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements AutoBotJobInvoker {
 
+    /**
+     * job运行时参数
+     */
     private final Map<String, AutoBotJobRuntimeParam> jobRuntimeParamMap = new ConcurrentHashMap<>();
+
+    /**
+     * job执行完成后的回调Map
+     */
+    private final Map<String, JobExecuteResultHandler> jobExecuteResultHandlerMap = new HashMap<>();
 
     private final Random random = new Random();
 
@@ -68,10 +77,8 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
             future = normalForEachAccount(runtimeParam, jobName, jobParam, this::normalInvoke);
         }
 
-        acListOptResultHandler(future);
-
-
-        logger.info("[%s]定时任务执行完毕".formatted(jobName));
+        // Step 3 结果处理
+        acListOptResultHandler(jobName, future);
     }
 
     @Override
@@ -159,6 +166,19 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
                     e
             );
         }
+    }
+
+    /**
+     * job执行完成后的结果处理
+     *
+     * @param jobName                 jobName
+     * @param jobExecuteResultHandler jobExecuteResultHandler
+     */
+    public void addJobExecuteResultHandler(
+            String jobName,
+            JobExecuteResultHandler jobExecuteResultHandler
+    ) {
+        this. jobExecuteResultHandlerMap.put(jobName, jobExecuteResultHandler);
     }
 
     /**
@@ -383,14 +403,20 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
         });
     }
 
+    /**
+     * 获取子类实例
+     *
+     * @return AutoBotJobInvoker
+     */
     protected abstract AutoBotJobInvoker getInstance();
 
     /**
      * 账户列表操作结果处理
      *
-     * @param future future
+     * @param jobName jobName
+     * @param future  future
      */
-    private void acListOptResultHandler(CompletableFuture<ACListOptResult> future) {
+    private void acListOptResultHandler(String jobName, CompletableFuture<ACListOptResult> future) {
         future.thenAcceptAsync(acListOptResult -> {
             if (!acListOptResult.getSuccess()) {
                 logger.info("botId[%s]-botName[%s]-jobName[%s] 定时任务执行失败, %s".formatted(
@@ -401,7 +427,11 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
                         acListOptResult.getBotId(), acListOptResult.getBotName(), acListOptResult.getJobName(), acListOptResult.getErrorMsg()
                 ));
             }
-        });
+            JobExecuteResultHandler resultHandler = this.jobExecuteResultHandlerMap.get(jobName);
+            if (resultHandler != null) {
+                resultHandler.handle(acListOptResult);
+            }
+        }, getExecutorService());
     }
 
     /**
@@ -422,9 +452,17 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
         );
     }
 
+    /**
+     * 执行账户job逻辑
+     */
     private interface AccountJobMethodInvokeHandler {
-
         CompletableFuture<Result> invoke(AccountContext accountContext, List<AccountContext> accountContexts, Object[] extraParams, Method jobMethod, Object invokeObj);
+    }
 
+    /**
+     * 一个job的所有账户执行完毕后的回调
+     */
+    public interface JobExecuteResultHandler {
+        void handle(ACListOptResult acListOptResult);
     }
 }

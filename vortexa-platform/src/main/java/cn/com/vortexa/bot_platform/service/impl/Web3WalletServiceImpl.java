@@ -6,6 +6,7 @@ import cn.com.vortexa.bot_platform.web3.SmartContractInvoker;
 import cn.com.vortexa.web3.dto.SCInvokeParams;
 import cn.com.vortexa.web3.dto.SCInvokeResult;
 import cn.com.vortexa.web3.dto.Web3ChainInfo;
+import cn.com.vortexa.web3.service.IWeb3WalletOPTRPC;
 import cn.hutool.core.collection.CollUtil;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -17,7 +18,6 @@ import cn.com.vortexa.common.entity.Web3Wallet;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.excel.ExcelReadUtil;
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
-import cn.com.vortexa.rpc.api.platform.IWeb3WalletRPC;
 import cn.com.vortexa.web3.EthWalletUtil;
 import cn.com.vortexa.web3.SolanaWalletUtil;
 import cn.com.vortexa.common.constants.ChainType;
@@ -47,7 +47,7 @@ import java.util.Map;
 @Slf4j
 @Service
 public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper, Web3Wallet>
-        implements IWeb3WalletRPC, IWeb3WalletService {
+        implements IWeb3WalletOPTRPC, IWeb3WalletService {
 
     private final Web3WalletMapper web3WalletMapper;
 
@@ -67,6 +67,20 @@ public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper,
     }
 
     @Override
+    public SCInvokeResult erc20ABIInvokeRPC(SCInvokeParams scInvokeParams) throws IOException {
+        Integer retryTimes = scInvokeParams.getRetryTimes();
+        for (int i = 1; i <= retryTimes; i++) {
+            Result result = smartContractInvoke(scInvokeParams);
+            if (result.getSuccess()) {
+                return (SCInvokeResult) result.getData();
+            } else if (i != retryTimes) {
+                log.warn("erc20 abi rpc error, start retry[{}/{}]", i, retryTimes);
+            }
+        }
+        throw new RuntimeException("erc20 abi rpc error, retry out of limit:" + retryTimes);
+    }
+
+    @Override
     public List<Web3Wallet> batchQueryByIds(List<Serializable> ids) {
         if (CollUtil.isEmpty(ids)) {
             return List.of();
@@ -75,6 +89,16 @@ public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper,
         queryWrapper.select(PUBLIC_FIELDS);
         queryWrapper.in("id", ids);
         return baseMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public Result saveWallet(List<Map<String, Object>> rawLines) {
+        try {
+            return Result.ok(importFromRaw(rawLines));
+        } catch (SQLException e) {
+            log.error("import wallet error", e);
+            return Result.fail(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
+        }
     }
 
     @Override
@@ -116,14 +140,15 @@ public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper,
             return Result.fail("chainInfo must be provided");
         }
 
+        ChainType chainType = chainInfo.getChainType() == null ? ChainType.ETH : chainInfo.getChainType();
         WalletInfo wallet = invokeParams.getWalletInfo() == null
-                ? new WalletInfo(chainInfo.getChainType(), web3WalletMapper.selectById(invokeParams.getWalletId()))
+                ? new WalletInfo(chainType, web3WalletMapper.selectById(invokeParams.getWalletId()))
                 : invokeParams.getWalletInfo();
 
-        SCInvokeResult result = switch (chainInfo.getChainType()) {
+        SCInvokeResult result = switch (chainType) {
             case ETH -> SmartContractInvoker.CHAIN.ETH.invokeSCFunction(wallet, chainInfo, invokeParams);
             default ->
-                    throw new IllegalArgumentException("chain type[%s] not support".formatted(chainInfo.getChainType()));
+                    throw new IllegalArgumentException("chain type[%s] not support".formatted(chainType));
         };
 
         return Result.ok(result);
@@ -155,6 +180,11 @@ public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper,
             WalletInfo solWallet = SolanaWalletUtil.generateWalletInfoFromMnemonic(mnemonic);
             builder.solPrivateKey(solWallet.getPrivateKey());
             builder.solAddress(solWallet.getAddress());
+
+            web3Wallets.add(builder.build());
+        }
+        if (web3Wallets.isEmpty()) {
+            return 0;
         }
         return insertOrUpdateBatch(web3Wallets);
     }

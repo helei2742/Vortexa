@@ -60,11 +60,31 @@ public @interface BotMethod {
      */
     boolean uniqueAccount() default false;
 
+    /**
+     * 是否动态触发器
+     *
+     * @return  boolean
+     */
     boolean dynamicTrigger() default false;
 
-    boolean syncExecute() default false;
-
+    /**
+     * dynamicTrigger设置为true时，动态的时间浮动范围（分）
+     *
+     * @return  int
+     */
     int dynamicTimeWindowMinute() default 120;
 
+    /**
+     * 是否同步执行
+     *
+     * @return  boolean
+     */
+    boolean syncExecute() default false;
+
+    /**
+     * websocket方法配置
+     *
+     * @return  BotWSMethodConfig
+     */
     BotWSMethodConfig bowWsConfig() default @BotWSMethodConfig();
 }

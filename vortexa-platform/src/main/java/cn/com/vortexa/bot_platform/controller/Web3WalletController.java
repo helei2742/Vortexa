@@ -3,6 +3,7 @@ package cn.com.vortexa.bot_platform.controller;
 import cn.com.vortexa.bot_platform.service.IWeb3WalletService;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.web3.SignatureMessage;
+import cn.com.vortexa.common.vo.BotImportVO;
 import cn.com.vortexa.web3.dto.SCInvokeParams;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,11 @@ import java.io.IOException;
 public class Web3WalletController {
     @Autowired
     public IWeb3WalletService web3WalletService;
+
+    @PostMapping("/batchAdd")
+    public Result batchAdd(@RequestBody BotImportVO importVO) {
+        return web3WalletService.saveWallet(importVO.getRawLines());
+    }
 
     @PostMapping("/signature")
     public Result signatureWalletMessage(SignatureMessage message) {

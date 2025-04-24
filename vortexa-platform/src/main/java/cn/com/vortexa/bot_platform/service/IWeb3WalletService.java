@@ -9,6 +9,8 @@ import cn.com.vortexa.db_layer.service.ImportService;
 import cn.com.vortexa.web3.dto.SCInvokeParams;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -20,6 +22,20 @@ import java.io.IOException;
  */
 public interface IWeb3WalletService extends IService<Web3Wallet>, ImportService {
 
+    /**
+     * 保存钱包
+     *
+     * @param rawLines rawLines
+     * @return Result
+     */
+    Result saveWallet(List<Map<String, Object>> rawLines);
+
+    /**
+     * 钱包签名消息
+     *
+     * @param signatureMessage  signatureMessage
+     * @return  Result¬
+     */
     Result signatureMessage(SignatureMessage signatureMessage);
 
     /**

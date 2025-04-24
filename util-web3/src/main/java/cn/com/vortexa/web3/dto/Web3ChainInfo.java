@@ -2,12 +2,14 @@ package cn.com.vortexa.web3.dto;
 
 
 import cn.com.vortexa.common.constants.ChainType;
+import cn.hutool.core.collection.CollUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 @Builder
@@ -19,7 +21,7 @@ public class Web3ChainInfo implements Serializable {
      */
     private ChainType chainType;
 
-    private String rpcUrl;
+    private List<String> rpcUrls;
 
     private String name;
 
@@ -28,4 +30,8 @@ public class Web3ChainInfo implements Serializable {
     private String originTokenSymbol;
 
     private String blockExploreUrl;
+
+    public String getRpcUrl() {
+        return CollUtil.isEmpty(rpcUrls) ? null : rpcUrls.getFirst();
+    }
 }

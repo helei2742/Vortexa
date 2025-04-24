@@ -9,10 +9,11 @@ import lombok.NoArgsConstructor;
 
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.util.List;
 
 /**
- * @author h30069248
+ * @author com.helei
  * @since 2025/4/23 11:05
  */
 @Data
@@ -39,6 +40,17 @@ public class SCInvokeParams implements Serializable {
      * 调用的合约地址
      */
     private String contractAddress;
+
+    /**
+     * gas limit
+     */
+    private BigInteger gasLimit;
+
+    /**
+     * 交易金额
+     */
+    private BigInteger value;
+
     /**
      * abi方法名
      */
@@ -47,12 +59,21 @@ public class SCInvokeParams implements Serializable {
      * 只读方法
      */
     private Boolean readFunction;
+
     /**
      * 参数类型
      */
     private List<Pair<Web3jFunctionType, Object>> paramsTypes;
+
     /**
      * 返回值类型
      */
     private List<Web3jFunctionType> resultTypes;
+
+    private Integer retryTimes;
+
+    public Integer getRetryTimes() {
+        if (retryTimes == null || retryTimes <= 0) { return 1; }
+        return retryTimes;
+    }
 }

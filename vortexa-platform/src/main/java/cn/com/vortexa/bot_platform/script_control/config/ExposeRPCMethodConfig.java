@@ -3,6 +3,7 @@ package cn.com.vortexa.bot_platform.script_control.config;
 
 import cn.com.vortexa.rpc.api.platform.*;
 import cn.com.vortexa.control.dto.RPCServiceInfo;
+import cn.com.vortexa.web3.service.IWeb3WalletOPTRPC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -111,11 +112,11 @@ public class ExposeRPCMethodConfig {
     }
 
     @Bean
-    @ConditionalOnBean(IWeb3WalletRPC.class)
-    public RPCServiceInfo<IWeb3WalletRPC> web3WalletRPCRPCServiceInfo(IWeb3WalletRPC ref) {
+    @ConditionalOnBean(IWeb3WalletOPTRPC.class)
+    public RPCServiceInfo<IWeb3WalletOPTRPC> web3WalletRPCRPCServiceInfo(IWeb3WalletOPTRPC ref) {
         return RPCServiceInfo
-                .<IWeb3WalletRPC>builder()
-                .interfaces(IWeb3WalletRPC.class)
+                .<IWeb3WalletOPTRPC>builder()
+                .interfaces(IWeb3WalletOPTRPC.class)
                 .ref(ref)
                 .build();
     }

@@ -4,6 +4,7 @@ import cn.com.vortexa.web3.constants.Web3jFunctionType;
 
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint256;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author h30069248
+ * @author com.helei
  * @since 2025/4/23 10:51
  */
 public class ABIFunctionBuilder {
@@ -32,7 +33,8 @@ public class ABIFunctionBuilder {
 
     public ABIFunctionBuilder addParameterType(Web3jFunctionType type, Object value) {
         parameterTypes.add(switch (type) {
-            case Uint256 -> new Uint256(BigInteger.valueOf((Long) value));
+            case Uint256 -> new Uint256((BigInteger) value);
+            case Bool -> new Bool((Boolean) value);
             case Address -> new Address(String.valueOf(value));
         });
         return this;
@@ -41,6 +43,7 @@ public class ABIFunctionBuilder {
     public ABIFunctionBuilder addReturnType(Web3jFunctionType type) {
         returnTypes.add(switch (type) {
             case Uint256 -> new TypeReference<Uint256>() {};
+            case Bool -> new TypeReference<Bool>() {};
             case Address -> new TypeReference<Address>() {};
         });
         return this;

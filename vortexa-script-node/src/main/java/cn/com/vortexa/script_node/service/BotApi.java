@@ -12,7 +12,7 @@ import cn.com.vortexa.rpc.api.platform.IDiscordAccountRPC;
 import cn.com.vortexa.rpc.api.platform.IProxyInfoRPC;
 import cn.com.vortexa.rpc.api.platform.ITelegramAccountRPC;
 import cn.com.vortexa.rpc.api.platform.ITwitterAccountRPC;
-import cn.com.vortexa.rpc.api.platform.IWeb3WalletRPC;
+import cn.com.vortexa.web3.service.IWeb3WalletOPTRPC;
 
 public interface BotApi {
 
@@ -42,5 +42,7 @@ public interface BotApi {
 
     IScriptAgentRPC getScriptAgentRPC();
 
-    IWeb3WalletRPC getWeb3WalletRPC();
+    IWeb3WalletOPTRPC getWeb3WalletRPC();
+
+    IWeb3WalletService getWeb3WalletService();
 }

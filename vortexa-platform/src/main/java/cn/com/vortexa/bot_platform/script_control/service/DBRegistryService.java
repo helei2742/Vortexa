@@ -17,7 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * 数据库注册服务
  *
- * @author h30069248
+ * @author com.helei
  * @since 2025/4/8 17:37
  */
 @Slf4j

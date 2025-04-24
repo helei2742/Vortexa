@@ -15,6 +15,7 @@ import org.web3j.abi.datatypes.Type;
 import java.io.IOException;
 
 import java.util.List;
+
 /**
  * 智能合约调用器
  *
@@ -25,11 +26,11 @@ public interface SmartContractInvoker {
     /**
      * 执行智能合约交互
      *
-     * @param walletInfo  钱包信息
-     * @param chainInfo  链信息
+     * @param walletInfo     钱包信息
+     * @param chainInfo      链信息
      * @param scInvokeParams 调用参数
-     * @return  SCInvokeResult
-     * @throws IOException  IOException
+     * @return SCInvokeResult
+     * @throws IOException IOException
      */
     SCInvokeResult invokeSCFunction(
             WalletInfo walletInfo,
@@ -40,7 +41,7 @@ public interface SmartContractInvoker {
     enum CHAIN implements SmartContractInvoker {
         ETH {
             @Override
-            public  SCInvokeResult invokeSCFunction(
+            public SCInvokeResult invokeSCFunction(
                     WalletInfo walletInfo,
                     Web3ChainInfo chainInfo,
                     SCInvokeParams scInvokeParams
@@ -77,7 +78,10 @@ public interface SmartContractInvoker {
                     String transactionHash = EthWalletUtil.smartContractTransactionInvoke(
                             chainInfo.getRpcUrl(),
                             scInvokeParams.getContractAddress(),
+                            walletInfo.getPrivateKey(),
                             walletInfo.getAddress(),
+                            scInvokeParams.getGasLimit(),
+                            scInvokeParams.getValue(),
                             functionBuilder
                     );
                     result.setTransactionHash(transactionHash);

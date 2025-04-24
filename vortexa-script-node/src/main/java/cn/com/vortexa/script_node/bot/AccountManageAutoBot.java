@@ -1,7 +1,5 @@
 package cn.com.vortexa.script_node.bot;
 
-import cn.com.vortexa.common.constants.ChainType;
-import cn.com.vortexa.common.dto.web3.SignatureMessage;
 import cn.com.vortexa.script_node.util.persistence.AccountPersistenceManager;
 import cn.com.vortexa.script_node.util.persistence.impl.DBAccountPersistenceManager;
 import cn.com.vortexa.common.dto.ACListOptResult;
@@ -10,12 +8,10 @@ import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.exception.BotInitException;
-import cn.com.vortexa.web3.exception.SignatureException;
 import cn.hutool.core.util.BooleanUtil;
 
 import com.alibaba.fastjson.JSONArray;
 
-import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 
 import java.util.*;
@@ -33,12 +29,21 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      */
     private final ConcurrentMap<String, Semaphore> jobCCSemaphoreMap = new ConcurrentHashMap<>();
 
+    /**
+     * 账户上下文列表
+     */
     @Getter
     private final List<AccountContext> accountContexts = new ArrayList<>();
 
+    /**
+     * 根据accountBaseInfo.id分组的 账户上下文
+     */
     @Getter
     private final Map<Integer, List<AccountContext>> acMap = new HashMap<>();
 
+    /**
+     * 去重的账户上下文
+     */
     @Getter
     private final List<AccountContext> uniqueACList = new ArrayList<>();
 
@@ -96,6 +101,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
      *
      * @return CompletableFuture<Result>
      */
+    @Deprecated
     public abstract CompletableFuture<ACListOptResult> updateAccountRewordInfo();
 
     /**
@@ -113,6 +119,14 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
     protected void accountsLoadedHandler(List<AccountContext> accountContexts) {
     }
 
+    /**
+     * 异步账户去重遍历账户
+     *
+     * @param buildResultFuture buildResultFuture
+     * @param resultHandler     resultHandler
+     * @param jobName           jobName
+     * @return CompletableFuture<ACListOptResult>
+     */
     protected CompletableFuture<ACListOptResult> uniqueAsyncForACList(
             BiFunction<AccountContext, List<AccountContext>, CompletableFuture<Result>> buildResultFuture,
             BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
@@ -127,6 +141,14 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         );
     }
 
+    /**
+     * 同步账户去重遍历账户
+     *
+     * @param buildResultFuture buildResultFuture
+     * @param resultHandler     resultHandler
+     * @param jobName           jobName
+     * @return  CompletableFuture<ACListOptResult>
+     */
     protected CompletableFuture<ACListOptResult> uniqueSyncForACList(
             BiFunction<AccountContext, List<AccountContext>, CompletableFuture<Result>> buildResultFuture,
             BiFunction<AccountContext, BotACJobResult, BotACJobResult> resultHandler,
@@ -396,39 +418,5 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
             }
             return new Semaphore(autoBotJobParam.getConcurrentCount());
         });
-    }
-
-    /**
-     * 账户消息签名
-     * <p>账户的钱包是不包含私钥的，签名需通过script-node发送RPC请求</p>
-     *
-     * @param accountContext accountContext
-     * @param message        String
-     * @return String
-     */
-    public String signatureAccountMessage(
-            AccountContext accountContext,
-            ChainType chainType,
-            String message
-    ) throws SignatureException {
-        if (accountContext.getWalletId() == null) {
-            throw new SignatureException("account didn't have bind wallet");
-        }
-        if (StrUtil.isBlank(message)) {
-            throw new SignatureException("signature message is empty");
-        }
-
-        try {
-            Result result = getBotApi().getWeb3WalletRPC().signatureMessageRPC(
-                    new SignatureMessage(accountContext.getWalletId(), chainType, message)
-            );
-            if (result.getSuccess()) {
-                return String.valueOf(result.getData());
-            } else {
-                throw new SignatureException("signature fail, " + result.getErrorMsg());
-            }
-        } catch (Exception e) {
-            throw new SignatureException("signature fail", e);
-        }
     }
 }

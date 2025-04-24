@@ -9,8 +9,8 @@ import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.YamlConfigLoadUtil;
 import cn.com.vortexa.common.util.http.RestApiClientFactory;
-import cn.com.vortexa.script_node.constants.ScriptNodeConstants;
 import cn.com.vortexa.common.dto.BotMetaInfo;
+import cn.com.vortexa.web3.constants.Web3ChainDict;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.Data;
@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 @Component
 @ConfigurationProperties(prefix = "vortexa.script-node")
 public class ScriptNodeConfiguration implements InitializingBean {
-
+    public static final String CUSTOM_CHAIN_INFO_DICT = "cn/com/vortexa/script_bot/wallet/r2money/custom-chain-info.yaml";
     public static final String BOT_META_INF_FILE_NAME = "bot-meta-info.yaml";
     public static final List<String> BOT_META_INFO_PREFIX = List.of("vortexa", "botMetaInfo");
     public static final List<String> BOT_INSTANCE_CONFIG_PREFIX = List.of("vortexa", "botInstance");
@@ -50,9 +50,14 @@ public class ScriptNodeConfiguration implements InitializingBean {
     private String scriptNodeName;
 
     /**
-     * 远程配置获取的url
+     * 远程REST接口的url
      */
-    private String remoteConfigUrl;
+    private String remoteRestUrl;
+
+    /**
+     * 链信息字典
+     */
+    private Web3ChainDict chainDict;
 
     /**
      * bot-instance jar包名字
@@ -93,18 +98,21 @@ public class ScriptNodeConfiguration implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        String nodeId = System.getProperty(ScriptNodeConstants.NODE_ID_KEH);
-        scriptNodeName = StrUtil.isBlank(nodeId) ? scriptNodeName : nodeId;
-
-        String remoteConfigUrl = System.getProperty(ScriptNodeConstants.REMOTE_CONFIG_URL_KEY);
-        this.remoteConfigUrl = StrUtil.isBlank(remoteConfigUrl) ? this.remoteConfigUrl : remoteConfigUrl;
-
         // 解析地址，
         scriptNodeBasePath = FileUtil.getAppResourceAppConfigDir() + File.separator + scriptNodeName;
 
         initBotMetaInfo();
 
         initBotInstance();
+    }
+
+    /**
+     * 获取远程设置api
+     *
+     * @return String
+     */
+    public String buildRemoteConfigRestApi() {
+        return remoteRestUrl + "/script-node/remote-config";
     }
 
     /**
@@ -117,14 +125,13 @@ public class ScriptNodeConfiguration implements InitializingBean {
         try (Stream<Path> walk = Files.walk(Paths.get(botInstanceConfigDir), 5)) {
             walk.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".yaml")).forEach(configFile -> {
                 try {
-                    AutoBotConfig botConfig = YamlConfigLoadUtil.load(configFile.toFile(), BOT_INSTANCE_CONFIG_PREFIX, AutoBotConfig.class);
-                    if (botConfig.getCustomConfig() == null) {
-                        botConfig.setCustomConfig(new HashMap<>());
-                    }
+                    AutoBotConfig botConfig = YamlConfigLoadUtil.load(configFile.toFile(), BOT_INSTANCE_CONFIG_PREFIX,
+                            AutoBotConfig.class);
 
                     // 配置文件校验
                     if (botConfig == null) {
-                        throw new IllegalArgumentException("bot instance config file [" + configFile.getFileName() + "] illegal");
+                        throw new IllegalArgumentException(
+                                "bot instance config file [" + configFile.getFileName() + "] illegal");
                     }
 
                     BotMetaInfo botMetaInfo = botNameMetaInfoMap.get(botConfig.getBotName());
@@ -144,12 +151,12 @@ public class ScriptNodeConfiguration implements InitializingBean {
 
                     // 合并bot公共配置
                     if (botCommonConfig != null) {
-                        botConfig.getCustomConfig().putAll(botCommonConfig);
+                        botConfig.setCustomConfig(botCommonConfig);
                     }
 
                     // 合并远程配置
                     AutoBotConfig remoteBotConfig = fetchRemoteBotConfig(
-                            remoteConfigUrl,
+                            buildRemoteConfigRestApi(),
                             scriptNodeName,
                             botConfig.getBotKey()
                     );
@@ -218,17 +225,19 @@ public class ScriptNodeConfiguration implements InitializingBean {
     /**
      * 获取远程配置
      *
-     * @param configUrl configUrl
-     * @param nodeId    nodeId
-     * @param botKey    botKey
+     * @param configUrl      configUrl
+     * @param scriptNodeName scriptNodeName
+     * @param botKey         botKey
      * @return String
      */
-    private AutoBotConfig fetchRemoteBotConfig(String configUrl, String nodeId, String botKey) {
-        if (StrUtil.isBlank(configUrl)) return null;
+    private AutoBotConfig fetchRemoteBotConfig(String configUrl, String scriptNodeName, String botKey) {
+        if (StrUtil.isBlank(configUrl)) {
+            return null;
+        }
 
         try {
             JSONObject params = new JSONObject();
-            params.put("nodeId", nodeId);
+            params.put("scriptNodeName", scriptNodeName);
             params.put("botKey", botKey);
             String response = RestApiClientFactory.getClient().request(
                     configUrl,
@@ -244,11 +253,11 @@ public class ScriptNodeConfiguration implements InitializingBean {
                 log.info("remote config fetch success, merge into [{}] bot config...", botKey);
                 return load;
             } else {
-                log.warn("script node[{}] botKey[{}] config not found in remote", nodeId, botKey);
+                log.warn("script node[{}] botKey[{}] config not found in remote", scriptNodeName, botKey);
                 return null;
             }
         } catch (InterruptedException | ExecutionException e) {
-            log.error("script node[{}] botKey[{}] remote fetch error", nodeId, botKey, e);
+            log.error("script node[{}] botKey[{}] remote fetch error", scriptNodeName, botKey, e);
             return null;
         }
     }
@@ -264,7 +273,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
             local.setAccountConfig(remote.getAccountConfig());
         }
         if (remote.getCustomConfig() != null) {
-            local.getCustomConfig().putAll(remote.getCustomConfig());
+            local.setCustomConfig(remote.getCustomConfig());
         }
     }
 
