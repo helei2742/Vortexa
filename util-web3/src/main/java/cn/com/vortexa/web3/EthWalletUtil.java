@@ -1,30 +1,33 @@
 package cn.com.vortexa.web3;
 
-import cn.com.vortexa.web3.constants.Web3jFunctionType;
 import cn.com.vortexa.web3.dto.WalletInfo;
+import cn.com.vortexa.web3.exception.ABIInvokeException;
 import cn.com.vortexa.web3.util.ABIFunctionBuilder;
 
 import org.bitcoinj.crypto.*;
 import org.jetbrains.annotations.NotNull;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
+import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.crypto.*;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.core.methods.response.EthCall;
-import org.web3j.protocol.core.methods.response.EthEstimateGas;
-import org.web3j.protocol.core.methods.response.EthSendTransaction;
+import org.web3j.protocol.core.methods.response.*;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.utils.Numeric;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author helei
@@ -32,12 +35,39 @@ import java.util.List;
  */
 public class EthWalletUtil {
 
+    public static final ConcurrentMap<String, Web3j> rpcUrlWeb3JMap = new ConcurrentHashMap<>();
+
+    /**
+     * 重试次数
+     */
+    public static final int TRANSACTION_ATTEMPTS = 40;
+
+    /**
+     * 间隔
+     */
+    public static final int TRANSACTION_SLEEP_MILLIS = 1500;
+
     /**
      * 默认Gas limit
      */
     private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(200_000);
 
     private static final SecureRandom secureRandom = new SecureRandom();
+
+    /**
+     * 获取web3j
+     *
+     * @param rpcUrl rpcUrl
+     * @return Web3j
+     */
+    public static Web3j getRpcWeb3j(String rpcUrl) {
+        return rpcUrlWeb3JMap.compute(rpcUrl, (k, v) -> {
+            if (v == null) {
+                v = Web3j.build(new HttpService(rpcUrl));
+            }
+            return v;
+        });
+    }
 
     /**
      * 生成eth钱包信息
@@ -173,29 +203,36 @@ public class EthWalletUtil {
     }
 
     /**
-     * approve token
+     * 智能合约调用 只读
      *
-     * @param rpcUrl           rpcUrl
-     * @param tokenAddress     代币地址
-     * @param spenderAddress   代币合约地址
-     * @param walletPrimaryKey 钱包私钥
-     * @param walletAddress    钱包公钥
-     * @param amount           授权数量
-     * @return String
-     * @throws IOException IOException
+     * @param rpcUrl          rpcUrl
+     * @param contractAddress contractAddress
+     * @param address         address
+     * @return EthCall EthCall
+     * @throws ABIInvokeException ABIInvokeException
      */
-    public static String erc20ApproveToken(
-            String rpcUrl, String tokenAddress, String spenderAddress, String walletPrimaryKey, String walletAddress, BigInteger amount
-    ) throws IOException {
-        return EthWalletUtil.smartContractTransactionInvoke(
-                rpcUrl, tokenAddress, walletPrimaryKey, walletAddress, null, amount,
-                ABIFunctionBuilder.builder()
-                        .functionName("approve")
-                        .addParameterType(Web3jFunctionType.Address, spenderAddress)
-                        .addParameterType(Web3jFunctionType.Uint256, amount)
+    public static EthCall smartContractCallInvoke(
+            String rpcUrl,
+            String contractAddress,
+            String address,
+            String data
+    ) throws ABIInvokeException {
+        Web3j web3j = getRpcWeb3j(rpcUrl);
+        Transaction transaction = Transaction.createEthCallTransaction(
+                address,
+                contractAddress,
+                data
         );
-    }
 
+        try {
+           return web3j.ethCall(
+                    transaction,
+                    DefaultBlockParameterName.LATEST
+            ).send();
+        } catch (Exception e) {
+            throw new ABIInvokeException(e);
+        }
+    }
     /**
      * 智能合约调用 只读
      *
@@ -204,28 +241,35 @@ public class EthWalletUtil {
      * @param address         address
      * @param functionBuilder functionBuilder
      * @return List<Type>
-     * @throws IOException IOException
+     * @throws ABIInvokeException ABIInvokeException
      */
     public static List<Type> smartContractCallInvoke(
             String rpcUrl,
             String contractAddress,
             String address,
             ABIFunctionBuilder functionBuilder
-    ) throws IOException {
-        Web3j web3j = Web3j.build(new HttpService(rpcUrl));
+    ) throws ABIInvokeException {
+        Web3j web3j = getRpcWeb3j(rpcUrl);
 
         Function function = functionBuilder.build();
+        String encode = FunctionEncoder.encode(function);
         Transaction transaction = Transaction.createEthCallTransaction(
                 address,
                 contractAddress,
-                FunctionEncoder.encode(function)
+                encode
         );
 
-        EthCall response = web3j.ethCall(
-                transaction,
-                DefaultBlockParameterName.LATEST
-        ).send();
-        return FunctionReturnDecoder.decode(response.getValue(), function.getOutputParameters());
+        EthCall response;
+        try {
+            response = web3j.ethCall(
+                    transaction,
+                    DefaultBlockParameterName.LATEST
+            ).send();
+
+            return FunctionReturnDecoder.decode(response.getValue(), function.getOutputParameters());
+        } catch (Exception e) {
+            throw new ABIInvokeException(e);
+        }
     }
 
     /**
@@ -239,7 +283,7 @@ public class EthWalletUtil {
      * @param value           发生金额
      * @param functionBuilder functionBuilder
      * @return transaction hash
-     * @throws IOException 网络不通， 获取hash失败都会抛出次异常
+     * @throws ABIInvokeException 网络不通， 获取hash失败都会抛出次异常
      */
     public static String smartContractTransactionInvoke(
             String rpcUrl,
@@ -249,37 +293,65 @@ public class EthWalletUtil {
             BigInteger gasLimit,
             BigInteger value,
             ABIFunctionBuilder functionBuilder
-    ) throws IOException {
-        Web3j web3j = Web3j.build(new HttpService(rpcUrl));
-
-        // Step 1 构建transaction
+    ) throws ABIInvokeException {
         Function function = functionBuilder.build();
-        String encodeFunction = FunctionEncoder.encode(function);
-        BigInteger nonce = getNonce(web3j, address);
-        BigInteger gasPrice = getGasPrice(web3j);
-        if (gasLimit == null) {
-            gasLimit = dynamicCalGasLimit(
-                    web3j, contractAddress, address, gasPrice, encodeFunction
+        return smartContractTransactionInvoke(rpcUrl, contractAddress, primaryKey, address, gasLimit, value, FunctionEncoder.encode(function));
+    }
+
+    /**
+     * 智能合约调用 上链
+     *
+     * @param rpcUrl          rpcUrl
+     * @param contractAddress 合约地址
+     * @param primaryKey      钱包私钥
+     * @param address         钱包地址
+     * @param gasLimit        gasLimit
+     * @param value           发生金额
+     * @param data            data
+     * @return transaction hash
+     * @throws ABIInvokeException 网络不通， 获取hash失败都会抛出次异常
+     */
+    public static String smartContractTransactionInvoke(
+            String rpcUrl,
+            String contractAddress,
+            String primaryKey,
+            String address,
+            BigInteger gasLimit,
+            BigInteger value,
+            String data
+    ) throws ABIInvokeException {
+        try {
+            Web3j web3j = getRpcWeb3j(rpcUrl);
+
+            // Step 1 参数处理
+            BigInteger nonce = getNonce(web3j, address);
+            BigInteger gasPrice = getGasPrice(web3j);
+            if (gasLimit == null) {
+                gasLimit = dynamicCalGasLimit(
+                        web3j, contractAddress, address, gasPrice, data
+                );
+            }
+            if (value == null) value = BigInteger.ZERO;
+
+            // Step 2 构建交易信息
+            RawTransaction rawTX = RawTransaction.createTransaction(
+                    nonce, gasPrice, gasLimit, contractAddress, value, data
             );
+
+            byte[] signedMessage = TransactionEncoder.signMessage(rawTX, Credentials.create(primaryKey));
+            String hexString = Numeric.toHexString(signedMessage);
+
+            // Step 3 发生交友
+            EthSendTransaction send = web3j.ethSendRawTransaction(hexString).send();
+
+            // Step 4 获取交易hash值
+            if (send.hasError()) {
+                throw new ABIInvokeException("contract transaction Error: " + send.getError().getMessage());
+            }
+            return send.getTransactionHash();
+        } catch (Exception e) {
+            throw new ABIInvokeException("contract transaction Error: ", e);
         }
-        if (value == null) value = BigInteger.ZERO;
-
-        // Step 2 构建交易信息
-        RawTransaction rawTX = RawTransaction.createTransaction(
-                nonce, gasPrice, gasLimit, contractAddress, value, encodeFunction
-        );
-
-        byte[] signedMessage = TransactionEncoder.signMessage(rawTX, Credentials.create(primaryKey));
-        String hexString = Numeric.toHexString(signedMessage);
-
-        // Step 3 发生交友
-        EthSendTransaction send = web3j.ethSendRawTransaction(hexString).send();
-
-        // Step 4 获取交易hash值
-        if (send.hasError()) {
-            throw new IOException("Transaction Error: " + send.getError().getMessage());
-        }
-        return send.getTransactionHash();
     }
 
     /**
@@ -293,18 +365,69 @@ public class EthWalletUtil {
             String walletAddress,
             BigInteger gasPrice,
             String encodeFunction
-    ) throws IOException {
+    ) throws ABIInvokeException {
+        try {
+            EthEstimateGas ethEstimateGas = web3j.ethEstimateGas(Transaction.createFunctionCallTransaction(
+                    walletAddress,
+                    null,
+                    gasPrice,
+                    null,
+                    contractAddress,
+                    BigInteger.ZERO,
+                    encodeFunction
+            )).send();
 
-        EthEstimateGas ethEstimateGas = web3j.ethEstimateGas(Transaction.createFunctionCallTransaction(
-                contractAddress,
-                null,
-                gasPrice,
-                null,
-                walletAddress,
-                BigInteger.ZERO,
-                encodeFunction
-        )).send();
-        return ethEstimateGas.getAmountUsed();
+            if (ethEstimateGas.hasError()) {
+                throw new ABIInvokeException("dynamic cal gas failed: " + ethEstimateGas.getError().getMessage());
+            }
+            return ethEstimateGas.getAmountUsed();
+        } catch (Exception e) {
+            throw new ABIInvokeException("dynamic cal gas fee error", e);
+        }
+    }
+
+    /**
+     * 等待交易完成
+     *
+     * @param rpcUrl          rpcUrl
+     * @param transactionHash transactionHash
+     * @return TransactionReceipt
+     * @throws ABIInvokeException ABIInvokeException
+     */
+    public static TransactionReceipt waitForTransactionReceipt(String rpcUrl, String transactionHash) throws ABIInvokeException {
+        return waitForTransactionReceipt(getRpcWeb3j(rpcUrl), transactionHash);
+    }
+
+    /**
+     * 等待交易完成
+     *
+     * @param web3j           web3j
+     * @param transactionHash 交易hash
+     * @return TransactionReceipt
+     * @throws ABIInvokeException 等待完成
+     */
+    public static TransactionReceipt waitForTransactionReceipt(
+            Web3j web3j, String transactionHash
+    ) throws ABIInvokeException {
+        for (int i = 0; i < TRANSACTION_ATTEMPTS; i++) {
+            try {
+                EthGetTransactionReceipt transactionReceipt = web3j.ethGetTransactionReceipt(transactionHash).send();
+                if (transactionReceipt.getTransactionReceipt().isPresent()) {
+                    return transactionReceipt.getTransactionReceipt().get();
+                } else {
+                    try {
+                        Thread.sleep(TRANSACTION_SLEEP_MILLIS);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        throw new ABIInvokeException("Transaction receipt not received after "
+                + (TRANSACTION_ATTEMPTS * TRANSACTION_SLEEP_MILLIS / 1000) + " seconds");
     }
 
     /**
@@ -316,7 +439,7 @@ public class EthWalletUtil {
      * @throws IOException IOException
      */
     public static BigInteger getNonce(String rpcUrl, String address) throws IOException {
-        return getNonce(Web3j.build(new HttpService(rpcUrl)), address);
+        return getNonce(getRpcWeb3j(rpcUrl), address);
     }
 
     /**
@@ -340,7 +463,7 @@ public class EthWalletUtil {
      * @throws IOException IOException
      */
     public static BigInteger getGasPrice(String rpcUrl) throws IOException {
-        return getGasPrice(Web3j.build(new HttpService(rpcUrl)));
+        return getGasPrice(getRpcWeb3j(rpcUrl));
     }
 
     /**
@@ -352,5 +475,57 @@ public class EthWalletUtil {
      */
     public static BigInteger getGasPrice(@NotNull Web3j web3j) throws IOException {
         return web3j.ethGasPrice().send().getGasPrice();
+    }
+
+    /**
+     * 数量单位化，乘decimals
+     *
+     * @param amount   数量
+     * @param decimals 多少个0
+     * @return 单位化的数量
+     */
+    public static BigInteger parseUnits(BigDecimal amount, int decimals) {
+        return amount.multiply(BigDecimal.TEN.pow(decimals))
+                .setScale(0, RoundingMode.DOWN).toBigIntegerExact();
+    }
+
+    /**
+     * 数量单位化，除decimals
+     *
+     * @param amount   数量
+     * @param decimals 多少个0
+     * @return 单位化的数量
+     */
+    public static BigDecimal formatUnits(BigInteger amount, int decimals) {
+        return new BigDecimal(amount).divide(BigDecimal.TEN.pow(decimals), 2, RoundingMode.DOWN);
+    }
+
+    /**
+     * 根据滑点百分比计算最小可接受输出（整数版本）
+     *
+     * @param amountInWei     预期数量（最小单位，比如 wei）
+     * @param slippagePercent 滑点百分比（例如 1 表示 1%）
+     * @return 最小可接受输出
+     */
+    public static BigInteger calculateMinOutput(BigInteger amountInWei, int slippagePercent) {
+        BigInteger numerator = BigInteger.valueOf(100 - slippagePercent);
+        BigInteger denominator = BigInteger.valueOf(100);
+        return amountInWei.multiply(numerator).divide(denominator);
+    }
+
+    /**
+     * BigDecimal 版本（用于可读金额 + 精度）
+     *
+     * @param amount          原始金额（例如 1.23）
+     * @param decimals        小数精度（例如 ERC20 token 通常是 18）
+     * @param slippagePercent 滑点百分比（例如 1 表示 1%）
+     * @return 最小可接受输出（单位：最小单位）
+     */
+    public static BigInteger calculateMinOutput(BigDecimal amount, int decimals, int slippagePercent) {
+        BigDecimal factor = BigDecimal.TEN.pow(decimals);
+        BigDecimal amountInWei = amount.multiply(factor);
+        BigDecimal min = amountInWei.multiply(BigDecimal.valueOf(100 - slippagePercent))
+                .divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN);
+        return min.toBigIntegerExact();
     }
 }

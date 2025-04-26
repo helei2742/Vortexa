@@ -68,16 +68,22 @@ public class CustomCommandProcessor {
         response.setFlag(-1 * request.getFlag());
 
         // 执行注册的回调方法
-        RequestHandleResult result = handler.handlerRequest(request);
-
-        if (result == null || !result.getSuccess()) {
+        try {
+            RequestHandleResult result = handler.handlerRequest(request);
+            if (result == null || !result.getSuccess()) {
+                response.setCode(RemotingCommandCodeConstants.FAIL);
+            } else {
+                response.setCode(RemotingCommandCodeConstants.SUCCESS);
+                response.setBody(Serializer.Algorithm.JDK.serialize(
+                        new RPCResultWrapper<>(result.getData(), null)
+                ));
+            }
+        } catch (Exception e) {
             response.setCode(RemotingCommandCodeConstants.FAIL);
-        } else {
-            response.setCode(RemotingCommandCodeConstants.SUCCESS);
-            response.setBody(Serializer.Algorithm.JDK.serialize(
-                    new RPCResultWrapper<>(result.getData(), null)
-            ));
+            response.setErrorMessage(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
+            log.error("custom command execute error", e);
         }
+
         return response;
     }
 

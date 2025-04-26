@@ -25,8 +25,8 @@ vortexa:
 #      - klok_test
       # - flow3_bot_test
       - taker_google
+      - beamable_test
       - magic_newton_v2
-#      - beamable_test
     bot-common-config:
       two_captcha_api_key: ''
     bot-instance-jar-names:

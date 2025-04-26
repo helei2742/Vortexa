@@ -16,6 +16,8 @@ public class ExecuteItem {
 
     private Integer retryTimes = 1;
 
+    private Boolean errorSkip;
+
     private ExecuteLogic executeLogic;
 
     private ExecuteLogic resetLogic;

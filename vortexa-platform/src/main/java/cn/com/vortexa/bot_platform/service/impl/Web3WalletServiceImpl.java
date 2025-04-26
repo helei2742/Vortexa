@@ -6,6 +6,7 @@ import cn.com.vortexa.bot_platform.web3.SmartContractInvoker;
 import cn.com.vortexa.web3.dto.SCInvokeParams;
 import cn.com.vortexa.web3.dto.SCInvokeResult;
 import cn.com.vortexa.web3.dto.Web3ChainInfo;
+import cn.com.vortexa.web3.exception.ABIInvokeException;
 import cn.com.vortexa.web3.service.IWeb3WalletOPTRPC;
 import cn.hutool.core.collection.CollUtil;
 
@@ -67,7 +68,7 @@ public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper,
     }
 
     @Override
-    public SCInvokeResult erc20ABIInvokeRPC(SCInvokeParams scInvokeParams) throws IOException {
+    public SCInvokeResult erc20ABIInvokeRPC(SCInvokeParams scInvokeParams) throws ABIInvokeException {
         Integer retryTimes = scInvokeParams.getRetryTimes();
         for (int i = 1; i <= retryTimes; i++) {
             Result result = smartContractInvoke(scInvokeParams);
@@ -130,7 +131,7 @@ public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper,
     }
 
     @Override
-    public Result smartContractInvoke(SCInvokeParams invokeParams) throws IOException {
+    public Result smartContractInvoke(SCInvokeParams invokeParams) throws ABIInvokeException {
         if (invokeParams.getWalletId() == null && invokeParams.getWalletInfo() == null) {
             return Result.fail("walletId or walletInfo must be provided");
         }
@@ -144,6 +145,7 @@ public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper,
         WalletInfo wallet = invokeParams.getWalletInfo() == null
                 ? new WalletInfo(chainType, web3WalletMapper.selectById(invokeParams.getWalletId()))
                 : invokeParams.getWalletInfo();
+
 
         SCInvokeResult result = switch (chainType) {
             case ETH -> SmartContractInvoker.CHAIN.ETH.invokeSCFunction(wallet, chainInfo, invokeParams);

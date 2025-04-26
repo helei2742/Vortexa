@@ -1,5 +1,6 @@
 package cn.com.vortexa.bot_platform.service;
 
+import cn.com.vortexa.web3.exception.ABIInvokeException;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import cn.com.vortexa.common.dto.Result;
@@ -44,5 +45,5 @@ public interface IWeb3WalletService extends IService<Web3Wallet>, ImportService 
      * @param invokeParams invokeParams
      * @return Result
      */
-    Result smartContractInvoke(SCInvokeParams invokeParams) throws IOException;
+    Result smartContractInvoke(SCInvokeParams invokeParams) throws IOException, ABIInvokeException;
 }

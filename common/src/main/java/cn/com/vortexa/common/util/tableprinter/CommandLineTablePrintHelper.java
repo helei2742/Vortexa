@@ -16,7 +16,7 @@ public class CommandLineTablePrintHelper {
      * @param tClass tClass
      * @return 表格字符串
      */
-    public static  String generateTableString(List<?> list, Class<?> tClass) {
+    public static String generateTableString(List<?> list, Class<?> tClass) {
         List<String> tableHeader = new ArrayList<>();
         List<Field> tableFields = new ArrayList<>();
 
@@ -43,7 +43,7 @@ public class CommandLineTablePrintHelper {
         String[][] table = new String[list.size()][tableHeader.size()];
 
         for (int i = 0; i < list.size(); i++) {
-            Object obj =  list.get(i);
+            Object obj = list.get(i);
 
             table[i][0] = String.valueOf(i);
             for (int i1 = 1; i1 <= tableFields.size(); i1++) {

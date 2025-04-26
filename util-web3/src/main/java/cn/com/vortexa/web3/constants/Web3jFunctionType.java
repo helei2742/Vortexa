@@ -5,6 +5,7 @@ package cn.com.vortexa.web3.constants;
  * @since 2025/4/23 10:54
  */
 public enum Web3jFunctionType {
+    Int128,
     Uint256,
     Bool,
     Address

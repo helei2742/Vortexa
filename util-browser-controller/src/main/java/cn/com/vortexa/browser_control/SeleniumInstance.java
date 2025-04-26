@@ -7,6 +7,7 @@ import cn.com.vortexa.browser_control.execute.ExecuteLogic;
 import cn.com.vortexa.browser_control.util.SeleniumProxyAuth;
 import cn.com.vortexa.browser_control.util.SeleniumUtil;
 import cn.hutool.core.lang.Pair;
+import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -179,9 +180,11 @@ public abstract class SeleniumInstance implements SeleniumOperate {
                             }
                         }
                     }
-                    // Step 3.1.1.4 超过次数抛出异常
-                    throw new RuntimeException("[%S]-[%s]-[%s] invoke logic error, out of limit %s"
-                            .formatted(instanceId, groupName, item.getName(), retryTimes));
+                    if (BooleanUtil.isTrue(item.getErrorSkip())) {
+                        // Step 3.1.1.4 超过次数抛出异常
+                        throw new RuntimeException("[%S]-[%s]-[%s] invoke logic error, out of limit %s"
+                                .formatted(instanceId, groupName, item.getName(), retryTimes));
+                    }
                 });
             } else {
                 // Step 3.1.2 不能进入执行

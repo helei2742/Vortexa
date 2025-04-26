@@ -32,7 +32,7 @@ public class AutoBotJob implements Job {
             // 调用invoke方法
             invoker.invokeJob(key, params);
         } else {
-            log.warn("job[{}] invoker is null", key);
+            log.debug("job[{}] invoker is null", key);
         }
     }
 

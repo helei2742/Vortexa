@@ -27,4 +27,7 @@ public class MapConfigKey {
     public static final String ACCESS_TOKEN_KEY_V2 ="accessToken";
     public static final String REFRESH_TOKEN_KEY_V1 = "refresh_token";
     public static final String REFRESH_TOKEN_KEY_V2 = "refreshToken";
+
+    public static final String MAX_USE_PERCENT_KEY = "max_use_percent";
+    public static final String MIN_USE_PERCENT_KEY = "min_use_percent";
 }

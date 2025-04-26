@@ -7,9 +7,9 @@ import cn.com.vortexa.web3.constants.Web3jFunctionType;
 import cn.com.vortexa.web3.dto.SCInvokeParams;
 import cn.com.vortexa.web3.dto.SCInvokeResult;
 import cn.com.vortexa.web3.dto.Web3ChainInfo;
+import cn.com.vortexa.web3.exception.ABIInvokeException;
 import cn.hutool.core.lang.Pair;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.List;
@@ -42,25 +42,25 @@ public interface IWeb3WalletOPTRPC {
      * @param scInvokeParams abi调用参数
      * @return 调用结果
      */
-    SCInvokeResult erc20ABIInvokeRPC(SCInvokeParams scInvokeParams) throws IOException;
+    SCInvokeResult erc20ABIInvokeRPC(SCInvokeParams scInvokeParams) throws ABIInvokeException;
 
     /**
      * 代币授权
      *
-     * @param chainInfo chainInfo
-     * @param walletId 钱包id
+     * @param chainInfo     chainInfo
+     * @param walletId      钱包id
      * @param tokenContract 合约地址
-     * @param amount 授权数量
+     * @param amount        授权数量
      * @return Result
-     * @throws IOException  IOException
+     * @throws ABIInvokeException ABIInvokeException
      */
     default Boolean erc20ApproveRPC(Web3ChainInfo chainInfo, Integer walletId, String tokenContract, String spenderAddress, BigInteger amount)
-            throws IOException {
+            throws ABIInvokeException {
         SCInvokeResult result = erc20ABIInvokeRPC(SCInvokeParams.builder()
                 .walletId(walletId)
                 .chainInfo(chainInfo)
-                .functionName("approve")
                 .contractAddress(tokenContract)
+                .functionName("approve")
                 .paramsTypes(List.of(
                         Pair.of(Web3jFunctionType.Address, spenderAddress),
                         Pair.of(Web3jFunctionType.Uint256, amount)
@@ -72,7 +72,7 @@ public interface IWeb3WalletOPTRPC {
         try {
             return (Boolean) result.getResult().getFirst();
         } catch (Exception e) {
-            throw new IOException("erc20 approve rpc error, "
+            throw new ABIInvokeException("erc20 approve rpc error, "
                     + (e.getCause() == null ? "" : e.getCause().getMessage()));
         }
     }
@@ -80,15 +80,15 @@ public interface IWeb3WalletOPTRPC {
     /**
      * 查某token的数量
      *
-     * @param chainInfo chainInfo
-     * @param walletId 钱包id
+     * @param chainInfo     chainInfo
+     * @param walletId      钱包id
      * @param tokenContract 合约地址
      * @param walletAddress 钱包地址
-     * @return  Result
-     * @throws IOException  IOException
+     * @return Result
+     * @throws ABIInvokeException ABIInvokeException
      */
     default BigInteger erc20BalanceOfRPC(Web3ChainInfo chainInfo, Integer walletId, String tokenContract, String walletAddress)
-            throws IOException {
+            throws ABIInvokeException {
         SCInvokeResult result = erc20ABIInvokeRPC(SCInvokeParams.builder()
                 .walletId(walletId)
                 .chainInfo(chainInfo)
@@ -105,22 +105,22 @@ public interface IWeb3WalletOPTRPC {
         try {
             return (BigInteger) result.getResult().getFirst();
         } catch (Exception e) {
-            throw new IOException("erc20 balanceOf rpc error, " + (e.getCause() == null ? "" : e.getCause().getMessage()));
+            throw new ABIInvokeException("erc20 balanceOf rpc error, " + (e.getCause() == null ? "" : e.getCause().getMessage()));
         }
     }
 
     /**
      * 查看spenderAddress能够使用的tokenContract的数量
      *
-     * @param chainInfo chainInfo
-     * @param walletId 钱包id
-     * @param tokenContract 合约地址
+     * @param chainInfo      chainInfo
+     * @param walletId       钱包id
+     * @param tokenContract  合约地址
      * @param spenderAddress spenderAddress
-     * @return  Result
-     * @throws IOException  IOException
+     * @return Result
+     * @throws ABIInvokeException ABIInvokeException
      */
     default BigInteger erc20AllowanceRPC(Web3ChainInfo chainInfo, Integer walletId, String tokenContract, String spenderAddress, String walletAddress)
-            throws IOException {
+            throws ABIInvokeException {
         SCInvokeResult result = erc20ABIInvokeRPC(SCInvokeParams.builder()
                 .walletId(walletId)
                 .chainInfo(chainInfo)
@@ -137,21 +137,21 @@ public interface IWeb3WalletOPTRPC {
         try {
             return (BigInteger) result.getResult().getFirst();
         } catch (Exception e) {
-            throw new IOException("erc20 allowance rpc error, " + (e.getCause() == null ? "" : e.getCause().getMessage()));
+            throw new ABIInvokeException("erc20 allowance rpc error, " + (e.getCause() == null ? "" : e.getCause().getMessage()));
         }
     }
 
     /**
      * 查看spenderAddress能够使用的tokenContract的数量
      *
-     * @param chainInfo chainInfo
-     * @param walletId 钱包id
+     * @param chainInfo     chainInfo
+     * @param walletId      钱包id
      * @param tokenContract 合约地址
-     * @return  Result
-     * @throws IOException  IOException
+     * @return Result
+     * @throws ABIInvokeException ABIInvokeException
      */
     default BigInteger erc20DecimalsRPC(Web3ChainInfo chainInfo, Integer walletId, String tokenContract)
-            throws IOException {
+            throws ABIInvokeException {
         SCInvokeResult result = erc20ABIInvokeRPC(SCInvokeParams.builder()
                 .walletId(walletId)
                 .chainInfo(chainInfo)
@@ -166,7 +166,7 @@ public interface IWeb3WalletOPTRPC {
         try {
             return (BigInteger) result.getResult().getFirst();
         } catch (Exception e) {
-            throw new IOException("erc20 decimals rpc error, " + (e.getCause() == null ? "" : e.getCause().getMessage()));
+            throw new ABIInvokeException("erc20 decimals rpc error, " + (e.getCause() == null ? "" : e.getCause().getMessage()));
         }
     }
 }

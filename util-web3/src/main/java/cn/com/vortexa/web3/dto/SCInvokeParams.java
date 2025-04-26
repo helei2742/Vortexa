@@ -51,14 +51,21 @@ public class SCInvokeParams implements Serializable {
      */
     private BigInteger value;
 
-    /**
-     * abi方法名
-     */
-    private String functionName;
+
     /**
      * 只读方法
      */
     private Boolean readFunction;
+
+    /**
+     * 含交易信息的数据, 有这个，就不会在用functionName、paramsTypes、resultTypes构建交易data了
+     */
+    private String data;
+
+    /**
+     * abi方法名
+     */
+    private String functionName;
 
     /**
      * 参数类型
