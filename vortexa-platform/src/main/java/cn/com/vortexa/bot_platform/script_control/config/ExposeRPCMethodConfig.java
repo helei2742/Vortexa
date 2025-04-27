@@ -120,4 +120,14 @@ public class ExposeRPCMethodConfig {
                 .ref(ref)
                 .build();
     }
+
+    @Bean
+    @ConditionalOnBean(IRewordInfoRPC.class)
+    public RPCServiceInfo<IRewordInfoRPC> rewordInfoRPCRPCServiceInfo(IRewordInfoRPC ref) {
+        return RPCServiceInfo
+                .<IRewordInfoRPC>builder()
+                .interfaces(IRewordInfoRPC.class)
+                .ref(ref)
+                .build();
+    }
 }

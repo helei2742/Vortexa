@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
+        import java.util.function.Supplier;
 
 public abstract class AbstractAutoBot {
 
@@ -173,13 +173,7 @@ public abstract class AbstractAutoBot {
 
         try {
             // Step 2.4 初始化存储的Table
-            logger.info("start init database table");
-            // 检查对应分表是否存在
-            if (!botApi.getBotAccountService()
-                    .checkAndCreateShardedTable(botInfo.getId(), getAutoBotConfig().getBotKey(), true)) {
-                throw new RuntimeException("bot account table create error");
-            }
-            logger.info("database table init finish");
+            initDBTable(botApi);
 
             // Step 2.5 初始化BotInstance实例
             logger.info("start init bot instance");
@@ -605,5 +599,24 @@ public abstract class AbstractAutoBot {
             }
         }
         return false;
+    }
+
+    /**
+     * 初始化数据库表
+     *
+     * @param botApi    botApi
+     * @throws SQLException SQLException
+     */
+    private void initDBTable(BotApi botApi) throws SQLException {
+        logger.info("start init database table");
+        // 检查对应分表是否存在
+        if (!botApi.getBotAccountService()
+                .checkAndCreateShardedTable(botInfo.getId(), getAutoBotConfig().getBotKey(), true)) {
+            throw new RuntimeException("bot account table create error");
+        }
+        if (!botApi.getRewordInfoService().checkAndCreateShardedTable(botInfo.getId(), getAutoBotConfig().getBotKey())) {
+            throw new RuntimeException("account reword table create error");
+        }
+        logger.info("database table init finish");
     }
 }

@@ -8,14 +8,6 @@ import java.io.Serializable;
  */
 public enum BotJobType implements Serializable {
     /**
-     * 注册
-     */
-    REGISTER,
-    /**
-     * 登录
-     */
-    LOGIN,
-    /**
      * 查询奖励
      */
     QUERY_REWARD,

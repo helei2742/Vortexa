@@ -120,9 +120,13 @@ public class ScriptNodeConfiguration implements InitializingBean {
      */
     private void initBotInstance() {
         botKeyConfigMap = new HashMap<>();
-        String botInstanceConfigDir = FileUtil.getBotInstanceConfigDir();
+        Path botInstanceConfigPath = Paths.get(FileUtil.getBotInstanceConfigDir());
+        if (!Files.exists(botInstanceConfigPath) || !Files.isDirectory(botInstanceConfigPath)) {
+            log.warn("no bot instance config dir [{}]", botInstanceConfigPath);
+            return;
+        }
 
-        try (Stream<Path> walk = Files.walk(Paths.get(botInstanceConfigDir), 5)) {
+        try (Stream<Path> walk = Files.walk(botInstanceConfigPath, 5)) {
             walk.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".yaml")).forEach(configFile -> {
                 try {
                     AutoBotConfig botConfig = YamlConfigLoadUtil.load(configFile.toFile(), BOT_INSTANCE_CONFIG_PREFIX,

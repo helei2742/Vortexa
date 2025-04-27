@@ -83,28 +83,6 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
     }
 
     /**
-     * 注册账户
-     *
-     * @return CompletableFuture<Result>
-     */
-    public abstract CompletableFuture<ACListOptResult> registerAccount();
-
-    /**
-     * 登录并获取token
-     *
-     * @return CompletableFuture<Result>
-     */
-    public abstract CompletableFuture<ACListOptResult> loginAndTakeTokenAccount();
-
-    /**
-     * 更新账户奖励信息
-     *
-     * @return CompletableFuture<Result>
-     */
-    @Deprecated
-    public abstract CompletableFuture<ACListOptResult> updateAccountRewordInfo();
-
-    /**
      * 获取jb name列表
      *
      * @return List<String>

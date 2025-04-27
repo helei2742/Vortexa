@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.vortexa.bot_platform.mapper.RewordInfoMapper">
+
+    <update id="createIfTableNotExist">
+        CREATE TABLE IF NOT EXISTS t_reword_info
+        (
+            id                   INT PRIMARY KEY AUTO_INCREMENT,
+            bot_id               INT NOT NULL,
+            bot_key              varchar(255)    NOT NULL,
+            bot_account_id       INT NOT NULL,
+            total_points         DOUBLE,
+            daily_points         DOUBLE,
+            insert_datetime      DATETIME DEFAULT CURRENT_TIMESTAMP,
+            update_datetime      DATETIME,
+            valid             TINYINT(1) default 1
+        );
+    </update>
+
+    <insert id="saveBatch">
+        insert into t_reword_info (
+        bot_id, bot_key, bot_account_id, total_points, daily_points, update_datetime
+        )
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.botId}, #{item.botKey}, #{item.botAccountId}, #{item.totalPoints}, #{item.dailyPoints},current_timestamp)
+        </foreach>
+    </insert>
+</mapper>

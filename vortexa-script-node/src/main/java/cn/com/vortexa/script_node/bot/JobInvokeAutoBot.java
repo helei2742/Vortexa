@@ -113,11 +113,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
             } else if (StrUtil.isNotBlank(botJobMethodAnno.cronExpression())) {
                 cronExpression = new CronExpression(botJobMethodAnno.cronExpression());
                 logger.info("%s cronExpression:[%s]".formatted(jobName, cronExpression.getCronExpression()));
-            } else if (
-                    botJobMethodAnno.jobType() != BotJobType.ONCE_TASK
-                            && botJobMethodAnno.jobType() != BotJobType.REGISTER
-                            && botJobMethodAnno.jobType() != BotJobType.LOGIN
-            ) {
+            } else if (botJobMethodAnno.jobType() != BotJobType.ONCE_TASK) {
                 throw new IllegalArgumentException("定时任务需设置时间间隔或cron表达式");
             }
 
@@ -147,7 +143,9 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
                     .dynamicTimeWindowMinute(botJobMethodAnno.dynamicTimeWindowMinute())
                     .syncExecute(botJobMethodAnno.syncExecute())
                     .build();
-
+            if (botJobMethodAnno.jobType() == BotJobType.QUERY_REWARD) {
+                autoBotJobParam.setUniqueAccount(true);
+            }
             // Step 4 设置
             setJobParam(jobName, autoBotJobParam);
 
@@ -178,7 +176,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
             String jobName,
             JobExecuteResultHandler jobExecuteResultHandler
     ) {
-        this. jobExecuteResultHandlerMap.put(jobName, jobExecuteResultHandler);
+        this.jobExecuteResultHandlerMap.put(jobName, jobExecuteResultHandler);
     }
 
     /**
@@ -431,7 +429,10 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
             if (resultHandler != null) {
                 resultHandler.handle(acListOptResult);
             }
-        }, getExecutorService());
+        }, getExecutorService()).exceptionally(exception->{
+            logger.error("[%s] job invoke exception", exception);
+            return null;
+        });
     }
 
     /**

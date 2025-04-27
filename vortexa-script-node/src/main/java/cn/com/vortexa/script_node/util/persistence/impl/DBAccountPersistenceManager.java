@@ -1,14 +1,14 @@
 package cn.com.vortexa.script_node.util.persistence.impl;
 
 import cn.com.vortexa.common.entity.*;
-        import cn.com.vortexa.script_node.service.BotApi;
+import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.script_node.util.persistence.AbstractPersistenceManager;
 import cn.com.vortexa.common.util.propertylisten.PropertyChangeInvocation;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 import java.util.*;
-        import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -78,6 +78,8 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
             } catch (SQLException e) {
                 log.error("更新Bot Account Context[{}] error", target, e);
             }
+        } else if (target instanceof RewordInfo) {
+
         }
     }
 
@@ -159,15 +161,6 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
                     .collect(Collectors.toMap(Web3Wallet::getId, account -> account));
         }, executorService);
 
-//        CompletableFuture<Map<Integer, RewordInfo>> rewordInfoMapFuture = CompletableFuture.supplyAsync(() -> {
-//            rewordInfoIds.remove(null);
-//            IRewordInfoService rewordInfoService = botApi.getRewordInfoService();
-//            return rewordInfoService
-//                    .batchQueryByIds(new ArrayList<>(rewordInfoIds))
-//                    .stream()
-//                    .collect(Collectors.toMap(RewordInfo::getProjectAccountId, account -> account));
-//        }, executorService);
-
         Map<Integer, AccountBaseInfo> accountBaseInfoMap = accountBaseInfoMapFuture.get();
         Map<Integer, TwitterAccount> twitterAccountMap = twitterAccountMapFuture.get();
         Map<Integer, DiscordAccount> discordAccountMap = discordAccountMapFuture.get();
@@ -175,7 +168,6 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
         Map<Integer, BrowserEnv> browserEnvMap = browserEnvMapFuture.get();
         Map<Integer, TelegramAccount> telegramAccountMap = telegramAccountMapFuture.get();
         Map<Integer, Web3Wallet> walletMap = walletMapFuture.get();
-//        Map<Integer, RewordInfo> rewordInfoMap = rewordInfoMapFuture.get();
 
         accountContexts.forEach(accountContext -> {
             accountContext.setAccountBaseInfo(accountBaseInfoMap.get(accountContext.getAccountBaseInfoId()));
@@ -185,7 +177,6 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
             accountContext.setBrowserEnv(browserEnvMap.get(accountContext.getBrowserEnvId()));
             accountContext.setTelegram(telegramAccountMap.get(accountContext.getTelegramId()));
             accountContext.setWallet(walletMap.get(accountContext.getWalletId()));
-//            accountContext.setRewordInfo(rewordInfoMap.get(accountContext.getId()));
         });
     }
 }

@@ -7,9 +7,7 @@ import cn.com.vortexa.script_node.util.AccountInfoPrinter;
 import cn.com.vortexa.script_node.util.ScriptBotLauncher;
 import cn.com.vortexa.script_node.view.commandMenu.CommandMenuNode;
 import cn.com.vortexa.script_node.view.commandMenu.DefaultMenuType;
-import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.script_node.view.commandMenu.PageMenuNode;
-import cn.com.vortexa.common.dto.ACListOptResult;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.entity.BrowserEnv;
@@ -26,8 +24,6 @@ import org.quartz.SchedulerException;
 
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -63,9 +59,6 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
 
         for (DefaultMenuType menuType : defaultMenuTypes) {
             botMenuNode.addSubMenu(switch (menuType) {
-                case REGISTER -> buildRegisterMenuNode();
-                case VERIFIER -> buildVerifierMenuNode();
-                case LOGIN -> buildQueryTokenMenuNode();
                 case ACCOUNT_LIST -> buildAccountListMenuNode();
                 case PROXY_LIST -> buildProxyListMenuNode();
                 case BROWSER_ENV_LIST -> buildBrowserListMenuNode();
@@ -106,68 +99,6 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
             keyBot.stop();
             return "";
         }));
-    }
-
-    /**
-     * 构建注册菜单节点
-     *
-     * @return CommandMenuNode
-     */
-    private CommandMenuNode buildRegisterMenuNode() {
-        CommandMenuNode registerMenu = new CommandMenuNode("注册",
-                "请确认设置后运行", this::printCurrentRegisterConfig);
-
-        CommandMenuNode interInvite = new CommandMenuNode(
-                "填入邀请码",
-                "请输入邀请码：",
-                this::printCurrentRegisterConfig
-        );
-        interInvite.setResolveInput(input -> {
-            AutoBotConfig autoBotConfig = getBot().getAutoBotConfig();
-            log.info("邀请码修改[{}]->[{}]", autoBotConfig.getConfig(INVITE_CODE_KEY), input);
-            autoBotConfig.setConfig(INVITE_CODE_KEY, input);
-        });
-
-        return registerMenu
-                .addSubMenu(interInvite)
-                .addSubMenu(new CommandMenuNode(
-                        true,
-                        "开始注册",
-                        "开始注册所有账号...",
-                        () -> {
-                            try {
-
-                                return getBot().registerAccount().get().toString();
-                            } catch (Exception e) {
-                                return "registry error, " + e.getMessage();
-                            }
-                        }
-                ));
-    }
-
-    private CommandMenuNode buildVerifierMenuNode() {
-        return new CommandMenuNode("验证邮箱", "请选择验证的账户类型",
-                () -> "当前的邮箱类型：" + getBot().getAutoBotConfig().getConfig(EMAIL_VERIFIER_TYPE));
-    }
-
-    /**
-     * 获取token
-     *
-     * @return CommandMenuNode
-     */
-    private CommandMenuNode buildQueryTokenMenuNode() {
-        return new CommandMenuNode("获取token", "开始获取token", () -> {
-            CompletableFuture<ACListOptResult> getToken = getBot().loginAndTakeTokenAccount();
-            try {
-                ACListOptResult acListOptResult = getToken.get();
-
-                return acListOptResult.printStr();
-            } catch (InterruptedException | ExecutionException e) {
-                getBot().logger.error("获取token异常, " +
-                        (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
-                return "";
-            }
-        });
     }
 
     /**
@@ -247,8 +178,8 @@ public class ScriptNodeCMDLineMenu extends CommandLineMenu {
             try {
                 return getBot().getBotApi()
                         .getRewordInfoService()
-                        .conditionPageQuery(pageNum, pageSize, new HashMap<>());
-            } catch (SQLException e) {
+                        .queryAccountReword(pageNum, pageSize, new HashMap<>());
+            } catch (Exception e) {
                 getBot().logger.error(
                         "查询账号收益列表出错, " + (e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
                 return null;

@@ -1,7 +1,41 @@
 package cn.com.vortexa.script_node.service;
 
-import cn.com.vortexa.common.entity.RewordInfo;
-import cn.com.vortexa.db_layer.service.IBaseService;
+import com.baomidou.mybatisplus.extension.service.IService;
 
-public interface IRewordInfoService extends IBaseService<RewordInfo> {
+import cn.com.vortexa.common.dto.PageResult;
+import cn.com.vortexa.common.entity.RewordInfo;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+
+public interface IRewordInfoService extends IService<RewordInfo> {
+
+    /**
+     * 查找并传几个分表
+     *
+     * @param id id
+     * @param botKey botKey
+     * @return boolean
+     */
+    boolean checkAndCreateShardedTable(Integer id, String botKey) throws SQLException;
+
+    /**
+     * 查询账户收益
+     *
+     * @param pageNum pageNum
+     * @param pageSize pageSize
+     * @param params params
+     * @return String
+     */
+    PageResult<RewordInfo> queryAccountReword(Integer pageNum, Integer pageSize, HashMap<String, Object> params);
+
+    /**
+     * 保存收益进库，并上传
+     *
+     * @param botId botId
+     * @param botKey botKey
+     * @param rewordInfos rewordInfos
+     */
+    void saveAndUploadRewordInfos(Integer botId, String botKey, List<RewordInfo> rewordInfos);
 }

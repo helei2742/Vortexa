@@ -1,11 +1,11 @@
 package cn.com.vortexa.bot_platform.service;
 
+import cn.com.vortexa.common.entity.Web3Wallet;
+import cn.com.vortexa.db_layer.service.IBaseService;
 import cn.com.vortexa.web3.exception.ABIInvokeException;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.web3.SignatureMessage;
-import cn.com.vortexa.common.entity.Web3Wallet;
 import cn.com.vortexa.db_layer.service.ImportService;
 import cn.com.vortexa.web3.dto.SCInvokeParams;
 
@@ -21,7 +21,7 @@ import java.util.Map;
  * @author com.helei
  * @since 2025-04-21
  */
-public interface IWeb3WalletService extends IService<Web3Wallet>, ImportService {
+public interface IWeb3WalletService  extends IBaseService<Web3Wallet>, ImportService {
 
     /**
      * 保存钱包

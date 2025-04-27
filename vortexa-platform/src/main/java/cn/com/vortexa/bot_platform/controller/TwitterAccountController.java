@@ -45,7 +45,6 @@ public class TwitterAccountController {
         );
     }
 
-
     @PostMapping("/delete")
     public Result delete(@RequestBody DeleteVO deleteVO) {
         Boolean delete = twitterAccountService.delete(deleteVO.getIds());

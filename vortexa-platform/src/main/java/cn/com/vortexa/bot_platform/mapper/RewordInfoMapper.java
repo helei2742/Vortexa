@@ -1,4 +1,4 @@
-package cn.com.vortexa.script_node.mapper;
+package cn.com.vortexa.bot_platform.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
@@ -8,13 +8,11 @@ import cn.com.vortexa.db_layer.plugn.table_shard.strategy.BotIdBasedTableShardSt
 
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author com.helei
- * @since 2025-02-05
+ * @author helei
+ * @since 2025/4/27 15:41
  */
 @TableShard(
         tableNamePrefix = RewordInfo.BOT_REWORD_INFO_TABLE_PREFIX,
@@ -25,6 +23,22 @@ import org.apache.ibatis.annotations.Param;
 )
 public interface RewordInfoMapper extends BaseMapper<RewordInfo> {
 
+    /**
+     * 不存在分表则创建
+     *
+     * @param botId botId
+     * @param botKey botKey
+     * @return Integer
+     */
     Integer createIfTableNotExist(@Param("botId") Integer botId, @Param("botKey") String botKey);
 
+    /**
+     * 批量保存
+     *
+     * @param botId botId
+     * @param botKey botKey
+     * @param rewordInfos rewordInfos
+     * @return int
+     */
+    int saveBatch(@Param("botId") Integer botId, @Param("botKey") String botKey, @Param("list")List<RewordInfo> rewordInfos);
 }

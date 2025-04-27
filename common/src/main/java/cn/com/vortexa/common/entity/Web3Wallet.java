@@ -11,6 +11,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
 import lombok.AllArgsConstructor;
@@ -58,6 +59,9 @@ public class Web3Wallet implements Serializable {
     private String btcPrivateKey;
     @TableField("btc_address")
     private String btcAddress;
+
+    @TableField("params")
+    private Map<String, Object> params;
 
     @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
     private LocalDateTime insertDatetime;

@@ -5,13 +5,18 @@ import cn.com.vortexa.common.util.tableprinter.CommandTableField;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
 import com.baomidou.mybatisplus.annotation.*;
 
-
+        import kotlin.Deprecated;
+import kotlin.jvm.JvmOverloads;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * <p>
@@ -24,28 +29,32 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @TableName("t_reword_info")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @PropertyChangeListenClass
 public class RewordInfo implements Serializable {
+    public static final String BOT_REWORD_INFO_TABLE_PREFIX = "t_reword_info";
 
     @Serial
     private static final long serialVersionUID = 6919845416514161654L;
 
+    @TableId(value = "id", type = IdType.AUTO)
+    private Integer id;
 
-    @TableId(value = "project_account_id", type = IdType.INPUT)
+    @TableField(value = "bot_id")
+    private Integer botId;
+
+    @TableField(value = "bot_key")
+    private String botKey;
+
+    @TableField(value = "bot_account_id")
     @CommandTableField
-    private Integer projectAccountId;
+    private Integer botAccountId;
 
     @TableField("total_points")
     @CommandTableField
     private Double totalPoints;
-
-    @TableField("session")
-    @CommandTableField
-    private String session;
-
-    @TableField("session_points")
-    @CommandTableField
-    private Double sessionPoints;
 
     @TableField("daily_points")
     @CommandTableField
@@ -64,9 +73,10 @@ public class RewordInfo implements Serializable {
 
     public RewordInfo newInstance() {
         RewordInfo rewordInfo = new RewordInfo();
+        rewordInfo.botId = this.botId;
+        rewordInfo.botKey = this.botKey;
+        rewordInfo.botAccountId = this.botAccountId;
         rewordInfo.totalPoints = this.totalPoints;
-        rewordInfo.session = this.session;
-        rewordInfo.sessionPoints = this.sessionPoints;
         rewordInfo.dailyPoints = this.dailyPoints;
         rewordInfo.insertDatetime = this.insertDatetime;
         rewordInfo.updateDatetime = this.updateDatetime;

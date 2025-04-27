@@ -167,19 +167,21 @@ create table t_script_node
 );
 
 
-CREATE TABLE `t_web3_wallet`
+create table t_web3_wallet
 (
-    `id`              bigint NOT NULL AUTO_INCREMENT,
-    `mnemonic`        varchar(520)                                                  DEFAULT NULL,
-    `eth_private_key` varchar(520) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-    `eth_address`     varchar(520)                                                  DEFAULT NULL,
-    `sol_address`     varchar(520)                                                  DEFAULT NULL,
-    `sol_private_key` varchar(520) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-    `btc_address`     varchar(520)                                                  DEFAULT NULL,
-    `insert_datetime` datetime                                                      DEFAULT CURRENT_TIMESTAMP,
-    `update_datetime` datetime                                                      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `valid`           tinyint(1) DEFAULT '1',
-    `btc_private_key` varchar(520) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `mnemonic` (`mnemonic`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    id              bigint auto_increment
+        primary key,
+    mnemonic        varchar(520)                         null,
+    eth_private_key varchar(520)                         null,
+    eth_address     varchar(520)                         null,
+    sol_address     varchar(520)                         null,
+    sol_private_key varchar(520)                         null,
+    btc_private_key varchar(520)                         null,
+    btc_address     varchar(520)                         null,
+    params          text                                 null,
+    insert_datetime datetime   default CURRENT_TIMESTAMP null,
+    update_datetime datetime   default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    valid           tinyint(1) default 1                 null,
+    constraint mnemonic
+        unique (mnemonic)
+);

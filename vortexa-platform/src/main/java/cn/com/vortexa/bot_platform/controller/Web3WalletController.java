@@ -4,6 +4,8 @@ import cn.com.vortexa.bot_platform.service.IWeb3WalletService;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.web3.SignatureMessage;
 import cn.com.vortexa.common.vo.BotImportVO;
+import cn.com.vortexa.common.vo.DeleteVO;
+import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.web3.dto.SCInvokeParams;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
+import java.sql.SQLException;
+
 
 /**
  * <p>
@@ -31,6 +34,21 @@ public class Web3WalletController {
     @PostMapping("/batchAdd")
     public Result batchAdd(@RequestBody BotImportVO importVO) {
         return web3WalletService.saveWallet(importVO.getRawLines());
+    }
+
+    @PostMapping("/pageQuery")
+    public Result pageQuery(@RequestBody PageQuery query)  throws SQLException {
+        return Result.ok(web3WalletService.conditionPageQuery(query.getPage(), query.getLimit(), query.getFilterMap()));
+    }
+
+    @PostMapping("/delete")
+    public Result delete(@RequestBody DeleteVO deleteVO) {
+        Boolean delete = web3WalletService.delete(deleteVO.getIds());
+        if (delete) {
+            return Result.ok();
+        } else {
+            return Result.fail("删除失败");
+        }
     }
 
     @PostMapping("/signature")

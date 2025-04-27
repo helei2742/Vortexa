@@ -16,6 +16,7 @@
         <result column="btc_private_key" property="btcPrivateKey"/>
         <result column="btc_address" property="btcAddress"/>
 
+        <result column="params" property="params"/>
         <result column="insert_datetime" property="insertDatetime"/>
         <result column="update_datetime" property="updateDatetime"/>
         <result column="valid" property="valid"/>
@@ -23,10 +24,10 @@
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.Web3Wallet">
         INSERT INTO t_web3_wallet
-        (mnemonic, eth_private_key, eth_address, sol_private_key, sol_address, btc_private_key, btc_address,
+        (mnemonic, eth_private_key, eth_address, sol_private_key, sol_address, btc_private_key, btc_address, params,
         update_datetime, valid)
         VALUES (#{item.mnemonic}, #{item.ethPrivateKey}, #{item.ethAddress}, #{item.solPrivateKey}, #{item.solAddress}, #{item.btcPrivateKey},
-        #{item.btcAddress}, current_timestamp, 1)
+        #{item.btcAddress}, #{item.params}, current_timestamp, 1)
         ON DUPLICATE KEY
         UPDATE
         <trim suffixOverrides=",">
@@ -48,6 +49,9 @@
             <if test="btcAddress != null">
                 btc_address = values(btc_address),
             </if>
+            <if test="params != null">
+                params = values(params),
+            </if>
             <if test="updateDatetime != null">
                 update_datetime = values(update_datetime),
             </if>
@@ -59,12 +63,12 @@
 
     <insert id="insertOrUpdateBatch" parameterType="java.util.List">
         INSERT INTO t_web3_wallet
-        (mnemonic, eth_private_key, eth_address, sol_private_key, sol_address, btc_private_key, btc_address,
+        (mnemonic, eth_private_key, eth_address, sol_private_key, sol_address, btc_private_key, btc_address,params,
         update_datetime, valid)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.mnemonic}, #{item.ethPrivateKey}, #{item.ethAddress}, #{item.solPrivateKey}, #{item.solAddress}, #{item.btcPrivateKey},
-            #{item.btcAddress}, current_timestamp, 1)
+            #{item.btcAddress}, #{item.params}, current_timestamp, 1)
         </foreach>
         ON DUPLICATE KEY UPDATE
         eth_private_key = values(eth_private_key),
@@ -73,6 +77,7 @@
         sol_address =values (sol_address),
         btc_private_key = values (btc_private_key),
         btc_address = values (btc_address),
+        params =values (params),
         update_datetime =values (update_datetime),
         valid =values (valid)
     </insert>
@@ -89,11 +94,12 @@
         t.sol_address as solAddress,
         t.btc_private_key as btcPrivateKey,
         t.btc_address as btcAddress,
+        t.params,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,
         t.valid as valid
         from
-        t_twitter_account as t
+        t_web3_wallet as t
         <where>
             valid = 1
             <if test="id != null">
@@ -119,6 +125,15 @@
             </if>
             <if test="btcAddress != null">
                 and t.btc_address = #{btcAddress}
+            </if>
+
+            <if test="params != null and !params.isEmpty()">
+                AND JSON_CONTAINS(
+                t.params,
+                <foreach collection="params" item='value' index='key' separator=',' open="JSON_OBJECT(" close=")">
+                    #{key}, #{value}
+                </foreach>
+                )
             </if>
         </where>
     </select>

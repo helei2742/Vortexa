@@ -1,13 +1,15 @@
 package cn.com.vortexa.script_node.bot;
 
+import cn.com.vortexa.common.dto.ACListOptResult;
+import cn.com.vortexa.common.dto.BotACJobResult;
+import cn.com.vortexa.common.entity.BotInstance;
+import cn.com.vortexa.common.entity.RewordInfo;
 import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.anno.BotMethod;
+import cn.com.vortexa.script_node.dto.AccountRewordSnapshot;
 import cn.com.vortexa.script_node.websocket.AccountWSClientBuilder;
 import cn.com.vortexa.script_node.websocket.BaseBotWSClient;
 import cn.com.vortexa.script_node.websocket.WebSocketClientLauncher;
-import cn.com.vortexa.common.constants.BotJobType;
-import cn.com.vortexa.script_node.constants.MapConfigKey;
-import cn.com.vortexa.common.dto.ACListOptResult;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.entity.AccountContext;
@@ -16,14 +18,10 @@ import cn.com.vortexa.common.exception.BotMethodFormatException;
 import cn.com.vortexa.common.exception.BotMethodInvokeException;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.script_node.dto.job.AutoBotJobRuntimeParam;
-import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
-
 import com.alibaba.fastjson.JSONArray;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
@@ -43,22 +41,25 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
     private final WebSocketClientLauncher webSocketClientLauncher = new WebSocketClientLauncher(this);
 
     /**
-     * 注册方法
-     */
-    @Getter
-    private Method registerMethod;
-
-    /**
-     * 登录方法
-     */
-    @Getter
-    private Method loginMethod;
-
-    /**
      * 奖励更新方法
      */
     @Getter
     private Method updateRewordMethod;
+
+    /**
+     * 奖励更新的代理方法
+     */
+    private final Method updateRewordProxyMethod;
+
+    public AnnoDriveAutoBot() {
+        try {
+            updateRewordProxyMethod = AnnoDriveAutoBot.class
+                    .getDeclaredMethod("rewardQueryProxyMethod", AccountContext.class, List.class);
+            updateRewordProxyMethod.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("reward query proxy method id empty", e);
+        }
+    }
 
     /**
      * 构建bot info， 会解析注解查询db，给上层父类调用
@@ -124,8 +125,6 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
 
                 // Step 3 根据BotMethod注解 的jobType，方法分类
                 switch (botJobMethod.jobType()) {
-                    case REGISTER -> registerMethodHandler(method, botJobMethod);
-                    case LOGIN -> loginMethodHandler(method, botJobMethod);
                     case QUERY_REWARD -> queryRewardMethodHandler(method, botJobMethod);
                     case ONCE_TASK, TIMED_TASK -> timedTaskMethodHandler(method, botJobMethod);
                     case WEB_SOCKET_CONNECT -> webSocketConnectMethodHandler(method, botJobMethod);
@@ -134,133 +133,11 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         }
     }
 
-    /**
-     * 注册type账号
-     *
-     * @return String
-     */
-    @Override
-    public CompletableFuture<ACListOptResult> registerAccount() {
-        if (registerMethod == null) {
-            return CompletableFuture.completedFuture(ACListOptResult.fail(
-                    getBotInstance().getBotId(),
-                    getBotInstance().getBotName(),
-                    BotJobType.REGISTER.name(),
-                    "未找到注册方法"
-            ));
-        }
-        return uniqueAsyncForACList(
-                (accountContext, accountContexts) -> {
-                    if (BooleanUtil.isTrue(accountContext.isSignUp())) {
-                        // 账户注册过，
-                        String errorMsg = String.format("[%s]账户[%s]-email[%s]注册过", accountContext.getId(),
-                                accountContext.getName(),
-                                accountContext.getAccountBaseInfo().getEmail());
-
-                        log.warn(errorMsg);
-
-                        return CompletableFuture.completedFuture(Result.fail(errorMsg));
-                    } else if (registerMethod != null) {
-                        // 调用注册方法注册
-                        return invokeBotMethod(
-                                registerMethod,
-                                accountContext,
-                                accountContexts,
-                                getAutoBotConfig().getConfig(MapConfigKey.INVITE_CODE_KEY)
-                        ).thenApplyAsync(result -> {
-                            if (result.getSuccess()) {
-                                for (AccountContext ac : accountContexts) {
-                                    AccountContext.signUpSuccess(ac);
-                                }
-                            }
-                            return result;
-                        });
-                    } else {
-                        return CompletableFuture.completedFuture(Result.fail("未知错误"));
-                    }
-                },
-                (accountContext, result) -> {
-                    // 登录成功
-                    if (BooleanUtil.isTrue(result.getSuccess())) {
-                        //注册成功
-                        AccountContext.signUpSuccess(accountContext);
-                    }
-                    return result;
-                },
-                BotJobType.REGISTER.name()
-        );
-    }
-
     @Override
     protected void doStop() {
-        registerMethod = null;
-        loginMethod = null;
         updateRewordMethod = null;
         webSocketClientLauncher.clear();
         super.doStop();
-    }
-
-    /**
-     * 获取账号的token
-     *
-     * @return String
-     */
-    @Override
-    public CompletableFuture<ACListOptResult> loginAndTakeTokenAccount() {
-        if (loginMethod == null) {
-            return CompletableFuture.completedFuture(ACListOptResult.fail(
-                    getBotInstance().getBotId(),
-                    getBotInstance().getBotName(),
-                    BotJobType.LOGIN.name(),
-                    "未找到登录方法"
-            ));
-        }
-
-        return asyncForACList(
-                accountContext -> invokeBotMethod(
-                        loginMethod,
-                        accountContext
-                ),
-                (accountContext, result) -> {
-                    // 登录成功
-                    if (BooleanUtil.isTrue(result.getSuccess())) {
-                        String token = result.getData() == null ? null :
-                                (result.getData() instanceof String ? (String) result.getData() : null);
-
-                        // token不为空，设置到accountContext里
-                        if (StrUtil.isNotBlank(token)) {
-                            accountContext.setParam(MapConfigKey.TOKEN_KEY, token);
-                        } else {
-                            log.debug("账号[{}]-[{}]token为空", accountContext.getId(), accountContext.getName());
-                        }
-                    }
-                    return result;
-                },
-                BotJobType.LOGIN.name()
-        );
-    }
-
-    @Override
-    public CompletableFuture<ACListOptResult> updateAccountRewordInfo() {
-        if (updateRewordMethod == null) {
-            return CompletableFuture.completedFuture(ACListOptResult.fail(
-                    getBotInstance().getBotId(),
-                    getBotInstance().getBotName(),
-                    BotJobType.QUERY_REWARD.name(),
-                    "未找到奖励查询方法"
-            ));
-        }
-
-        return asyncForACList(
-                getUniqueACList(),
-                accountContext -> invokeBotMethod(
-                        updateRewordMethod,
-                        accountContext,
-                        getAcMap().get(accountContext.getAccountBaseInfoId())
-                ),
-                (accountContext, result) -> result,
-                BotJobType.QUERY_REWARD.name()
-        );
     }
 
     @Override
@@ -271,68 +148,26 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
     protected abstract T getInstance();
 
     /**
-     * 注册方法处理器
+     * 保存并上传奖励信息
      *
-     * @param method       method
-     * @param botJobMethod botJobMethod
+     * @param aCListOptResult aCListOptResult
      */
-    private void registerMethodHandler(Method method, BotMethod botJobMethod) {
-        logger.debug("add register method");
-        if (method.getReturnType() == Result.class
-                && method.getParameterCount() == 3
-                && method.getParameters()[0].getType() == AccountContext.class
-                && method.getParameters()[1].getType() == List.class
-                && method.getParameters()[2].getType() == String.class) {
+    private void saveAndUploadRewordQueryResult(ACListOptResult aCListOptResult) {
+        List<BotACJobResult> results = aCListOptResult.getResults();
 
-            if (this.registerMethod == null) {
-                this.registerMethod = method;
-                this.addBasicJob(BotJobType.REGISTER);
-
-                registryJobInBot(
-                        getInstance(),
-                        method,
-                        null,
-                        botJobMethod
-                );
-            } else {
-                throw new BotMethodFormatException("注册方法只能有一个");
+        List<RewordInfo> rewordInfos = new ArrayList<>();
+        for (BotACJobResult result : results) {
+            if (result.getData() instanceof RewordInfo rewordInfo) {
+                rewordInfos.add(rewordInfo);
             }
-        } else {
-            throw new BotMethodFormatException("注册方法错误, " +
-                    "应为 Result methodName(AccountContext accountContext, List<AccountContext> sameAccountBaseInfoIdLists, String inviteCode)");
         }
-    }
 
-    /**
-     * 登录方法处理器
-     *
-     * @param method       method
-     * @param botJobMethod botJobMethod
-     */
-    private void loginMethodHandler(Method method, BotMethod botJobMethod) {
-        logger.debug("add login method");
-        if (method.getReturnType() == Result.class
-                && method.getParameterCount() == 1
-                && method.getParameters()[0].getType() == AccountContext.class
-        ) {
-
-            if (this.loginMethod == null) {
-                this.loginMethod = method;
-                this.addBasicJob(BotJobType.LOGIN);
-
-                registryJobInBot(
-                        getInstance(),
-                        method,
-                        null,
-                        botJobMethod
-                );
-            } else {
-                throw new BotMethodFormatException("登录方法只能有一个");
-            }
-        } else {
-            throw new BotMethodFormatException("登录方法错误, " +
-                    "应为 Result methodName(AccountContext ac");
-        }
+        BotInstance botInstance = getBotInstance();
+        getBotApi().getRewordInfoService().saveAndUploadRewordInfos(
+                botInstance.getBotId(),
+                botInstance.getBotKey(),
+                rewordInfos
+        );
     }
 
     /**
@@ -343,7 +178,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
      */
     private void queryRewardMethodHandler(Method method, BotMethod botJobMethod) {
         logger.debug("add reword query method");
-        if (method.getReturnType() == Result.class
+        if (method.getReturnType() == AccountRewordSnapshot.class
                 && method.getParameterCount() == 2
                 && method.getParameters()[0].getType() == AccountContext.class
                 && method.getParameters()[1].getType() == List.class
@@ -355,15 +190,47 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 throw new BotMethodFormatException("收益查询方法只能有一个");
             }
 
-            registryJobInBot(
+            String updateRewordJobName = registryJobInBot(
                     getInstance(),
-                    method,
+                    updateRewordProxyMethod,
                     null,
                     botJobMethod
             );
+
+            addJobExecuteResultHandler(updateRewordJobName, this::saveAndUploadRewordQueryResult);
         } else {
             throw new BotMethodFormatException("收益查询方法错误, " +
-                    "应为 Result methodName(AccountContext ac, List<AccountContext> sameAccountBaseInfoIdLists)");
+                    "应为 AccountRewordSnapshot methodName(AccountContext ac, List<AccountContext> sameAccountBaseInfoIdLists)");
+        }
+    }
+
+    /**
+     * 奖励查询方法的代理方法，得到收益快照后存人数据库
+     *
+     * @param accountContext  accountContext
+     * @param accountContexts accountContexts
+     * @return AccountRewordSnapshot
+     */
+    private RewordInfo rewardQueryProxyMethod(AccountContext accountContext, List<AccountContext> accountContexts) {
+        if (this.updateRewordMethod == null) {
+            throw new BotMethodInvokeException("update reword into,,");
+        } else {
+            try {
+                AccountRewordSnapshot rewordSnapshot = (AccountRewordSnapshot) this.updateRewordMethod.invoke(
+                        this, accountContext, accountContexts
+                );
+
+                // 解析后存db
+                return RewordInfo.builder()
+                        .botId(getBotInfo().getId())
+                        .botKey(getBotInstance().getBotKey())
+                        .botAccountId(accountContext.getId())
+                        .totalPoints(rewordSnapshot.getTotalPoints())
+                        .dailyPoints(rewordSnapshot.getDailyPoints())
+                        .build();
+            } catch (Exception e) {
+                throw new BotMethodInvokeException("reword query method invoke error", e);
+            }
         }
     }
 
@@ -472,7 +339,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         return botInfo;
     }
 
-    public  List<Method> allMethods() {
+    public List<Method> allMethods() {
         List<Method> list = new ArrayList<>();
         Class<?> clazz = getClass();
 
