@@ -3,12 +3,15 @@ package cn.com.vortexa.web3.service;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.web3.SignatureMessage;
 import cn.com.vortexa.common.entity.Web3Wallet;
+import cn.com.vortexa.web3.EthWalletUtil;
 import cn.com.vortexa.web3.constants.Web3jFunctionType;
 import cn.com.vortexa.web3.dto.SCInvokeParams;
 import cn.com.vortexa.web3.dto.SCInvokeResult;
 import cn.com.vortexa.web3.dto.Web3ChainInfo;
 import cn.com.vortexa.web3.exception.ABIInvokeException;
 import cn.hutool.core.lang.Pair;
+import cn.hutool.core.util.StrUtil;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -70,10 +73,15 @@ public interface IWeb3WalletOPTRPC {
         );
 
         try {
-            return (Boolean) result.getResult().getFirst();
+            String transactionHash = result.getTransactionHash();
+            if (StrUtil.isBlank(transactionHash)) {
+                return Boolean.FALSE;
+            } else {
+                TransactionReceipt receipt = EthWalletUtil.waitForTransactionReceipt(chainInfo.getRpcUrl(), transactionHash);
+                return EthWalletUtil.isTransactionReceiptSuccess(receipt);
+            }
         } catch (Exception e) {
-            throw new ABIInvokeException("erc20 approve rpc error, "
-                    + (e.getCause() == null ? "" : e.getCause().getMessage()));
+            throw new ABIInvokeException("erc20 approve rpc error", e);
         }
     }
 

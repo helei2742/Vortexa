@@ -10,6 +10,7 @@ import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
 import cn.com.vortexa.rpc.api.platform.IBrowserEnvRPC;
 import cn.com.vortexa.rpc.api.platform.IDiscordAccountRPC;
 import cn.com.vortexa.rpc.api.platform.IProxyInfoRPC;
+import cn.com.vortexa.rpc.api.platform.IRewordInfoRPC;
 import cn.com.vortexa.rpc.api.platform.ITelegramAccountRPC;
 import cn.com.vortexa.rpc.api.platform.ITwitterAccountRPC;
 import cn.com.vortexa.web3.service.IWeb3WalletOPTRPC;
@@ -35,6 +36,8 @@ public interface BotApi {
     ITableShardStrategy getTableShardStrategy();
 
     IRewordInfoService getRewordInfoService();
+
+    IRewordInfoRPC getRewordInfoRPC();
 
     IBotAccountContextService getBotAccountService();
 

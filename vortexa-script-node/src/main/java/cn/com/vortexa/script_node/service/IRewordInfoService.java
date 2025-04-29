@@ -7,7 +7,6 @@ import cn.com.vortexa.common.entity.RewordInfo;
 
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.List;
 
 public interface IRewordInfoService extends IService<RewordInfo> {
 
@@ -29,13 +28,4 @@ public interface IRewordInfoService extends IService<RewordInfo> {
      * @return String
      */
     PageResult<RewordInfo> queryAccountReword(Integer pageNum, Integer pageSize, HashMap<String, Object> params);
-
-    /**
-     * 保存收益进库，并上传
-     *
-     * @param botId botId
-     * @param botKey botKey
-     * @param rewordInfos rewordInfos
-     */
-    void saveAndUploadRewordInfos(Integer botId, String botKey, List<RewordInfo> rewordInfos);
 }

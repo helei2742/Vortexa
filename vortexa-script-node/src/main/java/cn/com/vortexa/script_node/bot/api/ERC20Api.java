@@ -303,6 +303,28 @@ public class ERC20Api {
         return sendAndGetTransactionReceipt(chainInfo, contractAddress, value, paramsBuilder);
     }
 
+    /**
+     * 查询token数量，并根据传入百分比获取数量
+     *
+     * @param accountContext 账户
+     * @param tokenAddress   地址
+     * @param percent        百分比
+     * @return 数量
+     * @throws ABIInvokeException ABIInvokeException
+     */
+    public @NotNull BigDecimal tokenPercentToAmount(String rpcUrl, AccountContext accountContext, String tokenAddress, double percent)
+            throws ABIInvokeException {
+        BigDecimal balance = erc20TokenBalance(rpcUrl, accountContext, tokenAddress);
+        if (balance == null) {
+            throw new ABIInvokeException("balance not enough");
+        }
+        if (percent <= 0 || percent > 1) {
+            throw new ABIInvokeException("percent not allowed");
+        }
+
+        return balance.multiply(BigDecimal.valueOf(percent));
+    }
+
     @NotNull
     private TransactionReceipt sendAndGetTransactionReceipt(Web3ChainInfo chainInfo, String contractAddress, BigDecimal value, SCInvokeParams.SCInvokeParamsBuilder paramsBuilder) throws ABIInvokeException {
         if (value != null) {

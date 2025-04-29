@@ -163,7 +163,8 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         }
 
         BotInstance botInstance = getBotInstance();
-        getBotApi().getRewordInfoService().saveAndUploadRewordInfos(
+        getBotApi().getRewordInfoService().saveBatch(rewordInfos);
+        getBotApi().getRewordInfoRPC().saveBatchRPC(
                 botInstance.getBotId(),
                 botInstance.getBotKey(),
                 rewordInfos
@@ -192,11 +193,12 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
 
             String updateRewordJobName = registryJobInBot(
                     getInstance(),
-                    updateRewordProxyMethod,
+                    updateRewordMethod,
                     null,
                     botJobMethod
             );
-
+            // 替换奖励查询方法为代理方法
+            getJobRuntimeParamMap().get(updateRewordJobName).setMethod(updateRewordProxyMethod);
             addJobExecuteResultHandler(updateRewordJobName, this::saveAndUploadRewordQueryResult);
         } else {
             throw new BotMethodFormatException("收益查询方法错误, " +

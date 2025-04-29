@@ -1,5 +1,6 @@
 package cn.com.vortexa.script_node.service.impl;
 
+import cn.com.vortexa.rpc.api.platform.IRewordInfoRPC;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.script_node.service.IBotAccountContextService;
 import cn.com.vortexa.script_node.service.IRewordInfoService;
@@ -62,6 +63,9 @@ public class DBBotApi implements BotApi {
 
     @RPCReference
     private IWeb3WalletOPTRPC web3WalletRPC;
+
+    @RPCReference
+    private IRewordInfoRPC rewordInfoRPC;
 
     @Autowired
     private IScriptAgentRPC scriptAgentRPC;

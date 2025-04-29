@@ -225,7 +225,7 @@ public class EthWalletUtil {
         );
 
         try {
-           return web3j.ethCall(
+            return web3j.ethCall(
                     transaction,
                     DefaultBlockParameterName.LATEST
             ).send();
@@ -233,6 +233,7 @@ public class EthWalletUtil {
             throw new ABIInvokeException(e);
         }
     }
+
     /**
      * 智能合约调用 只读
      *
@@ -527,5 +528,15 @@ public class EthWalletUtil {
         BigDecimal min = amountInWei.multiply(BigDecimal.valueOf(100 - slippagePercent))
                 .divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN);
         return min.toBigIntegerExact();
+    }
+
+    /**
+     * 判断交易是否成功
+     *
+     * @param transactionReceipt transactionReceipt
+     * @return Boolean
+     */
+    public static Boolean isTransactionReceiptSuccess(TransactionReceipt transactionReceipt) {
+        return transactionReceipt != null && transactionReceipt.isStatusOK();
     }
 }

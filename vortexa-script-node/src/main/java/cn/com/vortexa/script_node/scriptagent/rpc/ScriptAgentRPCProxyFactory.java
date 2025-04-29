@@ -68,6 +68,8 @@ public class ScriptAgentRPCProxyFactory {
                             log.debug("rpc [{}-{}] got result [{}]",
                                     interfaceClass.getName(), method.getName(), RPCResultWrapper.getResult());
                             return RPCResultWrapper.getResult();
+                        } else {
+                            return null;
                         }
                     } else if (response.getCode() == RemotingCommandCodeConstants.FAIL) {
                         String errorMsg = "rpc [%s-%s] error".formatted(interfaceClass.getName(), method.getName());
@@ -80,9 +82,9 @@ public class ScriptAgentRPCProxyFactory {
                     String errorMsg = "rpc [%s-%s] error".formatted(interfaceClass.getName(), method.getName());
                     throw new RPCException(errorMsg, e);
                 }
+            } else {
+                return method.invoke(proxy, args);
             }
-
-            return method.invoke(proxy, args);
         }
     }
 }
