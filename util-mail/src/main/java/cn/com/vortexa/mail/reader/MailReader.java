@@ -127,12 +127,12 @@ public class MailReader {
                     result.append(bodyPart.getContent().toString());
                 }
                 return result.toString();
+            } else {
+                return message.getContent().toString();
             }
         } catch (Exception e) {
             throw new MailReadException("邮件内容读取时发生错误", e);
         }
-
-        return "";
     }
 
 

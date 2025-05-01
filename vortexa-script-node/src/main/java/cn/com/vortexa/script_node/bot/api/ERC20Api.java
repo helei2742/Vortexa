@@ -114,14 +114,24 @@ public class ERC20Api {
         if (accountContext == null || accountContext.getWalletId() == null) {
             throw new IllegalArgumentException("accountContext wallet is null");
         }
+        try {
+            String transactionHash = autoLaunchBot.getBotApi().getWeb3WalletRPC().erc20ApproveRPC(
+                    chainInfo,
+                    accountContext.getWalletId(),
+                    tokenAddress,
+                    spenderAddress,
+                    EthWalletUtil.parseUnits(amount, decimal)
+            );
 
-        return autoLaunchBot.getBotApi().getWeb3WalletRPC().erc20ApproveRPC(
-                chainInfo,
-                accountContext.getWalletId(),
-                tokenAddress,
-                spenderAddress,
-                EthWalletUtil.parseUnits(amount, decimal)
-        );
+            if (StrUtil.isBlank(transactionHash)) {
+                return Boolean.FALSE;
+            } else {
+                TransactionReceipt receipt = EthWalletUtil.waitForTransactionReceipt(chainInfo.getRpcUrl(), transactionHash);
+                return EthWalletUtil.isTransactionReceiptSuccess(receipt);
+            }
+        } catch (Exception e) {
+            throw new ABIInvokeException("erc20 approve rpc error", e);
+        }
     }
 
     /**
@@ -148,7 +158,7 @@ public class ERC20Api {
         }
 
         if (allowance.compareTo(amount) < 0) {
-            return erc20ApproveToken(chainInfo, accountContext, tokenAddress, spenderAddress, allowance);
+            return erc20ApproveToken(chainInfo, accountContext, tokenAddress, spenderAddress, amount);
         } else {
             return true;
         }

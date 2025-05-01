@@ -51,7 +51,6 @@ public class SCInvokeParams implements Serializable {
      */
     private BigInteger value;
 
-
     /**
      * 只读方法
      */

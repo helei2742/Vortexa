@@ -57,7 +57,7 @@ public interface IWeb3WalletOPTRPC {
      * @return Result
      * @throws ABIInvokeException ABIInvokeException
      */
-    default Boolean erc20ApproveRPC(Web3ChainInfo chainInfo, Integer walletId, String tokenContract, String spenderAddress, BigInteger amount)
+    default String erc20ApproveRPC(Web3ChainInfo chainInfo, Integer walletId, String tokenContract, String spenderAddress, BigInteger amount)
             throws ABIInvokeException {
         SCInvokeResult result = erc20ABIInvokeRPC(SCInvokeParams.builder()
                 .walletId(walletId)
@@ -71,18 +71,7 @@ public interface IWeb3WalletOPTRPC {
                 .resultTypes(List.of(Web3jFunctionType.Bool))
                 .build()
         );
-
-        try {
-            String transactionHash = result.getTransactionHash();
-            if (StrUtil.isBlank(transactionHash)) {
-                return Boolean.FALSE;
-            } else {
-                TransactionReceipt receipt = EthWalletUtil.waitForTransactionReceipt(chainInfo.getRpcUrl(), transactionHash);
-                return EthWalletUtil.isTransactionReceiptSuccess(receipt);
-            }
-        } catch (Exception e) {
-            throw new ABIInvokeException("erc20 approve rpc error", e);
-        }
+        return result.getTransactionHash();
     }
 
     /**

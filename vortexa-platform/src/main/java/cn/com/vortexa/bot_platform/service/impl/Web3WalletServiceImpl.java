@@ -141,13 +141,16 @@ public class Web3WalletServiceImpl extends AbstractBaseService<Web3WalletMapper,
         }
 
         ChainType chainType = chainInfo.getChainType() == null ? ChainType.ETH : chainInfo.getChainType();
-        WalletInfo wallet = invokeParams.getWalletInfo() == null
-                ? new WalletInfo(chainType, web3WalletMapper.selectById(invokeParams.getWalletId()))
-                : invokeParams.getWalletInfo();
-
+        // 没有钱包信息的查询
+        if (invokeParams.getWalletInfo() == null) {
+            invokeParams.setWalletInfo(new WalletInfo(chainType, web3WalletMapper.selectById(invokeParams.getWalletId())));
+        }
+        if (invokeParams.getWalletInfo() == null) {
+            return Result.fail("target wallet not exist");
+        }
 
         SCInvokeResult result = switch (chainType) {
-            case ETH -> SmartContractInvoker.CHAIN.ETH.invokeSCFunction(wallet, chainInfo, invokeParams);
+            case ETH -> SmartContractInvoker.CHAIN.ETH.invokeSCFunction(invokeParams);
             default ->
                     throw new IllegalArgumentException("chain type[%s] not support".formatted(chainType));
         };

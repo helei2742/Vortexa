@@ -223,6 +223,8 @@ public class RestApiClient {
             builder.get();
         } else if(HttpMethod.POST.equals(method)) {
             builder.method(method.name(), requestBody);
+        } else {
+            builder.method(method.name(), requestBody);
         }
 
         for (Map.Entry<String, String> header : headers.entrySet()) {

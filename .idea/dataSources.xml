@@ -97,5 +97,12 @@
         </library>
       </libraries>
     </data-source>
+    <data-source source="LOCAL" name="vortexa_platform@192.168.1.98" uuid="a41cf236-c2b1-44a8-b935-3dc15c209272">
+      <driver-ref>mysql.8</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://192.168.1.98:3306/vortexa_platform</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

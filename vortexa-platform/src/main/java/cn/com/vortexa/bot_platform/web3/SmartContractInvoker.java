@@ -4,8 +4,6 @@ import cn.com.vortexa.web3.EthWalletUtil;
 import cn.com.vortexa.web3.constants.Web3jFunctionType;
 import cn.com.vortexa.web3.dto.SCInvokeParams;
 import cn.com.vortexa.web3.dto.SCInvokeResult;
-import cn.com.vortexa.web3.dto.WalletInfo;
-import cn.com.vortexa.web3.dto.Web3ChainInfo;
 import cn.com.vortexa.web3.exception.ABIInvokeException;
 import cn.com.vortexa.web3.util.ABIFunctionBuilder;
 import cn.hutool.core.collection.CollUtil;
@@ -32,15 +30,11 @@ public interface SmartContractInvoker {
     /**
      * 执行智能合约交互
      *
-     * @param walletInfo     钱包信息
-     * @param chainInfo      链信息
      * @param scInvokeParams 调用参数
      * @return SCInvokeResult
      * @throws ABIInvokeException ABIInvokeException
      */
     SCInvokeResult invokeSCFunction(
-            WalletInfo walletInfo,
-            Web3ChainInfo chainInfo,
             SCInvokeParams scInvokeParams
     ) throws ABIInvokeException;
 
@@ -48,8 +42,6 @@ public interface SmartContractInvoker {
         ETH {
             @Override
             public SCInvokeResult invokeSCFunction(
-                    WalletInfo walletInfo,
-                    Web3ChainInfo chainInfo,
                     SCInvokeParams scInvokeParams
             ) throws ABIInvokeException {
                 List<Web3jFunctionType> resultTypes = scInvokeParams.getResultTypes();
@@ -82,9 +74,9 @@ public interface SmartContractInvoker {
                 SCInvokeResult result = new SCInvokeResult();
                 if (BooleanUtil.isTrue(scInvokeParams.getReadFunction())) {
                     EthCall ethCall = EthWalletUtil.smartContractCallInvoke(
-                            chainInfo.getRpcUrl(),
+                            scInvokeParams.getChainInfo().getRpcUrl(),
                             scInvokeParams.getContractAddress(),
-                            walletInfo.getAddress(),
+                            scInvokeParams.getWalletInfo().getAddress(),
                             data
                     );
                     // 不上链方法获取值
@@ -93,13 +85,7 @@ public interface SmartContractInvoker {
                 } else {
                     // 上链方法只获取hash
                     String transactionHash = EthWalletUtil.smartContractTransactionInvoke(
-                            chainInfo.getRpcUrl(),
-                            scInvokeParams.getContractAddress(),
-                            walletInfo.getPrivateKey(),
-                            walletInfo.getAddress(),
-                            scInvokeParams.getGasLimit(),
-                            scInvokeParams.getValue(),
-                            data
+                            scInvokeParams
                     );
                     result.setTransactionHash(transactionHash);
                 }

@@ -250,8 +250,8 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 || method.getParameters()[0].getType() != AccountContext.class
                 || (method.getParameterCount() == 2 && method.getParameters()[1].getType() != List.class)
         ) {
-            throw new BotMethodFormatException("定时任务方法错误, " +
-                    "应为 void methodName(AccountContext ac) 或 " +
+            throw new BotMethodFormatException("time task method " +method.getName()+ " error, " +
+                    "use void methodName(AccountContext ac) or " +
                     "void methodName(AccountContext exampleAC, List<AccountContext> sameABIIdList) ");
         }
 

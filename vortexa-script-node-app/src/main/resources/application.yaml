@@ -30,7 +30,7 @@ vortexa:
     bot-common-config:
       two_captcha_api_key: ''
     bot-instance-jar-names:
-      - vortexa-script-bot
+      - vortexa-script-bot-1.0-SNAPSHOT
 
   script-agent:
     registryCenterUrl: ws://localhost:18848

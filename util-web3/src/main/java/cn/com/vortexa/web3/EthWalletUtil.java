@@ -1,14 +1,19 @@
 package cn.com.vortexa.web3;
 
+import cn.com.vortexa.web3.constants.Web3jFunctionType;
+import cn.com.vortexa.web3.dto.SCInvokeParams;
 import cn.com.vortexa.web3.dto.WalletInfo;
+import cn.com.vortexa.web3.dto.Web3ChainInfo;
 import cn.com.vortexa.web3.exception.ABIInvokeException;
 import cn.com.vortexa.web3.util.ABIFunctionBuilder;
 
+import cn.hutool.core.lang.Pair;
+import cn.hutool.core.util.StrUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.crypto.*;
 import org.jetbrains.annotations.NotNull;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
-import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.crypto.*;
@@ -23,6 +28,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.net.SocketTimeoutException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +39,7 @@ import java.util.concurrent.ConcurrentMap;
  * @author helei
  * @since 2025/3/28 11:16
  */
+@Slf4j
 public class EthWalletUtil {
 
     public static final ConcurrentMap<String, Web3j> rpcUrlWeb3JMap = new ConcurrentHashMap<>();
@@ -40,7 +47,7 @@ public class EthWalletUtil {
     /**
      * 重试次数
      */
-    public static final int TRANSACTION_ATTEMPTS = 40;
+    public static final int TRANSACTION_ATTEMPTS = 20;
 
     /**
      * 间隔
@@ -276,33 +283,37 @@ public class EthWalletUtil {
     /**
      * 智能合约调用 上链
      *
-     * @param rpcUrl          rpcUrl
-     * @param contractAddress 合约地址
-     * @param primaryKey      钱包私钥
-     * @param address         钱包地址
-     * @param gasLimit        gasLimit
-     * @param value           发生金额
-     * @param functionBuilder functionBuilder
+     * @param scInvokeParams       scInvokeParams
      * @return transaction hash
      * @throws ABIInvokeException 网络不通， 获取hash失败都会抛出次异常
      */
-    public static String smartContractTransactionInvoke(
-            String rpcUrl,
-            String contractAddress,
-            String primaryKey,
-            String address,
-            BigInteger gasLimit,
-            BigInteger value,
-            ABIFunctionBuilder functionBuilder
-    ) throws ABIInvokeException {
-        Function function = functionBuilder.build();
-        return smartContractTransactionInvoke(rpcUrl, contractAddress, primaryKey, address, gasLimit, value, FunctionEncoder.encode(function));
+    public static String smartContractTransactionInvoke(SCInvokeParams scInvokeParams) throws ABIInvokeException {
+        String data = scInvokeParams.getData();
+        if (StrUtil.isBlank(data)) {
+            ABIFunctionBuilder abiFunctionBuilder = ABIFunctionBuilder.builder()
+                    .functionName(scInvokeParams.getFunctionName());
+            for (Pair<Web3jFunctionType, Object> paramsType : scInvokeParams.getParamsTypes()) {
+                abiFunctionBuilder.addParameterType(paramsType.getKey(), paramsType.getValue());
+            }
+            scInvokeParams.getResultTypes().forEach(abiFunctionBuilder::addReturnType);
+
+            data = FunctionEncoder.encode(abiFunctionBuilder.build());
+        }
+        return smartContractTransactionInvoke(
+                scInvokeParams.getChainInfo(),
+                scInvokeParams.getContractAddress(),
+                scInvokeParams.getWalletInfo().getPrivateKey(),
+                scInvokeParams.getWalletInfo().getAddress(),
+                scInvokeParams.getGasLimit(),
+                scInvokeParams.getValue(),
+                data
+        );
     }
 
     /**
      * 智能合约调用 上链
      *
-     * @param rpcUrl          rpcUrl
+     * @param chainInfo       chainInfo
      * @param contractAddress 合约地址
      * @param primaryKey      钱包私钥
      * @param address         钱包地址
@@ -313,7 +324,7 @@ public class EthWalletUtil {
      * @throws ABIInvokeException 网络不通， 获取hash失败都会抛出次异常
      */
     public static String smartContractTransactionInvoke(
-            String rpcUrl,
+            Web3ChainInfo chainInfo,
             String contractAddress,
             String primaryKey,
             String address,
@@ -322,7 +333,7 @@ public class EthWalletUtil {
             String data
     ) throws ABIInvokeException {
         try {
-            Web3j web3j = getRpcWeb3j(rpcUrl);
+            Web3j web3j = getRpcWeb3j(chainInfo.getRpcUrl());
 
             // Step 1 参数处理
             BigInteger nonce = getNonce(web3j, address);
@@ -339,11 +350,15 @@ public class EthWalletUtil {
                     nonce, gasPrice, gasLimit, contractAddress, value, data
             );
 
-            byte[] signedMessage = TransactionEncoder.signMessage(rawTX, Credentials.create(primaryKey));
-            String hexString = Numeric.toHexString(signedMessage);
+            String signedMessage = null;
+            if (chainInfo.getChainId() == null) {
+                signedMessage = Numeric.toHexString(TransactionEncoder.signMessage(rawTX, Credentials.create(primaryKey)));
+            } else {
+                signedMessage = Numeric.toHexString(TransactionEncoder.signMessage(rawTX, chainInfo.getChainId(), Credentials.create(primaryKey)));
+            }
 
-            // Step 3 发生交友
-            EthSendTransaction send = web3j.ethSendRawTransaction(hexString).send();
+            // Step 3 发送交易
+            EthSendTransaction send = web3j.ethSendRawTransaction(signedMessage).send();
 
             // Step 4 获取交易hash值
             if (send.hasError()) {
@@ -412,16 +427,18 @@ public class EthWalletUtil {
     ) throws ABIInvokeException {
         for (int i = 0; i < TRANSACTION_ATTEMPTS; i++) {
             try {
+                Thread.sleep(TRANSACTION_SLEEP_MILLIS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            try {
                 EthGetTransactionReceipt transactionReceipt = web3j.ethGetTransactionReceipt(transactionHash).send();
                 if (transactionReceipt.getTransactionReceipt().isPresent()) {
                     return transactionReceipt.getTransactionReceipt().get();
-                } else {
-                    try {
-                        Thread.sleep(TRANSACTION_SLEEP_MILLIS);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
                 }
+            } catch (SocketTimeoutException e) {
+                log.debug("time out");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

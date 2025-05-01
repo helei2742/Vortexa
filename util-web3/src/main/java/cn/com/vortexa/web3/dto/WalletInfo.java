@@ -1,6 +1,5 @@
 package cn.com.vortexa.web3.dto;
 
-
 import cn.com.vortexa.common.constants.ChainType;
 import cn.com.vortexa.common.entity.Web3Wallet;
 import lombok.AllArgsConstructor;
