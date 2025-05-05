@@ -6,12 +6,12 @@ import cn.com.vortexa.browser_control.execute.ExecuteGroup;
 import cn.com.vortexa.browser_control.execute.ExecuteLogic;
 import cn.com.vortexa.browser_control.util.SeleniumProxyAuth;
 import cn.com.vortexa.browser_control.util.SeleniumUtil;
+import cn.com.vortexa.common.util.log.AppendLogger;
 import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WindowType;
@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 
-@Slf4j
 @Getter
 public abstract class SeleniumInstance implements SeleniumOperate {
 
@@ -43,6 +42,8 @@ public abstract class SeleniumInstance implements SeleniumOperate {
 
     private final String instanceId;
 
+    private final AppendLogger logger;
+
     private WebDriver webDriver;
 
     private String targetHandle;
@@ -55,20 +56,23 @@ public abstract class SeleniumInstance implements SeleniumOperate {
 
     public SeleniumInstance(
             String instanceId,
-            SeleniumParams params
+            SeleniumParams params,
+            AppendLogger logger
     ) throws IOException {
-        this(instanceId, null, params);
+        this(instanceId, null, params, logger);
     }
 
     public SeleniumInstance(
             String instanceId,
             SeleniumProxy proxy,
-            SeleniumParams params
+            SeleniumParams params,
+            AppendLogger logger
     ) throws IOException {
         this.instanceId = instanceId;
         if (instanceId == null || instanceId.isEmpty()) throw new IllegalArgumentException("instanceId is empty");
         this.params = params;
         this.proxy = proxy;
+        this.logger = logger;
         this.chromeOptions = initChromeOption(proxy, params);
     }
 
@@ -132,7 +136,7 @@ public abstract class SeleniumInstance implements SeleniumOperate {
             // Step 3 遍历execute chain 执行
             executeChainInvoke();
         } catch (Exception e) {
-            log.error("selenium instance invoke error", e);
+            logger.error("selenium instance invoke error", e);
         } finally {
             if (finishHandler != null) {
                 finishHandler.accept(System.currentTimeMillis() - start);
@@ -149,20 +153,21 @@ public abstract class SeleniumInstance implements SeleniumOperate {
         for (ExecuteGroup executeGroup : seleniumExecuteChain) {
             String groupName = executeGroup.getName();
 
-            log.info("[{}]-[{}] group start execute", instanceId, groupName);
+            logger.info("[%s]-[%s] group start execute".formatted(instanceId, groupName));
 
             // Step 3.1 判断该组操作是否能够进入
             Boolean isEnter = executeGroup.getEnterCondition().apply(webDriver, this);
             if (isEnter != null && isEnter) {
                 // Step 3.1.1 能够进入，开始执行group的逻辑
-                log.info("[{}]-[{}] group can execute", instanceId, groupName);
+                logger.info("[%s]-[%s] group can execute".formatted(instanceId, groupName));
                 executeGroup.getExecuteItems().forEach(item -> {
                     // Step 3.1.1.1 带重试
                     Integer retryTimes = item.getRetryTimes() == null ? 1 : item.getRetryTimes();
                     for (int j = 0; j < retryTimes; j++) {
                         try {
-                            log.info("[{}]-[{}]-[{}] start invoke logic [{}/{}]",
-                                    instanceId, groupName, item.getName(), j, retryTimes);
+                            logger.info("[%s]-[%s]-[%s] start invoke logic [%s/%s]".formatted(
+                                    instanceId, groupName, item.getName(), j, retryTimes
+                            ));
                             ExecuteLogic executeLogic = item.getExecuteLogic();
 
                             if (executeLogic != null) {
@@ -172,7 +177,9 @@ public abstract class SeleniumInstance implements SeleniumOperate {
                             return;
                         } catch (Exception e) {
                             // Step 3.1.1.3 运行失败，调用重试Rest方法后，继续执行
-                            log.error("[{}]-[{}]-[{}] invoke logic error, retry {}", instanceId, groupName, item.getName(), j, e);
+                            logger.error("[%s]-[%s]-[%s] invoke logic error, retry %s".formatted(
+                                    instanceId, groupName, item.getName(), j
+                            ), e);
 
                             ExecuteLogic resetLogic = item.getResetLogic();
                             if (resetLogic != null) {
@@ -188,12 +195,14 @@ public abstract class SeleniumInstance implements SeleniumOperate {
                 });
             } else {
                 // Step 3.1.2 不能进入执行
-                log.warn("[{}]-[{}] group can not execute", instanceId, groupName);
+                logger.warn("[%s]-[%s] group can not execute".formatted(instanceId, groupName));
             }
 
             // Step 3.2 group 操作执行完，sleep一段时间
             int timeout = random.nextInt(500, 5000);
-            log.info("[{}]-[{}] execute finish, sleep [{}]ms", instanceId, groupName, timeout);
+            logger.info("[%s]-[%s] execute finish, sleep [%s]ms".formatted(
+                    instanceId, groupName, timeout
+            ));
             TimeUnit.MILLISECONDS.sleep(timeout);
         }
     }
@@ -206,7 +215,7 @@ public abstract class SeleniumInstance implements SeleniumOperate {
      */
     protected WebDriver createWebDriver(ChromeOptions chromeOptions) {
         ChromeDriver chromeDriver = new ChromeDriver(chromeOptions);
-        log.info("chrome browser started, start execute chain");
+        logger.info("chrome browser started, start execute chain");
         try {
             TimeUnit.SECONDS.sleep(5);
         } catch (InterruptedException e) {
@@ -221,7 +230,7 @@ public abstract class SeleniumInstance implements SeleniumOperate {
      * @throws IOException IOException
      */
     private void launchBrowser() throws IOException {
-        log.info("starting chrome browser [{}}", instanceId);
+        logger.info("starting chrome browser [%s]".formatted(instanceId));
         this.webDriver = createWebDriver(chromeOptions);
         this.webDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(1));
 
@@ -257,7 +266,7 @@ public abstract class SeleniumInstance implements SeleniumOperate {
                 } catch (WebDriverException e) {
                     webDriver.close();
                 } catch (Exception e) {
-                    log.warn("{} cannot open tab, try next", title);
+                    logger.warn("[%s] cannot open tab, try next".formatted(title));
                 }
             }
         }
@@ -322,7 +331,7 @@ public abstract class SeleniumInstance implements SeleniumOperate {
                 seleniumExecuteChain.clear();
                 webDriver = null;
             } catch (Exception e) {
-                log.error("{} close exception", instanceId, e);
+                logger.error("[%s] close exception".formatted(instanceId), e);
             }
         }
     }

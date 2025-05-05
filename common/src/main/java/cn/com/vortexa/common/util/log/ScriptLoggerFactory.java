@@ -1,4 +1,4 @@
-package cn.com.vortexa.script_node.util.log;
+package cn.com.vortexa.common.util.log;
 
 import ch.qos.logback.classic.*;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;

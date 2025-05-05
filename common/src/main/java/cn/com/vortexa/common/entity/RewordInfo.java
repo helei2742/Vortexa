@@ -5,8 +5,6 @@ import cn.com.vortexa.common.util.tableprinter.CommandTableField;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
 import com.baomidou.mybatisplus.annotation.*;
 
-        import kotlin.Deprecated;
-import kotlin.jvm.JvmOverloads;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,7 +14,6 @@ import lombok.Setter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * <p>

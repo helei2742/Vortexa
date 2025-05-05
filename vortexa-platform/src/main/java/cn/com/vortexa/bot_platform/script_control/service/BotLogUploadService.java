@@ -83,13 +83,17 @@ public class BotLogUploadService {
             );
             String logUploadTxId = platformControlServer.nextTxId();
             command.addExtField(BotExtFieldConstants.LOG_UPLOAD_TX_ID, logUploadTxId);
+            command.addExtField(BotExtFieldConstants.TARGET_GROUP_KEY, group);
+            command.addExtField(BotExtFieldConstants.TARGET_BOT_NAME_KEY, botName);
+            command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);
 
             botLogTxIdToFrontTokenMap.put(logUploadTxId, token);
             botLogTxIdToFrontInstanceKeyMap.put(logUploadTxId, botInstanceKey);
 
+            String scriptNodeKey = platformControlServer.getBotInstanceKey2ScriptNodeKeyMap().get(botInstanceKey);
             // 发送，并等待结果
             RemotingCommand botStartResponse = platformControlServer.sendCommandToServiceInstance(
-                    group, botName, botKey, command
+                    scriptNodeKey, command
             ).get();
 
             if (botStartResponse.getCode() == RemotingCommandCodeConstants.SUCCESS) {

@@ -2,9 +2,14 @@ package cn.com.vortexa.script_node.scriptagent;
 
 import cn.com.vortexa.common.constants.BotExtFieldConstants;
 import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
+import cn.com.vortexa.common.constants.BotStatus;
 import cn.com.vortexa.common.dto.BotACJobResult;
+import cn.com.vortexa.common.dto.PageResult;
+import cn.com.vortexa.common.dto.account.BotInstanceAccount;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
+import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.entity.ScriptNode;
+import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.script_agent.ScriptAgent;
 import cn.com.vortexa.script_agent.config.ScriptAgentConfig;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
@@ -19,14 +24,22 @@ import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.control.util.RPCMethodUtil;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
+import cn.com.vortexa.script_node.service.BotApi;
+import cn.com.vortexa.script_node.util.ScriptBotLauncher;
 import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSONObject;
+import io.netty.channel.Channel;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,12 +51,14 @@ import javax.net.ssl.SSLException;
  */
 @Slf4j
 public class BotScriptAgent extends ScriptAgent {
-
     private final AtomicInteger initCount = new AtomicInteger(0);   // 启动次数
     private final BotScriptAgentLogUploadService logUploadService = new BotScriptAgentLogUploadService(this);  // 日志上传服务
     private final Map<String, BotInstanceMetaInfo> runningBotMap = new HashMap<>(); // key map bot
     private final String scriptNodeName;
     private final List<RPCServiceInfo<?>> rpcServiceInfos;  // RPC方法信息
+
+    @Setter
+    private BotApi botApi;
 
     public BotScriptAgent(
             ScriptAgentConfig clientConfig,
@@ -57,7 +72,9 @@ public class BotScriptAgent extends ScriptAgent {
 
             ScriptNode scriptNode = ScriptNode.generateFromServiceInstance(serviceInstance);
             scriptNode.setScriptNodeName(scriptNodeConfiguration.getScriptNodeName());
-            // scriptNode.setBotConfigMap(scriptNodeConfiguration.getBotNameMetaInfoMap());
+            scriptNode.setBotConfigMap(scriptNodeConfiguration.getBotKeyConfigMap());
+            scriptNode.setBotMetaInfoMap(scriptNodeConfiguration.getBotNameMetaInfoMap());
+            scriptNode.setNodeAppConfig(JSONObject.toJSONString(ScriptNodeConfiguration.RAW_CONFIG));
 
             return scriptNode;
         });
@@ -75,7 +92,7 @@ public class BotScriptAgent extends ScriptAgent {
         }
 
         // Step 1 RPC命令处理
-        if (initRPCMethod()) return;
+        initRPCMethod();
 
         // Step 2 其它命令处理
         customCommandInit();
@@ -96,6 +113,23 @@ public class BotScriptAgent extends ScriptAgent {
         addCustomRemotingCommandHandler(
                 BotRemotingCommandFlagConstants.START_BOT_JOB,
                 (channel, remotingCommand) -> startOrParsedBotJob(remotingCommand)
+        );
+
+        // 启动bot命令处理
+        addCustomRemotingCommandHandler(
+                BotRemotingCommandFlagConstants.START_BOT,
+                this::startBotHandler
+        );
+        // 关闭bot命令处理
+        addCustomRemotingCommandHandler(
+                BotRemotingCommandFlagConstants.STOP_BOT,
+                this::stopBotHandler
+        );
+
+        // 查询bot account命令
+        addCustomRemotingCommandHandler(
+                BotRemotingCommandFlagConstants.QUERY_BOT_ACCOUNT,
+                this::pageQueryBotAccount
         );
     }
 
@@ -193,23 +227,23 @@ public class BotScriptAgent extends ScriptAgent {
     /**
      * 将bot 上线上报到ControlServer
      *
-     * @param botGroup botGroup
-     * @param botName  botName
-     * @param botKey   botKey
+     * @param scriptNodeName scriptNodeName
+     * @param botName        botName
+     * @param botKey         botKey
      * @return boolean
      */
-    private CompletableFuture<Boolean> reportScriptBotOnLine(String botGroup, String botName, String botKey) {
-        log.info("send report bot[{}][{}] on line command", botGroup, botName);
+    private CompletableFuture<Boolean> reportScriptBotOnLine(String scriptNodeName, String botName, String botKey) {
+        log.info("send report bot[{}][{}] on line command", scriptNodeName, botName);
         // Step 1 生成命令
         RemotingCommand command = newRequestCommand(BotRemotingCommandFlagConstants.SCRIPT_BOT_ON_LINE, true);
-        command.addExtField(BotExtFieldConstants.TARGET_GROUP_KEY, botGroup);
+        command.addExtField(BotExtFieldConstants.TARGET_GROUP_KEY, scriptNodeName);
         command.addExtField(BotExtFieldConstants.TARGET_BOT_NAME_KEY, botName);
         command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);
 
         return sendRequest(command)
                 .thenApply(response -> {
                     if (response.isSuccess()) {
-                        log.info("report bot[{}][{}] online success", botGroup, botName);
+                        log.info("report bot[{}][{}] online success", scriptNodeName, botName);
                         return true;
                     } else {
                         return false;
@@ -283,6 +317,132 @@ public class BotScriptAgent extends ScriptAgent {
         }
 
         response.setBody(Serializer.Algorithm.JDK.serialize(botACJobResult));
+        return response;
+    }
+
+    /**
+     * 远程命令启动Bot
+     *
+     * @param channel channel
+     * @param request request
+     * @return RemotingCommand
+     */
+    private RemotingCommand startBotHandler(Channel channel, RemotingCommand request) {
+        RemotingCommand response = new RemotingCommand();
+        response.setTransactionId(request.getTransactionId());
+        response.setCode(RemotingCommandCodeConstants.SUCCESS);
+        response.setFlag(BotRemotingCommandFlagConstants.START_BOT_RESPONSE);
+
+        String botKey = request.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
+        String group = request.getGroup();
+        String serviceId = request.getServiceId();
+        String instanceId = request.getInstanceId();
+        if (StrUtil.isBlank(group) || StrUtil.isBlank(serviceId)
+                || StrUtil.isBlank(instanceId) || StrUtil.isBlank(botKey)) {
+            response.setCode(RemotingCommandCodeConstants.FAIL);
+            response.setErrorMessage("params error");
+        } else {
+            log.info("remote[{}]-[{}]-[{}] try launch bot[{}]", group, serviceId, instanceId, botKey);
+            try {
+                BotStatus botStatus = ScriptBotLauncher.INSTANCE.loadAndLaunchBot(botKey);
+                response.setObjBody(botStatus);
+                log.info("remote[{}]-[{}]-[{}] try launch bot[{}] success", group, serviceId, instanceId, botKey);
+            } catch (Exception e) {
+                response.setCode(RemotingCommandCodeConstants.FAIL);
+                response.setErrorMessage(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
+                log.error("remote[{}]-[{}]-[{}] launch bot[{}] failed", group, serviceId, instanceId, botKey, e);
+            }
+        }
+        return response;
+    }
+
+    /**
+     * 远程命令停止bot
+     *
+     * @param channel channel
+     * @param request request
+     * @return RemotingCommand
+     */
+    private RemotingCommand stopBotHandler(Channel channel, RemotingCommand request) {
+        RemotingCommand response = new RemotingCommand();
+        response.setTransactionId(request.getTransactionId());
+        response.setCode(RemotingCommandCodeConstants.SUCCESS);
+        response.setFlag(BotRemotingCommandFlagConstants.STOP_BOT_RESPONSE);
+
+        String botKey = request.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
+        String group = request.getGroup();
+        String serviceId = request.getServiceId();
+        String instanceId = request.getInstanceId();
+        if (StrUtil.isBlank(group) || StrUtil.isBlank(serviceId)
+                || StrUtil.isBlank(instanceId) || StrUtil.isBlank(botKey)) {
+            response.setCode(RemotingCommandCodeConstants.FAIL);
+            response.setErrorMessage("params error");
+        } else {
+            log.info("remote[{}]-[{}]-[{}] try stop bot[{}]", group, serviceId, instanceId, botKey);
+            try {
+                AutoLaunchBot<?> bot = ScriptBotLauncher.INSTANCE.getBotByBotKey(botKey);
+                if (bot != null) {
+                    bot.stop();
+                    response.setObjBody(bot.getStatus());
+                } else {
+                    response.setCode(RemotingCommandCodeConstants.FAIL);
+                    response.setErrorMessage("bot not found");
+                }
+                log.info("remote[{}]-[{}]-[{}] try stop bot[{}] success", group, serviceId, instanceId, botKey);
+            } catch (Exception e) {
+                response.setCode(RemotingCommandCodeConstants.FAIL);
+                response.setErrorMessage(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
+                log.error("remote[{}]-[{}]-[{}] v bot[{}] failed", group, serviceId, instanceId, botKey, e);
+            }
+        }
+        return response;
+    }
+
+    /**
+     * 查询bot 账户
+     *
+     * @param channel channel
+     * @param request request
+     * @return response
+     */
+    private RemotingCommand pageQueryBotAccount(Channel channel, RemotingCommand request) {
+        log.info("remote page query bot account...");
+        RemotingCommand response = new RemotingCommand();
+        response.setTransactionId(request.getTransactionId());
+        response.setCode(RemotingCommandCodeConstants.SUCCESS);
+        response.setFlag(BotRemotingCommandFlagConstants.QUERY_BOT_ACCOUNT_RESPONSE);
+
+        String botKey = request.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
+        Integer botId = request.getExtFieldsInt(BotExtFieldConstants.TARGET_BOT_ID_KEY);
+        PageQuery pageQuery = request.getObjBody(PageQuery.class);
+
+        Map<String, Object> filterMap = new HashMap<>();
+        filterMap.put("botId", botId);
+        filterMap.put("botKey", botKey);
+        if (pageQuery.getFilterMap() != null) {
+            filterMap.putAll(pageQuery.getFilterMap());
+        }
+        try {
+            PageResult<AccountContext> pageResult = botApi.getBotAccountService().conditionPageQuery(
+                    pageQuery.getPage(),
+                    pageQuery.getLimit(),
+                    filterMap
+            );
+            List<AccountContext> list = pageResult.getList();
+
+            PageResult<BotInstanceAccount> result = new PageResult<>(
+                    pageResult.getTotal(),
+                    list == null ? List.of(): list.stream().map(BotInstanceAccount::fromAccountContext).toList(),
+                    pageResult.getPages(),
+                    pageResult.getPageNum(),
+                    pageResult.getPageSize()
+            );
+            response.setBody(Serializer.Algorithm.JDK.serialize(result));
+        } catch (SQLException e) {
+            response.setCode(RemotingCommandCodeConstants.FAIL);
+            response.setErrorMessage(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
+            log.error("page query bot account error", e);
+        }
         return response;
     }
 }

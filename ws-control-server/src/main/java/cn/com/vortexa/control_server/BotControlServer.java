@@ -246,19 +246,19 @@ public class BotControlServer {
     /**
      * 给服务实例发送命令
      *
-     * @param key             key
+     * @param serviceInstanceKey             serviceInstanceKey
      * @param remotingCommand remotingCommand
      * @return CompletableFuture<RemotingCommand>
      */
     public CompletableFuture<RemotingCommand> sendCommandToServiceInstance(
-            String key, RemotingCommand remotingCommand
+            String serviceInstanceKey, RemotingCommand remotingCommand
     ) {
         // Step 1 获取连接
-        ConnectEntry connectEntry = connectionService.getServiceInstanceChannel(key);
+        ConnectEntry connectEntry = connectionService.getServiceInstanceChannel(serviceInstanceKey);
 
         if (connectEntry == null || !connectEntry.isUsable()) {
-            log.error("[{}] channel is unusable", key);
-            return CompletableFuture.completedFuture(null);
+            log.error("[{}] channel is unusable", serviceInstanceKey);
+            throw new RuntimeException(serviceInstanceKey + " channel is unusable");
         }
 
         return CompletableFuture.supplyAsync(() -> {

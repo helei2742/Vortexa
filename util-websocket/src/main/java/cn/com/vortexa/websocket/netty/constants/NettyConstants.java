@@ -23,7 +23,7 @@ public class NettyConstants {
     /**
      * netty客户端断线重连时间
      */
-    public static final int[] RECONNECT_DELAY_SECONDS = {0, 0, 10, 60, 180, 300, 600};
+    public static final int[] RECONNECT_DELAY_SECONDS = {0, 0, 10, 25, 60, 60, 180, 300};
 
 
     /**

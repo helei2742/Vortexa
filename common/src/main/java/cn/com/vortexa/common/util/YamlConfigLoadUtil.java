@@ -42,18 +42,7 @@ public class YamlConfigLoadUtil {
                 try (InputStream inputStream = new FileInputStream(dirResourcePath)) {
                     Map<String, Object> yamlData = yaml.load(inputStream);
 
-                    if (prefixList != null) {
-                        for (String prefix : prefixList) {
-                            yamlData = (Map<String, Object>) yamlData.get(prefix);
-                            Map<String, Object> target = new HashMap<>();
-                            for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
-                                target.put(toCamelCase(entry.getKey()), entry.getValue());
-                            }
-                            yamlData = target;
-                        }
-                    }
-
-                    config = yaml.loadAs(yaml.dump(yamlData), clazz);
+                    return load(yaml, yamlData, prefixList, clazz);
                 } catch (IOException e) {
                     throw new RuntimeException(String.format("加载配置池文件[%s]发生错误", dirResourcePath), e);
                 }
@@ -111,18 +100,7 @@ public class YamlConfigLoadUtil {
                 try (InputStream inputStream = new FileInputStream(path)) {
                     Map<String, Object> yamlData = yaml.load(inputStream);
 
-                    if (prefixList != null) {
-                        for (String prefix : prefixList) {
-                            yamlData = (Map<String, Object>) yamlData.get(prefix);
-                            Map<String, Object> target = new HashMap<>();
-                            for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
-                                target.put(toCamelCase(entry.getKey()), entry.getValue());
-                            }
-                            yamlData = target;
-                        }
-                    }
-
-                    return yaml.loadAs(yaml.dump(yamlData), tClass);
+                    return load(yaml, yamlData, prefixList, tClass);
                 } catch (IOException e) {
                     throw new RuntimeException(String.format("加载配置池文件[%s]发生错误", path), e);
                 }
@@ -139,17 +117,7 @@ public class YamlConfigLoadUtil {
             if (config == null) {
                 Yaml yaml = new Yaml();
                 Map<String, Object> yamlData = yaml.load(inputStream);
-                if (prefixList != null) {
-                    for (String prefix : prefixList) {
-                        yamlData = (Map<String, Object>) yamlData.get(prefix);
-                        Map<String, Object> target = new HashMap<>();
-                        for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
-                            target.put(toCamelCase(entry.getKey()), entry.getValue());
-                        }
-                        yamlData = target;
-                    }
-                }
-                return yaml.loadAs(yaml.dump(yamlData), tClass);
+                return load(yaml, yamlData, prefixList, tClass);
             }
             return config;
         });
@@ -160,9 +128,16 @@ public class YamlConfigLoadUtil {
     public static <T> T load(String content, List<String> prefixList, Class<T> tClass) {
         Yaml yaml = new Yaml();
         Map<String, Object> yamlData = yaml.load(String.valueOf(content));
+        return load(yaml, yamlData, prefixList, tClass);
+    }
+
+    public static <T> T load(Yaml yaml, Map<String, Object> yamlData, List<String> prefixList, Class<T> tClass) {
         if (prefixList != null) {
             for (String prefix : prefixList) {
                 yamlData = (Map<String, Object>) yamlData.get(prefix);
+                if (yamlData == null) {
+                    break;
+                }
                 Map<String, Object> target = new HashMap<>();
                 for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
                     target.put(toCamelCase(entry.getKey()), entry.getValue());

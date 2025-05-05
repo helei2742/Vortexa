@@ -16,8 +16,8 @@ public class ControlServerUtil {
     /**
      * 生成服务实例的key
      *
-     * @param group group
-     * @param serviceId serviceId
+     * @param group      group
+     * @param serviceId  serviceId
      * @param instanceId instanceId
      * @return String
      */

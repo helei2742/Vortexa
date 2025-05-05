@@ -1,15 +1,11 @@
 package cn.com.vortexa.script_node.bot;
 
-import static cn.com.vortexa.script_node.service.impl.BotAccountContextServiceImpl.BOT_ACCOUNT_CONTEXT_TABLE_PREFIX;
-import static cn.com.vortexa.common.entity.BotInfo.BASIC_JOB_LIST_KEY;
-
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
 import cn.com.vortexa.script_node.service.BotApi;
-import cn.com.vortexa.script_node.constants.BotStatus;
-import cn.com.vortexa.common.constants.BotJobType;
+import cn.com.vortexa.common.constants.BotStatus;
 import cn.com.vortexa.common.constants.HttpMethod;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
-import cn.com.vortexa.script_node.util.log.AppendLogger;
+import cn.com.vortexa.common.util.log.AppendLogger;
 import cn.com.vortexa.common.dto.AutoBotRuntimeInfo;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.entity.BotInfo;
@@ -20,10 +16,10 @@ import cn.com.vortexa.common.exception.BotStatusException;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.common.util.http.RestApiClientFactory;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 import lombok.Getter;
@@ -33,12 +29,10 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.*;
-        import java.util.function.Supplier;
+import java.util.function.Supplier;
 
 public abstract class AbstractAutoBot {
 
@@ -164,6 +158,8 @@ public abstract class AbstractAutoBot {
                 .botId(botInfo.getId())
                 .botName(botInfo.getName())
                 .scriptNodeName(scriptNodeConfiguration.getScriptNodeName())
+                .jobParams(botInfo.getJobParams())
+                .params(botInfo.getParams())
                 .botKey(autoBotConfig.getBotKey())
                 .build();
 
@@ -179,28 +175,17 @@ public abstract class AbstractAutoBot {
             logger.info("start init bot instance");
 
             BotInstance dbInstance = getBotApi().getBotInstanceRPC().selectOneRPC(botInstance);
+            // 数据库存在bot instance实例信息合并数据库的。
+            if (dbInstance != null) {
+                mergeDbBotInstance(dbInstance);
+                logger.info("exist db botInstance, marge exist instance config...");
+            }
 
-            // 数据库存在bot instance实例信息并且job信息没变化，用数据库的。 否则用BotInfo信息生成BotInstance信息写入库
-            if (dbInstance != null && !compareBotJobParamsChanged(botInfo, dbInstance)) {
-                this.botInstance = dbInstance;
-                logger.info("exist botInstance, use exist instance config");
+            logger.info("start save bot instance...");
+            if (botApi.getBotInstanceRPC().insertOrUpdateRPC(botInstance) > 0) {
+                logger.info("bot instance save success...");
             } else {
-                logger.info("no instance or instance job update, create it...");
-
-                String tableName = getBotApi().getTableShardStrategy().generateTableName(
-                        BOT_ACCOUNT_CONTEXT_TABLE_PREFIX,
-                        new Object[]{botInstance.getBotId(), botInstance.getBotKey()}
-                );
-                botInstance.setBotName(botInfo.getName());
-                botInstance.setAccountTableName(tableName);
-                botInstance.setJobParams(botInfo.getJobParams());
-                botInstance.setParams(botInfo.getParams());
-
-                if (botApi.getBotInstanceRPC().insertOrUpdateRPC(botInstance) > 0) {
-                    logger.info("new bot instance create success");
-                } else {
-                    throw new BotInitException("new bot instance create error");
-                }
+                throw new BotInitException("bot instance save error");
             }
 
             // Step 2.5 子类初始化
@@ -526,32 +511,11 @@ public abstract class AbstractAutoBot {
     }
 
     protected synchronized AutoBotJobParam getJobParam(String jobName) {
-        return this.botInfo.getJobParams() == null ? null : this.botInfo.getJobParams().get(jobName);
+        return this.botInstance.getJobParams() == null ? null : this.botInstance.getJobParams().get(jobName);
     }
 
     protected synchronized void setJobParam(String jobKey, AutoBotJobParam jobParam) {
         this.botInfo.getJobParams().put(jobKey, jobParam);
-    }
-
-    protected synchronized void addBasicJob(BotJobType jobType) {
-        if (this.botInfo.getParams() == null) {
-            this.botInfo.setParams(new HashMap<>());
-        }
-
-        this.botInfo.getParams().compute(BASIC_JOB_LIST_KEY, (k, v) -> {
-            if (v == null) {
-                v = new HashSet<String>();
-            }
-            if (v instanceof JSONArray t) {
-                v = new HashSet<String>();
-                for (int i = 0; i < t.size(); i++) {
-                    ((HashSet<String>) v).add(t.getString(i));
-                }
-            }
-            Set<String> set = (HashSet<String>) v;
-            set.add(jobType.name());
-            return v;
-        });
     }
 
     protected abstract BotInfo buildBotInfo() throws BotInitException;
@@ -604,7 +568,7 @@ public abstract class AbstractAutoBot {
     /**
      * 初始化数据库表
      *
-     * @param botApi    botApi
+     * @param botApi botApi
      * @throws SQLException SQLException
      */
     private void initDBTable(BotApi botApi) throws SQLException {
@@ -618,5 +582,23 @@ public abstract class AbstractAutoBot {
             throw new RuntimeException("account reword table create error");
         }
         logger.info("database table init finish");
+    }
+
+    /**
+     * 合并BotInstance的db配置
+     *
+     * @param dbInstance dbInstance
+     */
+    private void mergeDbBotInstance(BotInstance dbInstance) {
+        Map<String, AutoBotJobParam> jobParams = this.botInstance.getJobParams();
+        Map<String, AutoBotJobParam> dbJobParams = dbInstance.getJobParams();
+        for (Map.Entry<String, AutoBotJobParam> entry : jobParams.entrySet()) {
+            String jobName = entry.getKey();
+            AutoBotJobParam dbJobParam = dbJobParams.get(jobName);
+            entry.setValue(dbJobParam);
+        }
+        if (CollUtil.isNotEmpty(dbInstance.getParams())) {
+            this.botInstance.getParams().putAll(dbInstance.getParams());
+        }
     }
 }

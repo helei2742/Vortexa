@@ -134,6 +134,19 @@ public class FileUtil {
     }
 
     /**
+     * 获取script node config file
+     *
+     * @return 配置目录绝对路径
+     */
+    public static Path getScriptNodeConfig(String fileName) throws IOException {
+        Path path = Paths.get(getScriptNodeConfigDir() + File.separator + fileName);
+        if (Files.notExists(path)) {
+            Files.createDirectories(path.getParent());
+        }
+        return path;
+    }
+
+    /**
      * 依赖目录
      *
      * @return String
@@ -176,6 +189,28 @@ public class FileUtil {
      */
     public static String getBotInstanceConfigDir() {
         return USER_DIR + File.separator + "instance";
+    }
+
+    /**
+     * bot日志目录
+     *
+     * @param scriptNodeName scriptNodeName
+     * @param botKey         botKey
+     * @return  String
+     */
+    public static String getBotInstanceLogsDir(String scriptNodeName, String botKey) {
+        return RESOURCE_ROOT_DIR + File.separator + "logs" + File.separator + scriptNodeName + File.separator + botKey;
+    }
+
+    /**
+     * bot日志目录
+     *
+     * @param scriptNodeName scriptNodeName
+     * @param botKey         botKey
+     * @return  String
+     */
+    public static String getBotInstanceCurrentLogPath(String scriptNodeName, String botKey) {
+        return getBotInstanceLogsDir(scriptNodeName, botKey) + File.separator +  botKey + ".log";
     }
 
     /**

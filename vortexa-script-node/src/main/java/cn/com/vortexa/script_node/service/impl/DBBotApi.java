@@ -5,7 +5,6 @@ import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.script_node.service.IBotAccountContextService;
 import cn.com.vortexa.script_node.service.IRewordInfoService;
 import cn.com.vortexa.db_layer.plugn.table_shard.strategy.ITableShardStrategy;
-import cn.com.vortexa.rpc.api.bot.IScriptAgentRPC;
 import cn.com.vortexa.rpc.api.platform.IAccountBaseInfoRPC;
 import cn.com.vortexa.rpc.api.platform.IBotInfoRPC;
 import cn.com.vortexa.job.service.BotJobService;
@@ -66,9 +65,6 @@ public class DBBotApi implements BotApi {
 
     @RPCReference
     private IRewordInfoRPC rewordInfoRPC;
-
-    @Autowired
-    private IScriptAgentRPC scriptAgentRPC;
 
     @Autowired
     private ITableShardStrategy tableShardStrategy;

@@ -2,6 +2,7 @@ package cn.com.vortexa.common.entity;
 
 import cn.com.vortexa.common.util.tableprinter.CommandTableField;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
+import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.*;
@@ -56,7 +57,7 @@ public class AccountBaseInfo implements Serializable {
     @CommandTableField
     private String password;
 
-    @TableField("params")
+    @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
     private Map<String, Object> params = new HashMap<>();
 
     @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)

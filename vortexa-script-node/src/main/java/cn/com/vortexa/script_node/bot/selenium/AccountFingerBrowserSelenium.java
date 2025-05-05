@@ -4,6 +4,7 @@ import cn.com.vortexa.browser_control.OptSeleniumInstance;
 import cn.com.vortexa.browser_control.dto.SeleniumParams;
 import cn.com.vortexa.browser_control.execute.ExecuteGroup;
 import cn.com.vortexa.common.entity.AccountContext;
+import cn.com.vortexa.common.util.log.AppendLogger;
 import cn.com.vortexa.script_node.dto.selenium.ACBotTypedSeleniumExecuteInfo;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +40,12 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
     @Getter
     private volatile boolean running = false;
 
-    public AccountFingerBrowserSelenium(AccountContext accountContext, SeleniumParams params) throws IOException {
-        super(accountContext.getSimpleInfo(), params);
+    public AccountFingerBrowserSelenium(
+            AccountContext accountContext,
+            SeleniumParams params,
+            AppendLogger logger
+    ) throws IOException {
+        super(accountContext.getSimpleInfo(), params, logger);
     }
 
     @Override

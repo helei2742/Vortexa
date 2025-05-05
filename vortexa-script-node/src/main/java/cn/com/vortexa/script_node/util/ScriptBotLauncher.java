@@ -6,7 +6,7 @@ import cn.com.vortexa.script_node.anno.BotApplication;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
-import cn.com.vortexa.script_node.constants.BotStatus;
+import cn.com.vortexa.common.constants.BotStatus;
 import cn.com.vortexa.script_node.scriptagent.BotScriptAgent;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.common.exception.BotInitException;
@@ -23,6 +23,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 @Slf4j
@@ -36,11 +37,14 @@ public class ScriptBotLauncher {
     private final ScriptNodeConfiguration scriptNodeConfiguration;
     private final BotApi botApi;
     private final BotScriptAgent botScriptAgent;
+    // 同时只启动一个bot
+    private final ReentrantLock launchLock = new ReentrantLock();
 
     public static ScriptBotLauncher buildScriptBotLauncher(ScriptNodeConfiguration scriptNodeConfiguration, BotApi botApi, BotScriptAgent botScriptAgent) {
         if (INSTANCE == null) {
             synchronized (ScriptBotLauncher.class) {
                 if (INSTANCE == null) {
+                    botScriptAgent.setBotApi(botApi);
                     INSTANCE = new ScriptBotLauncher(scriptNodeConfiguration, botApi, botScriptAgent);
                 }
             }
@@ -59,12 +63,12 @@ public class ScriptBotLauncher {
      *
      * @param botKey botKey
      */
-    public void loadAndLaunchBot(String botKey) {
-         AutoBotConfig botConfig = scriptNodeConfiguration.getBotKeyConfigMap().get(botKey);
-         if (botConfig == null) {
-             throw new IllegalArgumentException("no bot in script node" + botKey);
-         }
-         loadAndLaunchBot(botConfig);
+    public BotStatus loadAndLaunchBot(String botKey) {
+        AutoBotConfig botConfig = scriptNodeConfiguration.getBotKeyConfigMap().get(botKey);
+        if (botConfig == null) {
+            throw new IllegalArgumentException("no bot in script node" + botKey);
+        }
+       return loadAndLaunchBot(botConfig);
     }
 
     /**
@@ -72,23 +76,21 @@ public class ScriptBotLauncher {
      *
      * @param botConfig botConfig
      */
-    public void loadAndLaunchBot(AutoBotConfig botConfig) {
+    public BotStatus loadAndLaunchBot(AutoBotConfig botConfig) {
         String botKey = botConfig.getBotKey();
-        ScriptBotMetaInfo rowBotMetaInfo = botMetaInfoMap.get(botKey);
-        if (rowBotMetaInfo != null) {
-            if (rowBotMetaInfo.getBot().getStatus() == BotStatus.RUNNING) {
-                throw new IllegalArgumentException(botKey + " in running..please stop it first");
-            }
-        }
+        checkBotStatus(botKey);
 
-        BotMetaInfo metaInfo = botConfig.getMetaInfo();
-
-        log.info("[{}] start launch...", botKey);
-        String className = metaInfo.getClassName();
-        if (StrUtil.isBlank(className)) {
-            throw new IllegalArgumentException(botKey + " config class name is null");
-        }
+        launchLock.lock();
         try {
+            checkBotStatus(botKey);
+
+            BotMetaInfo metaInfo = botConfig.getMetaInfo();
+            log.info("[{}] start launch...", botKey);
+            String className = metaInfo.getClassName();
+            if (StrUtil.isBlank(className)) {
+                throw new IllegalArgumentException(botKey + " config class name is null");
+            }
+
             // 加载 class
             // 1 编译为class
             // 2 加载class
@@ -118,14 +120,36 @@ public class ScriptBotLauncher {
 
                 // Step 4 添加进菜单
                 setLoadedBotInMenu(botKey, autoLaunchBot);
+                return autoLaunchBot.getStatus();
             } else {
-                log.info("[{}] class[{}} illegal, must extends AutoLaunchBot.class", botKey, className);
+                log.warn("[{}] class[{}} illegal, must extends AutoLaunchBot.class", botKey, className);
+                return BotStatus.NOT_LOADED;
             }
         } catch (BotStartException | BotInitException e) {
             log.error("script botKey[{}] auto launch error", botKey, e);
+            return BotStatus.INIT_ERROR;
         } catch (Exception e) {
             log.error("script botKey[{}] auto launch error", botKey, e);
             throw new RuntimeException("load class error", e);
+        } finally {
+            launchLock.unlock();
+        }
+    }
+
+    /**
+     * 检查bot状态
+     *
+     * @param botKey botKey
+     */
+    private static void checkBotStatus(String botKey) {
+        ScriptBotMetaInfo rowBotMetaInfo;
+        rowBotMetaInfo = botMetaInfoMap.get(botKey);
+        if (rowBotMetaInfo != null) {
+            if (rowBotMetaInfo.getBot().getStatus() == BotStatus.RUNNING) {
+                throw new IllegalArgumentException(botKey + " in running..please stop it first");
+            } else if (rowBotMetaInfo.getBot().getStatus() == BotStatus.SHUTDOWN) {
+                throw new IllegalArgumentException(botKey + " in shutdown..can't start it");
+            }
         }
     }
 

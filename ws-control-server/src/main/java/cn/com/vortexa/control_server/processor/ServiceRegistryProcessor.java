@@ -54,7 +54,7 @@ public class ServiceRegistryProcessor {
         ScriptNode scriptNode = null;
         if (remotingCommand.getBody() != null && remotingCommand.getBody().length > 0) {
             try {
-                scriptNode = remotingCommand.getObjBodY(ScriptNode.class);
+                scriptNode = remotingCommand.getObjBody(ScriptNode.class);
             } catch (Exception e) {
                 log.warn("get service props from remoting command error, {}", e.getMessage());
             }

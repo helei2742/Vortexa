@@ -1,6 +1,7 @@
 package cn.com.vortexa.common.entity;
 
 import cn.com.vortexa.common.util.tableprinter.CommandTableField;
+import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -61,7 +62,7 @@ public class TelegramAccount implements Serializable {
     @CommandTableField
     private String token;
 
-    @TableField("params")
+    @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
     private Map<String, Object> params;
 
     @TableField("insert_datetime")

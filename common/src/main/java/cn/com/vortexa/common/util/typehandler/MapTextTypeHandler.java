@@ -10,11 +10,11 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MapTextTypeHandler extends BaseTypeHandler<Map<String, Object>> {
+public class MapTextTypeHandler extends BaseTypeHandler<Map<String, ?>> {
 
 
     @Override
-    public void setNonNullParameter(PreparedStatement ps, int i, Map<String, Object> parameter, JdbcType jdbcType) throws SQLException {
+    public void setNonNullParameter(PreparedStatement ps, int i, Map<String, ?> parameter, JdbcType jdbcType) throws SQLException {
         String jsonString = parameter != null ? JSONObject.toJSONString(parameter) : null;
         ps.setString(i, jsonString);
     }

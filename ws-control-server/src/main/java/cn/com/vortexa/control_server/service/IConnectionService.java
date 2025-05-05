@@ -53,5 +53,10 @@ public interface IConnectionService {
      */
     void freshServiceInstanceConnection(String key, Channel channel);
 
+    /**
+     * 查询在线的script node 的 instance key（groupId, serviceId, instanceId）
+     *
+     * @return List<String>
+     */
     List<String> queryOnlineInstanceKey();
 }

@@ -2,6 +2,7 @@ package cn.com.vortexa.browser_control;
 
 import cn.com.vortexa.browser_control.dto.SeleniumParams;
 import cn.com.vortexa.browser_control.dto.SeleniumProxy;
+import cn.com.vortexa.common.util.log.AppendLogger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
@@ -23,12 +24,12 @@ public class OptSeleniumInstance extends SeleniumInstance {
 
     private WebDriverWait normalDriverWaiter;
 
-    public OptSeleniumInstance(String instanceId, SeleniumParams params) throws IOException {
-        super(instanceId, null, params);
+    public OptSeleniumInstance(String instanceId, SeleniumParams params, AppendLogger logger) throws IOException {
+        super(instanceId, null, params, logger);
     }
 
-    public OptSeleniumInstance(String instanceId, SeleniumProxy proxy, SeleniumParams params) throws IOException {
-        super(instanceId, proxy, params);
+    public OptSeleniumInstance(String instanceId, SeleniumProxy proxy, SeleniumParams params, AppendLogger logger) throws IOException {
+        super(instanceId, proxy, params,logger);
     }
 
     @Override

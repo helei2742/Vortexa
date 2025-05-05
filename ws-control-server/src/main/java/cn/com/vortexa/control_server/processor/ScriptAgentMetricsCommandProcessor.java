@@ -28,7 +28,7 @@ public class ScriptAgentMetricsCommandProcessor {
      */
     public RemotingCommand handlerScriptAgentMetricsUpload(String key, RemotingCommand command) {
         // Step 1 提取数据
-        ScriptAgentMetrics agentMetrics = command.getObjBodY(ScriptAgentMetrics.class);
+        ScriptAgentMetrics agentMetrics = command.getObjBody(ScriptAgentMetrics.class);
 
         int insert =  botControlServer.getMetricsService().saveAgentMetrics(agentMetrics);
 

@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @since 2025-03-17
  */
 @Slf4j
+@Deprecated
 public class FileRegistryService implements IRegistryService {
 
     private static final String FILE_NAME = "nameserver-registry.json";

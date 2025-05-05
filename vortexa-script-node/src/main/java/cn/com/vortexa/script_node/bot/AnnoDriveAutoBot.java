@@ -18,6 +18,7 @@ import cn.com.vortexa.common.exception.BotMethodFormatException;
 import cn.com.vortexa.common.exception.BotMethodInvokeException;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.script_node.dto.job.AutoBotJobRuntimeParam;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONArray;
 import lombok.Getter;
@@ -87,22 +88,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                     }
                 }
 
-                BotInfo botInfo = null;
-
-                // 查询是否存在botKey的bot
-                Map<String, Object> query = new HashMap<>();
-                query.put("name", botName);
-                List<BotInfo> dbBotInfoList = getBotApi().getBotInfoRPC().conditionQueryRPC(query);
-
-                // 查询bot是否存在，不存在则创建
-                if (dbBotInfoList == null || dbBotInfoList.isEmpty()) {
-                    logger.warn("不存在bot info, 自动创建...");
-                    botInfo = generateFromAnno(annotation);
-                } else {
-                    botInfo = dbBotInfoList.getFirst();
-                    botInfo.fixMapValueType();
-                }
-                return botInfo;
+                return generateFromAnno(annotation);
             } else {
                 throw new IllegalArgumentException("bot 应该带有 @BotApplication注解");
             }

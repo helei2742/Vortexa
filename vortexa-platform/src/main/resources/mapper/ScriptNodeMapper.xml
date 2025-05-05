@@ -12,7 +12,9 @@
         <result column="port" property="port" />
         <result column="script_node_name" property="scriptNodeName" />
         <result column="description" property="description" />
+        <result column="node_app_config" property="nodeAppConfig" />
         <result column="bot_config_map" property="botConfigMap" />
+        <result column="bot_meta_info_map" property="botMetaInfoMap" />
         <result column="params" property="params" />
         <result column="insert_datetime" property="insertDatetime" />
         <result column="update_datetime" property="updateDatetime" />
@@ -21,9 +23,9 @@
 
     <insert id="insertOrUpdate">
         INSERT INTO t_script_node
-        (group_id, service_id, instance_id, host, port, script_node_name, description, bot_config_map, params, update_datetime,  valid)
+        (group_id, service_id, instance_id, host, port, script_node_name, description, node_app_config, bot_config_map, bot_meta_info_map,params, update_datetime,  valid)
         VALUES (
-        #{groupId}, #{serviceId}, #{instanceId}, #{host}, #{port}, #{scriptNodeName}, #{description}, #{botConfigMap}, #{params},  current_timestamp, 1
+        #{groupId}, #{serviceId}, #{instanceId}, #{host}, #{port}, #{scriptNodeName}, #{description}, #{nodeAppConfig}, #{botConfigMap}, #{botMetaInfoMap}, #{params},  current_timestamp, 1
         ) ON DUPLICATE KEY  UPDATE
         <trim suffixOverrides=",">
             <if test="groupId != null">
@@ -47,8 +49,14 @@
             <if test="description != null">
                 description = values(description),
             </if>
+            <if test="nodeAppConfig != null">
+                node_app_config = values(node_app_config),
+            </if>
             <if test="botConfigMap != null">
                 bot_config_map = values(bot_config_map),
+            </if>
+            <if test="botMetaInfoMap != null">
+                bot_meta_info_map = values(bot_meta_info_map),
             </if>
             <if test="params != null">
                 params = values(params),

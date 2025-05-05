@@ -2,7 +2,7 @@ package cn.com.vortexa.script_node.view;
 
 import cn.com.vortexa.common.util.AnsiColor;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
-import cn.com.vortexa.script_node.constants.BotStatus;
+import cn.com.vortexa.common.constants.BotStatus;
 import cn.com.vortexa.script_node.util.AccountInfoPrinter;
 import cn.com.vortexa.script_node.util.ScriptBotLauncher;
 import cn.com.vortexa.script_node.view.commandMenu.CommandMenuNode;
@@ -13,7 +13,7 @@ import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.entity.BrowserEnv;
 import cn.com.vortexa.common.entity.ProxyInfo;
 import cn.com.vortexa.common.entity.RewordInfo;
-import cn.com.vortexa.job.constants.JobStatus;
+import cn.com.vortexa.common.constants.JobStatus;
 
 import com.alibaba.fastjson.JSON;
 

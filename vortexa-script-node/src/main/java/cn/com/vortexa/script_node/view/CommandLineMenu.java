@@ -2,7 +2,7 @@ package cn.com.vortexa.script_node.view;
 
 import cn.com.vortexa.common.util.AnsiColor;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
-import cn.com.vortexa.script_node.constants.BotStatus;
+import cn.com.vortexa.common.constants.BotStatus;
 import cn.com.vortexa.script_node.view.commandMenu.CommandMenuNode;
 import cn.com.vortexa.script_node.view.commandMenu.MenuNodeMethod;
 import cn.hutool.core.collection.ConcurrentHashSet;

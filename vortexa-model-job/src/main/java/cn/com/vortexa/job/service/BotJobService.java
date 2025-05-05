@@ -2,17 +2,22 @@ package cn.com.vortexa.job.service;
 
 
 import cn.com.vortexa.common.dto.BotACJobResult;
-import cn.com.vortexa.job.constants.JobStatus;
+import cn.com.vortexa.common.constants.JobStatus;
 import cn.com.vortexa.job.core.AutoBotJobInvoker;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
+import cn.com.vortexa.common.dto.job.JobTrigger;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface BotJobService {
 
+    static String botQuartzGroupBuilder(String scriptNodeName, String botKey) {
+        return "node{" + scriptNodeName + "}bot{" + botKey + "}";
+    }
 
     /**
      * 注册Job的调用者
@@ -82,7 +87,8 @@ public interface BotJobService {
     /**
      * 注册job，开始定时执行
      *
-     * @param group           group
+     * @param scriptNodeName  scriptNodeName
+     * @param botKey          botKey
      * @param jobName         jobName
      * @param autoBotJobParam autoBotJobParam
      * @param invoker         invoker
@@ -90,21 +96,22 @@ public interface BotJobService {
      */
     BotACJobResult startJob(
             String scriptNodeName,
-            String group,
+            String botKey,
             String jobName,
             AutoBotJobParam autoBotJobParam,
             AutoBotJobInvoker invoker
     );
 
-    void parseJob(JobKey jobKey) throws SchedulerException;
+    Boolean pauseJob(JobKey jobKey) throws SchedulerException;
 
     /**
      * 暂停Job
      *
      * @param botKey  botKey
      * @param jobName jobName
+     * @return  Boolean
      */
-    void parseJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException;
+    Boolean pauseJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException;
 
     /**
      * 暂停Bot的全部任务
@@ -132,6 +139,24 @@ public interface BotJobService {
      */
     void resumeJob(JobKey jobKey) throws SchedulerException;
 
+    /**
+     * 删除Job
+     *
+     * @param botKey  botKey
+     * @param jobName jobName
+     * @return Boolean
+     * @throws SchedulerException SchedulerException
+     */
+    Boolean deleteJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException;
+
+    /**
+     * 删除Job
+     *
+     * @param jobKey jobKey
+     * @return Boolean
+     * @throws SchedulerException SchedulerException
+     */
+    Boolean deleteJob(JobKey jobKey) throws SchedulerException;
 
     /**
      * 查询job状态
@@ -151,4 +176,13 @@ public interface BotJobService {
      */
     JobStatus queryJobStatus(JobKey jobKey) throws SchedulerException;
 
+    /**
+     * 查询scriptNodeName下botKey运行的job
+     *
+     * @param scriptNodeName scriptNodeName
+     * @param botKey         botKey
+     * @return List>
+     * @throws SchedulerException SchedulerException
+     */
+    Map<String, List<JobTrigger>> queryScriptNodeBotJobs(String scriptNodeName, String botKey) throws SchedulerException;
 }

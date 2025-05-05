@@ -2,6 +2,7 @@ package cn.com.vortexa.common.entity;
 
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
+import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.*;
@@ -35,8 +36,6 @@ public class BotInfo implements Serializable {
 
     public static final String ACCOUNT_PARAMS_KEY = "account_params_key";
 
-    public static final String BASIC_JOB_LIST_KEY = "basic_job_list";
-
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
@@ -55,7 +54,7 @@ public class BotInfo implements Serializable {
     @TableField("job_params")
     private Map<String, AutoBotJobParam> jobParams = new HashMap<>();
 
-    @TableField("params")
+    @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
     private Map<String, Object> params = new HashMap<>();
 
     @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
@@ -69,12 +68,12 @@ public class BotInfo implements Serializable {
     private Integer valid;
 
 
-    /**
-     * 序列化为Json保存的，读取时会存在将AutoBotJobParam变成泛型JsonObject
-     */
-    public void fixMapValueType() {
-        if (jobParams == null || jobParams.isEmpty()) return;
-        for (Map.Entry<String, ?> entry : jobParams.entrySet()) {
+    public void setJobParams(Map<String, Object> params) {
+        this.jobParams = new HashMap<>();
+        if (params == null || params.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, ?> entry : params.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
 
@@ -86,6 +85,5 @@ public class BotInfo implements Serializable {
                 throw new IllegalArgumentException("error map entity value type");
             }
         }
-
     }
 }

@@ -3,7 +3,7 @@ package cn.com.vortexa.script_node.bot;
 import cn.com.vortexa.common.exception.BotStatusException;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
-import cn.com.vortexa.script_node.constants.BotStatus;
+import cn.com.vortexa.common.constants.BotStatus;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.common.exception.BotStartException;

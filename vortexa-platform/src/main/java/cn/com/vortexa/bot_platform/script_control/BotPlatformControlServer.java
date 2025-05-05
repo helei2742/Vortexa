@@ -3,12 +3,13 @@ package cn.com.vortexa.bot_platform.script_control;
 import cn.com.vortexa.bot_platform.script_control.service.BotLogUploadService;
 import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;
 import cn.com.vortexa.bot_platform.wsController.UIWSMessage;
-import cn.com.vortexa.common.constants.BotExtFieldConstants;
-import cn.com.vortexa.common.constants.BotInstanceStatus;
-import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
+import cn.com.vortexa.common.constants.*;
 import cn.com.vortexa.common.dto.BotACJobResult;
+import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
+import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.common.exception.BotStartException;
+import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.control_server.BotControlServer;
 import cn.com.vortexa.control_server.config.ControlServerConfig;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
@@ -22,16 +23,14 @@ import cn.com.vortexa.control_server.service.IConnectionService;
 import cn.com.vortexa.control_server.service.IRegistryService;
 import cn.com.vortexa.control.util.ControlServerUtil;
 import cn.com.vortexa.control.util.RPCMethodUtil;
+import cn.hutool.core.util.StrUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -42,7 +41,9 @@ import java.util.concurrent.ConcurrentMap;
  */
 @Slf4j
 public class BotPlatformControlServer extends BotControlServer {
+    @Getter
     private final ConcurrentMap<String, Set<String>> scriptNodeKey2BotInstanceKeyMap = new ConcurrentHashMap<>();
+    @Getter
     private final ConcurrentMap<String, String> botInstanceKey2ScriptNodeKeyMap = new ConcurrentHashMap<>();
 
     private final List<RPCServiceInfo<?>> rpcServiceInfos;
@@ -168,41 +169,58 @@ public class BotPlatformControlServer extends BotControlServer {
     /**
      * 开启job
      *
-     * @param group   group
-     * @param jobName jobName
-     * @param botName botName
-     * @param botKey  botKey
+     * @param scriptNode scriptNode
+     * @param jobName    jobName
+     * @param botName    botName
+     * @param botKey     botKey
      * @return CompletableFuture<Result>
      */
-    public CompletableFuture<Result> startJob(String group, String botName, String botKey, String jobName)
+    public CompletableFuture<Result> startJob(ScriptNode scriptNode, String botName, String botKey, String jobName)
             throws BotStartException {
-        // Step 1 判断目标Bot是否在线
-        String key = ControlServerUtil.generateServiceInstanceKey(group, botName, botKey);
-        BotInstanceStatus status = getBotInstanceStatus(key);
+        String scriptNodeName;
+        String groupId;
+        String serviceId;
+        String instanceId;
+        if (scriptNode == null
+                || (StrUtil.isBlank(scriptNodeName = scriptNode.getScriptNodeName()))
+                || (StrUtil.isBlank(groupId = scriptNode.getGroupId()))
+                || (StrUtil.isBlank(serviceId = scriptNode.getServiceId()))
+                || (StrUtil.isBlank(instanceId = scriptNode.getInstanceId()))
+        ) {
+            throw new IllegalArgumentException("scriptNodeName or groupId、serviceId、instanceId are required");
+        }
+        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
 
+        // Step 1 判断目标Bot是否在线
+        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
+
+        BotInstanceStatus status = getBotInstanceStatus(botInstanceKey);
         if (status != BotInstanceStatus.RUNNING) {
             throw new BotStartException("bot[%s][%s][%s] status is[%s] not RUNNING".formatted(
-                    group, botName, botKey, status
+                    scriptNodeName, botName, botKey, status
             ));
         }
 
         // Step 2 发送启动命令
         RemotingCommand command = newRemotingCommand(BotRemotingCommandFlagConstants.START_BOT_JOB, true);
         command.addExtField(BotExtFieldConstants.JOB_NAME, jobName);
+        command.addExtField(BotExtFieldConstants.TARGET_BOT_NAME_KEY, botName);
+        command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);
+
         return sendCommandToServiceInstance(
-                key,
+                scriptNodeKey,
                 command
         ).thenApplyAsync(response -> {
-            BotACJobResult result = response.getObjBodY(BotACJobResult.class);
             if (response.isSuccess()) {
-                log.info("[{}] start job[{}] success", key, jobName);
+                BotACJobResult result = response.getObjBody(BotACJobResult.class);
+                log.info("[{}] start job[{}] success", botInstanceKey, jobName);
                 return Result.ok(result.getData());
             } else {
-                log.error("[{}] start job[{}] fail, {}", key, jobName, response.getPayLoad());
-                return Result.fail(result.getErrorMsg());
+                log.error("[{}] start job[{}] fail, {}", botInstanceKey, jobName, response);
+                return Result.fail(response.getErrorMessage());
             }
         }).exceptionally(throwable -> {
-            log.error("[{}] start job[{}] error", key, jobName, throwable);
+            log.error("[{}] start job[{}] error", botInstanceKey, jobName, throwable);
             return Result.fail(throwable.getMessage());
         });
     }
@@ -210,13 +228,13 @@ public class BotPlatformControlServer extends BotControlServer {
     /**
      * 获取bot实例状态
      *
-     * @param group   group
-     * @param botName botName
-     * @param botKey  botKey
+     * @param scriptNodeName scriptNodeName
+     * @param botName        botName
+     * @param botKey         botKey
      * @return BotInstanceStatus
      */
-    public BotInstanceStatus getBotInstanceStatus(String group, String botName, String botKey) {
-        String instanceKey = ControlServerUtil.generateServiceInstanceKey(group, botName, botKey);
+    public BotInstanceStatus getBotInstanceStatus(String scriptNodeName, String botName, String botKey) {
+        String instanceKey = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
         return getBotInstanceStatus(instanceKey);
     }
 
@@ -298,7 +316,7 @@ public class BotPlatformControlServer extends BotControlServer {
             log.info("script node[{}] remove bot instance[{}] fail, bot instance not exist", scriptNodeKey, botInstanceKey);
         } else {
             onLineBotInstanceKeys.remove(botInstanceKey);
-            botInstanceKey2ScriptNodeKeyMap.remove(scriptNodeKey);
+            botInstanceKey2ScriptNodeKeyMap.remove(botInstanceKey);
             log.info("script node[{}] remove bot instance[{}]", scriptNodeKey, botInstanceKey);
         }
 
@@ -322,5 +340,158 @@ public class BotPlatformControlServer extends BotControlServer {
             return new ArrayList<>(onLineBotInstanceKeys);
         }
         return List.of();
+    }
+
+    /**
+     * 查询script node下的botKey是否在线
+     *
+     * @param scriptNodeName scriptNodeName
+     * @param botKey        botKey
+     * @return boolean
+     */
+    public boolean isScriptNodeBotOnline(String scriptNodeName, String botName, String botKey) {
+        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
+        String scriptNodeKey =  botInstanceKey2ScriptNodeKeyMap.get(botInstanceKey);
+        if (StrUtil.isBlank(scriptNodeKey)) {
+            return false;
+        }
+        ConnectEntry connectEntry = getConnectionService().getServiceInstanceChannel(scriptNodeKey);
+        return connectEntry != null && connectEntry.isUsable();
+    }
+
+    /**
+     * 查询scriptNode的status
+     *
+     * @param groupId    groupId
+     * @param serviceId  serviceId
+     * @param instanceId instanceId
+     * @return WebsocketClientStatus
+     */
+    public ScriptNodeStatus queryScriptNodeStatus(String groupId, String serviceId, String instanceId) {
+        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
+        ConnectEntry connectEntry = getConnectionService().getServiceInstanceChannel(scriptNodeKey);
+        if (connectEntry == null) {
+            return ScriptNodeStatus.UNKNOWN;
+        } else if (connectEntry.isUsable()) {
+            return ScriptNodeStatus.ONLINE;
+        } else {
+            return ScriptNodeStatus.UNUSABLE;
+        }
+    }
+
+    /**
+     * 启动scriptNode下的Bot
+     *
+     * @param groupId    groupId
+     * @param serviceId  serviceId
+     * @param instanceId instanceId
+     * @param botKey     botKey
+     * @return Result
+     */
+    public CompletableFuture<Result> startScriptNodeBot(String groupId, String serviceId, String instanceId, String botKey) {
+        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
+
+        RemotingCommand command = newRemotingCommand(BotRemotingCommandFlagConstants.START_BOT, true);
+        command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);
+
+        return sendCommandToServiceInstance(
+                scriptNodeKey,
+                command
+        ).thenApplyAsync(response -> {
+            if (response.isSuccess()) {
+                log.info("[{}] start bot[{}] success", scriptNodeKey, botKey);
+                BotStatus botStatus = response.getObjBody(BotStatus.class);
+                return Result.ok(botStatus);
+            } else {
+                log.error("[{}] start bot[{}] fail, {}", scriptNodeKey, botKey, response.getPayLoad());
+                return Result.fail(response.getErrorMessage());
+            }
+        }).exceptionally(throwable -> {
+            log.error("[{}] start job[{}] error", scriptNodeKey, botKey, throwable);
+            return Result.fail(throwable.getMessage());
+        });
+    }
+
+    /**
+     * 关闭Bot
+     *
+     * @param groupId    groupId
+     * @param serviceId  serviceId
+     * @param instanceId instanceId
+     * @param botKey     botKey
+     * @return CompletableFuture<Result>
+     */
+    public CompletableFuture<Result> stopScriptNodeBot(String groupId, String serviceId, String instanceId, String botKey) {
+        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
+
+        RemotingCommand command = newRemotingCommand(BotRemotingCommandFlagConstants.STOP_BOT, true);
+        command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);
+
+        return sendCommandToServiceInstance(
+                scriptNodeKey,
+                command
+        ).thenApplyAsync(response -> {
+            BotStatus botStatus = response.getObjBody(BotStatus.class);
+            if (response.isSuccess()) {
+                log.info("[{}] stop bot[{}] success", scriptNodeKey, botKey);
+                return Result.ok(botStatus);
+            } else {
+                log.error("[{}] stop bot[{}] fail, {}", scriptNodeKey, botKey, response.getPayLoad());
+                return Result.fail(response.getErrorMessage());
+            }
+        }).exceptionally(throwable -> {
+            log.error("[{}] v job[{}] error", scriptNodeKey, botKey, throwable);
+            return Result.fail(throwable.getMessage());
+        });
+    }
+
+    /**
+     * 查询bot instance中运行的账户
+     *
+     * @param scriptNode scriptNode
+     * @param botId      botId
+     * @param botKey     botKey
+     * @param pageQuery  pageQuery
+     * @return Result
+     */
+    public CompletableFuture<Result> queryBotInstanceAccount(
+            ScriptNode scriptNode, Integer botId, String botName, String botKey, PageQuery pageQuery
+    ) {
+        log.info("query[{}] bot[{}] account, params[{}]", scriptNode, botKey, pageQuery);
+        String groupId;
+        String serviceId;
+        String instanceId;
+        if (scriptNode == null
+                || botId == null
+                || pageQuery == null
+                || StrUtil.isBlank(botKey)
+                || StrUtil.isBlank(botName)
+                || (StrUtil.isBlank(groupId = scriptNode.getGroupId()))
+                || (StrUtil.isBlank(serviceId = scriptNode.getServiceId()))
+                || (StrUtil.isBlank(instanceId = scriptNode.getInstanceId()))
+        ) {
+            throw new IllegalArgumentException("scriptNodeName or groupId、serviceId、instanceId are required");
+        }
+        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
+
+        RemotingCommand command = newRemotingCommand(BotRemotingCommandFlagConstants.QUERY_BOT_ACCOUNT, true);
+        command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);
+        command.addExtField(BotExtFieldConstants.TARGET_BOT_NAME_KEY, botName);
+        command.addExtField(BotExtFieldConstants.TARGET_BOT_ID_KEY, String.valueOf(botId));
+        command.setObjBody(new PageQuery(pageQuery.getPage(), pageQuery.getLimit(), pageQuery.getFilterMap()));
+
+        return sendCommandToServiceInstance(
+                scriptNodeKey,
+                command
+        ).thenApply(response -> {
+            PageResult<?> result = null;
+            if (response.isSuccess() && (result = response.getObjBody(PageResult.class)) != null) {
+                log.info("query[{}] bot[{}] account success, total:{}", scriptNode, botKey, result.getTotal());
+                return Result.ok(result);
+            } else {
+                log.error("query[{}] bot[{}] account fail, {}", scriptNode, botKey, response.getErrorMessage());
+                return Result.fail(response.getErrorMessage());
+            }
+        });
     }
 }

@@ -2,6 +2,7 @@ package cn.com.vortexa.common.entity;
 
 import cn.com.vortexa.common.util.tableprinter.CommandTableField;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
+import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.*;
@@ -44,7 +45,7 @@ public class BrowserEnv implements Serializable {
     @CommandTableField
     private String userAgent;
 
-    @TableField("other_header")
+    @TableField(value = "other_header", typeHandler = MapTextTypeHandler.class)
     @ExcelProperty("other_header")
     @CommandTableField
     private Map<String, Object> otherHeader;

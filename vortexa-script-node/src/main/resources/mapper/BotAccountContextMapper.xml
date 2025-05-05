@@ -14,7 +14,6 @@
         <result column="browser_env_id" property="browserEnvId"/>
         <result column="telegram_id" property="telegramId"/>
         <result column="wallet_id" property="walletId"/>
-        <result column="reward_id" property="rewardId"/>
         <result column="status" property="status"/>
         <result column="params" property="params"/>
         <result column="insert_datetime" property="insertDatetime"/>
@@ -35,7 +34,6 @@
             "browser_env_id"       INTEGER,
             "telegram_id"          INTEGER,
             "wallet_id"            INTEGER,
-            "reward_id"            INTEGER,
             "status"               INTEGER,
             "usable"               INTEGER(1),
             "params"               TEXT,
@@ -51,9 +49,9 @@
 
         INSERT INTO t_bot_account_context
         (bot_id, bot_key, account_base_info_id, twitter_id, discord_id, proxy_id, browser_env_id, telegram_id,
-         wallet_id, reward_id, status, params, update_datetime, valid)
+         wallet_id, status, params, update_datetime, valid)
         VALUES (#{botId}, #{botKey}, #{accountBaseInfoId}, #{twitterId}, #{discordId}, #{proxyId}, #{browserEnvId},
-                #{telegramId},  #{walletId}, #{rewardId}, #{status}, #{params}, strftime('%Y-%m-%d %H:%M:%S', 'now'),  1)
+                #{telegramId},  #{walletId}, #{status}, #{params}, strftime('%Y-%m-%d %H:%M:%S', 'now'),  1)
         ON CONFLICT(bot_key, account_base_info_id, proxy_id) DO
         UPDATE SET
             bot_id = excluded.bot_id,
@@ -63,7 +61,6 @@
             browser_env_id = excluded.browser_env_id,
             telegram_id = excluded.telegram_id,
             wallet_id = excluded.wallet_id,
-            reward_id = excluded.reward_id,
             status = excluded.status,
             params = excluded.params,
             update_datetime = excluded.update_datetime,
@@ -79,7 +76,7 @@
         <foreach collection="list" item="item" separator=",">
             (#{item.botId}, #{item.botKey}, #{item.accountBaseInfoId}, #{item.twitterId}, #{item.discordId},
              #{item.proxyId}, #{item.browserEnvId}, #{item.telegramId},
-             #{item.walletId}, #{item.rewardId}, #{item.status}, #{item.params},
+             #{item.walletId},  #{item.status}, #{item.params},
                 strftime('%Y-%m-%d %H:%M:%S', 'now'), 1
             )
         </foreach>
@@ -92,7 +89,6 @@
             browser_env_id = excluded.browser_env_id,
             telegram_id = excluded.telegram_id,
             wallet_id = excluded.wallet_id,
-            reward_id = excluded.reward_id,
             status = excluded.status,
             params = excluded.params,
             update_datetime = excluded.update_datetime,
@@ -124,7 +120,7 @@
         t.bot_id as botId, t.bot_key as botKey, t.account_base_info_id as accountBaseInfoId,
         t.twitter_id as twitterId, t.discord_id as discordId, t.proxy_id as proxyId,
         t.browser_env_id as browserEnvId, t.telegram_id as telegramId,
-        t.wallet_id as walletId, t.reward_id as rewardId, t.status,
+        t.wallet_id as walletId, t.status,
         t.params,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,

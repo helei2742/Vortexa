@@ -100,7 +100,8 @@ public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
                     try {
                         v = new AccountFingerBrowserSelenium(
                                 accountContext,
-                                buildSeleniumParams(seq)
+                                buildSeleniumParams(seq),
+                                logger
                         );
 
                         for (ACBotTypedSeleniumExecuteInfo acExecuteInfo : acExecuteInfos) {

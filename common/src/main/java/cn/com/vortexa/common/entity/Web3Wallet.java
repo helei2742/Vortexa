@@ -1,5 +1,6 @@
 package cn.com.vortexa.common.entity;
 
+import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -60,7 +61,7 @@ public class Web3Wallet implements Serializable {
     @TableField("btc_address")
     private String btcAddress;
 
-    @TableField("params")
+    @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
     private Map<String, Object> params;
 
     @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)

@@ -83,9 +83,6 @@ public class AccountContext implements Serializable {
     @ExcelProperty(value = "wallet_id", converter = IntegerStringConverter.class)
     private Integer walletId;
 
-    @TableField("reward_id")
-    private Integer rewardId;
-
     /**
      * 账号状态
      * 0 表示初始状态

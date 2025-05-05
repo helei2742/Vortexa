@@ -167,7 +167,7 @@ public class RemotingCommand {
         this.body = Serializer.Algorithm.JDK.serialize(objBody);
     }
 
-    public <T> T getObjBodY(Class<T> tClass) {
+    public <T> T getObjBody(Class<T> tClass) {
         return Serializer.Algorithm.JDK.deserialize(this.body, tClass);
     }
 

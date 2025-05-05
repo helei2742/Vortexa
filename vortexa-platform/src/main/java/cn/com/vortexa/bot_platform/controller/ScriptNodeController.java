@@ -1,14 +1,16 @@
 package cn.com.vortexa.bot_platform.controller;
 
 import cn.com.vortexa.bot_platform.service.IScriptNodeService;
+import cn.com.vortexa.bot_platform.vo.ScriptNodeVO;
 import cn.com.vortexa.common.dto.Result;
-import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
+import cn.com.vortexa.common.entity.BotInstance;
 import cn.hutool.core.util.StrUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <p>
@@ -46,7 +48,7 @@ public class ScriptNodeController {
     ) {
         String configStr = null;
         try {
-            configStr = scriptNodeService.loadScriptNodeBotConfig(scriptNodeName, botKey);
+            configStr = scriptNodeService.loadScriptNodeBotLaunchConfig(scriptNodeName, botKey);
             if (StrUtil.isBlank(configStr)) {
                 return Result.fail(" config is empty");
             }
@@ -58,7 +60,23 @@ public class ScriptNodeController {
 
     @PostMapping("/all")
     public Result queryAllScriptNode() {
-        List<RegisteredScriptNode> list = scriptNodeService.queryAllScriptNode();
+        List<ScriptNodeVO> list = scriptNodeService.queryAllScriptNode();
         return Result.ok(list);
+    }
+
+    @PostMapping("/start_bot")
+    public Result startBot(@RequestBody BotInstance botInstance) throws ExecutionException, InterruptedException {
+        return scriptNodeService.startBot(
+                botInstance.getScriptNodeName(),
+                botInstance.getBotKey()
+        );
+    }
+
+    @PostMapping("/stop_bot")
+    public Result stopBot(@RequestBody BotInstance botInstance) throws ExecutionException, InterruptedException {
+        return scriptNodeService.stopBot(
+                botInstance.getScriptNodeName(),
+                botInstance.getBotKey()
+        );
     }
 }

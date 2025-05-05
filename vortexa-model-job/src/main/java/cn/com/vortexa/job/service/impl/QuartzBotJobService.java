@@ -2,20 +2,24 @@ package cn.com.vortexa.job.service.impl;
 
 import cn.com.vortexa.common.constants.BotJobType;
 import cn.com.vortexa.common.dto.BotACJobResult;
-import cn.com.vortexa.job.constants.JobStatus;
+import cn.com.vortexa.common.constants.JobStatus;
 import cn.com.vortexa.job.core.AutoBotJobInvoker;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.job.dto.AutoBotJob;
+import cn.com.vortexa.common.dto.job.JobTrigger;
 import cn.com.vortexa.job.service.BotJobService;
+import cn.com.vortexa.job.util.TriggerConvertUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
+import org.quartz.utils.Key;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import static cn.com.vortexa.common.dto.job.AutoBotJobParam.START_AT;
 import static cn.com.vortexa.job.dto.AutoBotJob.BOT_JOB_PARAM_KEY;
@@ -36,7 +40,7 @@ public class QuartzBotJobService implements BotJobService {
 
     @Override
     public void registerJobInvoker(String scriptNodeName, String botKey, String jobName, AutoBotJobInvoker invoker) {
-        String group = botQuartzGroupBuilder(scriptNodeName, botKey);
+        String group = BotJobService.botQuartzGroupBuilder(scriptNodeName, botKey);
         JobKey jobKey = new JobKey(jobName, group);
         registerJobInvoker(jobKey, invoker);
     }
@@ -79,9 +83,10 @@ public class QuartzBotJobService implements BotJobService {
             AutoBotJobInvoker invoker,
             boolean refreshTrigger
     ) {
-        String group = botQuartzGroupBuilder(scriptNodeName, botKey);
+        String group = BotJobService.botQuartzGroupBuilder(scriptNodeName, botKey);
 
         JobKey jobKey = new JobKey(jobName, group);
+        TriggerKey triggerKey = new TriggerKey(jobName, group);
 
         registerJobInvoker(jobKey, invoker);
 
@@ -93,17 +98,28 @@ public class QuartzBotJobService implements BotJobService {
                 .build();
 
         try {
-
             JobStatus status = queryJobStatus(jobKey);
 
             switch (status) {
-                case PARSED -> resumeJob(jobKey);
-                case STARTED -> {
+                case PAUSED -> {
+                    log.warn("job [{}] paused, will resume it", jobKey);
+                    resumeJob(jobKey);
+                }
+                case COMPLETE -> {
+                    log.warn("job [{}] already complete, will restart it", jobKey);
                     scheduler.deleteJob(jobKey);
                     registerJobInvoker(jobKey, invoker);
-//                    updateTrigger(jobParam, refreshTrigger, jobKey, result);
                 }
-                case NOT_REGISTER -> registryAndStartJob(jobKey, jobParam);
+                case BLOCKED, NORMAL -> {
+                    log.warn("job [{}] already started, will delete it", jobKey);
+                    scheduler.deleteJob(jobKey);
+                }
+                case ERROR -> {
+                    log.warn("job [{}] error, will resume trigger it", jobKey);
+                    scheduler.resetTriggerFromErrorState(triggerKey);
+                    scheduler.resumeTrigger(triggerKey);
+                }
+                case NONE -> registryAndStartJob(jobKey, jobParam);
             }
         } catch (Exception e) {
             result.setSuccess(false);
@@ -122,62 +138,109 @@ public class QuartzBotJobService implements BotJobService {
     }
 
     @Override
-    public void parseJob(JobKey jobKey) throws SchedulerException {
-        if (scheduler.getJobDetail(jobKey) == null) {
-            log.warn("[{}] not exist, cancel parse", jobKey);
-            return;
-        }
-
-        scheduler.pauseJob(jobKey);
-        log.info("[{}] parsed", jobKey);
+    public Boolean pauseJob(JobKey jobKey) throws SchedulerException {
+        TriggerKey triggerKey = new TriggerKey(jobKey.getName(), jobKey.getGroup());
+        Trigger.TriggerState state = scheduler.getTriggerState(triggerKey);
+        return switch (state) {
+            case NORMAL, BLOCKED -> {
+                scheduler.pauseTrigger(triggerKey);
+                yield true;
+            }
+            case ERROR -> {
+                scheduler.resetTriggerFromErrorState(triggerKey);
+                scheduler.pauseTrigger(triggerKey);
+                yield true;
+            }
+            case PAUSED, COMPLETE, NONE -> false;
+        };
     }
 
 
     @Override
-    public void parseJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException {
-        JobKey jobKey = new JobKey(jobName, botKey);
-        parseJob(jobKey);
+    public Boolean pauseJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException {
+        JobKey jobKey = new JobKey(jobName, BotJobService.botQuartzGroupBuilder(scriptNodeName, botKey));
+        return pauseJob(jobKey);
     }
 
     @Override
     public void parseGroupJob(String scriptNodeName, String botKey) throws SchedulerException {
-        String group = botQuartzGroupBuilder(scriptNodeName, botKey);
+        String group = BotJobService.botQuartzGroupBuilder(scriptNodeName, botKey);
         scheduler.pauseJobs(GroupMatcher.jobGroupEquals(group));
         log.info("{} all job parsed", group);
     }
 
     @Override
     public void resumeJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException {
-        JobKey jobKey = new JobKey(jobName, botQuartzGroupBuilder(scriptNodeName, botKey));
+        JobKey jobKey = new JobKey(jobName, BotJobService.botQuartzGroupBuilder(scriptNodeName, botKey));
         resumeJob(jobKey);
     }
 
     @Override
     public void resumeJob(JobKey jobKey) throws SchedulerException {
         if (scheduler.getJobDetail(jobKey) == null) {
-            log.warn("[{}] not exist, cancel resume", jobKey);
-            return;
+            throw new SchedulerException(jobKey + "not exist, cancel resume");
         }
         scheduler.resumeJob(jobKey);
         log.info("[{}] resumed", jobKey);
     }
 
     @Override
+    public Boolean deleteJob(String scriptNodeName, String botKey, String jobName) throws SchedulerException {
+        JobKey jobKey = new JobKey(jobName, BotJobService.botQuartzGroupBuilder(scriptNodeName, botKey));
+        return deleteJob(jobKey);
+    }
+
+    @Override
+    public Boolean deleteJob(JobKey jobKey) throws SchedulerException {
+        if (scheduler.getJobDetail(jobKey) == null) {
+            throw new SchedulerException(jobKey + "not exist, cancel delete");
+        }
+        return scheduler.deleteJob(jobKey);
+    }
+
+    @Override
     public JobStatus queryJobStatus(String scriptNodeName, String botKey, String jobName) throws SchedulerException {
-        JobKey jobKey = new JobKey(jobName, botQuartzGroupBuilder(scriptNodeName, botKey));
+        JobKey jobKey = new JobKey(jobName, BotJobService.botQuartzGroupBuilder(scriptNodeName, botKey));
         return queryJobStatus(jobKey);
     }
 
     @Override
     public JobStatus queryJobStatus(JobKey jobKey) throws SchedulerException {
+        TriggerKey triggerKey = new TriggerKey(jobKey.getName(), jobKey.getGroup());
+        Trigger.TriggerState state = scheduler.getTriggerState(triggerKey);
+        return switch (state) {
+            case NONE -> JobStatus.NONE;
+            case NORMAL -> JobStatus.NORMAL;
+            case PAUSED -> JobStatus.PAUSED;
+            case COMPLETE -> JobStatus.COMPLETE;
+            case ERROR -> JobStatus.ERROR;
+            case BLOCKED -> JobStatus.BLOCKED;
+        };
+    }
 
-        if (!scheduler.checkExists(jobKey)) {
-            return JobStatus.NOT_REGISTER;
-        }
-        if (scheduler.isStarted()) {
-            return JobStatus.STARTED;
-        }
-        return JobStatus.PARSED;
+    @Override
+    public Map<String, List<JobTrigger>> queryScriptNodeBotJobs(String scriptNodeName, String botKey) throws SchedulerException {
+        Set<JobKey> jobKeys = scheduler.getJobKeys(
+                GroupMatcher.jobGroupEquals(BotJobService.botQuartzGroupBuilder(scriptNodeName, botKey))
+        );
+        return jobKeys.stream().collect(Collectors.toMap(
+                Key::getName,
+                jobKey -> {
+                    try {
+                        return scheduler.getTriggersOfJob(jobKey).stream().map(trigger -> {
+                            try {
+                                JobTrigger jobTrigger = TriggerConvertUtils.fromQuartzTrigger(trigger);
+                                jobTrigger.setJobStatus(queryJobStatus(scriptNodeName, botKey, jobKey.getName()));
+                                return jobTrigger;
+                            } catch (SchedulerException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }).toList();
+                    } catch (SchedulerException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        ));
     }
 
 
@@ -267,10 +330,5 @@ public class QuartzBotJobService implements BotJobService {
             result.setSuccess(false);
             result.setErrorMsg("job exist");
         }
-    }
-
-
-    private String botQuartzGroupBuilder(String scriptNodeName, String botKey) {
-        return "node{" + scriptNodeName + "}bot{" + botKey + "}";
     }
 }

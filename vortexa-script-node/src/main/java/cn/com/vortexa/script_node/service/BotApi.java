@@ -3,7 +3,6 @@ package cn.com.vortexa.script_node.service;
 
 import cn.com.vortexa.db_layer.plugn.table_shard.strategy.ITableShardStrategy;
 import cn.com.vortexa.job.service.BotJobService;
-import cn.com.vortexa.rpc.api.bot.IScriptAgentRPC;
 import cn.com.vortexa.rpc.api.platform.IAccountBaseInfoRPC;
 import cn.com.vortexa.rpc.api.platform.IBotInfoRPC;
 import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
@@ -42,8 +41,6 @@ public interface BotApi {
     IBotAccountContextService getBotAccountService();
 
     BotJobService getBotJobService();
-
-    IScriptAgentRPC getScriptAgentRPC();
 
     IWeb3WalletOPTRPC getWeb3WalletRPC();
 

@@ -1,7 +1,9 @@
 package cn.com.vortexa.common.entity;
 
+import cn.com.vortexa.common.dto.BotMetaInfo;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
+import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.*;
 
@@ -40,9 +42,15 @@ public class ScriptNode extends ServiceInstance implements Serializable {
     private String description;
 
     @TableField("bot_config_map")
-    private Map<String, AutoBotConfig> botConfigMap;
+    private Map<String, AutoBotConfig> botConfigMap;    //  bot实例配置
 
-    @TableField("params")
+    @TableField("bot_meta_info_map")
+    private Map<String, BotMetaInfo> botMetaInfoMap;    // bot元信息
+
+    @TableField("node_app_config")
+    private String nodeAppConfig;   // script node 的application.yaml文件
+
+    @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
     private Map<String, Object> params;
 
     @TableField(value = "insert_datetime", fill = FieldFill.INSERT)
@@ -56,8 +64,8 @@ public class ScriptNode extends ServiceInstance implements Serializable {
     private Integer valid;
 
     public boolean usable() {
-       return StrUtil.isNotBlank(groupId) && StrUtil.isNotBlank(serviceId) && StrUtil.isNotBlank(instanceId)
-               && StrUtil.isNotBlank(host) && port != null && StrUtil.isNotBlank(scriptNodeName);
+        return StrUtil.isNotBlank(groupId) && StrUtil.isNotBlank(serviceId) && StrUtil.isNotBlank(instanceId)
+                && StrUtil.isNotBlank(host) && port != null && StrUtil.isNotBlank(scriptNodeName);
     }
 
     public static ScriptNode generateFromServiceInstance(ServiceInstance serviceInstance) {

@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 @Component
 @ConfigurationProperties(prefix = "vortexa.script-node")
 public class ScriptNodeConfiguration implements InitializingBean {
-    public static final String CUSTOM_CHAIN_INFO_DICT = "cn/com/vortexa/script_bot/wallet/r2money/custom-chain-info.yaml";
+    public static Map<String, Object> RAW_CONFIG = null;
     public static final String BOT_META_INF_FILE_NAME = "bot-meta-info.yaml";
     public static final List<String> BOT_META_INFO_PREFIX = List.of("vortexa", "botMetaInfo");
     public static final List<String> BOT_INSTANCE_CONFIG_PREFIX = List.of("vortexa", "botInstance");
@@ -253,7 +253,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
             Result result = JSONObject.parseObject(response, Result.class);
             if (result.getSuccess()) {
                 AutoBotConfig load = YamlConfigLoadUtil.load(String.valueOf(result.getData()),
-                        BOT_META_INFO_PREFIX, AutoBotConfig.class);
+                        BOT_INSTANCE_CONFIG_PREFIX, AutoBotConfig.class);
                 log.info("remote config fetch success, merge into [{}] bot config...", botKey);
                 return load;
             } else {

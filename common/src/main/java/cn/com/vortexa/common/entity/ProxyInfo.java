@@ -6,6 +6,7 @@ import cn.com.vortexa.common.util.excel.IntegerStringConverter;
 import cn.com.vortexa.common.util.excel.ProxyProtocolConverter;
 import cn.com.vortexa.common.util.tableprinter.CommandTableField;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
+import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.*;
@@ -70,7 +71,7 @@ public class ProxyInfo implements Serializable {
     @CommandTableField
     private String password;
 
-    @TableField("params")
+    @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
     private Map<String, Object> params;
 
     private Boolean usable;

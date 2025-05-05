@@ -1,31 +1,16 @@
-package cn.com.vortexa.script_node.util.log;
+package cn.com.vortexa.common.util.log;
 
 import cn.com.vortexa.common.util.AnsiColor;
-import cn.com.vortexa.common.util.DiscardingBlockingQueue;
-import cn.com.vortexa.common.dto.config.AutoBotConfig;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.function.Consumer;
 
 public class AppendLogger {
     private final Logger log;
 
     private final StringBuilder format = new StringBuilder();
-
-    @Getter
-    private final DiscardingBlockingQueue<LogContent> logCache = new DiscardingBlockingQueue<>(
-            AutoBotConfig.LOG_CACHE_COUNT);
-
-    @Setter
-    private Consumer<LogContent> beforePrintHandler;
 
     public AppendLogger(String scriptNodeName, String botName, String botKey) throws IOException {
         log = ScriptLoggerFactory.getScriptLogger(scriptNodeName, botKey);
@@ -65,18 +50,7 @@ public class AppendLogger {
     }
 
     private @NotNull String getPrefix(LogType type, Object context) {
-        String logStr = format + " - " + context;
-        LogContent logContent = new LogContent(System.currentTimeMillis(), type, logStr);
-
-        try {
-            logCache.put(logContent);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        if (beforePrintHandler != null) {
-            beforePrintHandler.accept(logContent);
-        }
-        return logStr;
+        return format + " - " + context;
     }
 
     public enum LogType {
@@ -85,16 +59,5 @@ public class AppendLogger {
         INFO,
         ERROR,
         WARNING
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class LogContent {
-        private long datetime;
-
-        private LogType type;
-
-        private String content;
     }
 }

@@ -9,6 +9,8 @@ public class BotExtFieldConstants {
     public static final String TARGET_BOT_NAME_KEY = "target_bot_name"; // 目标的bot name
     public static final String TARGET_BOT_KEY_KEY = "target_bot_key";   // 目标的bot key
 
+    public static final String TARGET_BOT_ID_KEY = "target_bot_id";       // 目标的bot id
+
     public static final String LOG_UPLOAD_TX_ID = "log_upload_tx_id";   // 日志上传的txId
 
     public static final String JOB_NAME = "job_name";   // job名称

@@ -3,6 +3,8 @@ package cn.com.vortexa.common.dto;
 import cn.com.vortexa.common.constants.ConnectStatus;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -10,7 +12,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Account的连接状态
  */
 @Data
-public class ConnectStatusInfo {
+public class ConnectStatusInfo implements Serializable {
+    @Serial
+    private static final long serialVersionUID = -2394832984738927493L;
 
     /**
      * 开始时间
