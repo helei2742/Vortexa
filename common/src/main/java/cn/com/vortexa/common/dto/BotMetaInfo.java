@@ -26,7 +26,12 @@ public class BotMetaInfo implements Serializable {
     private String version;
 
     /**
-     * 资源文件dir, 运行时写入，为class文件所在目录(bot-instance-config所在目录)
+     * 图标，base64字符串
+     */
+    private String icon;
+
+    /**
+     * 资源文件dir, 运行时写入，为class文件所在目录(bot-meta-config所在目录)
      */
     private String resourceDir;
 

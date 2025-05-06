@@ -1,6 +1,7 @@
 package cn.com.vortexa.bot_platform.controller;
 
 import cn.com.vortexa.bot_platform.service.IScriptNodeService;
+import cn.com.vortexa.bot_platform.vo.ScriptNodeDetail;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeVO;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.BotInstance;
@@ -63,6 +64,13 @@ public class ScriptNodeController {
         List<ScriptNodeVO> list = scriptNodeService.queryAllScriptNode();
         return Result.ok(list);
     }
+
+    @PostMapping("/detail/{scriptNodeName}")
+    public Result queryScriptNodeDetail(@PathVariable("scriptNodeName") String scriptNodeName) {
+        ScriptNodeDetail detail = scriptNodeService.queryScriptNodeDetail(scriptNodeName);
+        return detail == null ? Result.fail("detail query error") : Result.ok(detail);
+    }
+
 
     @PostMapping("/start_bot")
     public Result startBot(@RequestBody BotInstance botInstance) throws ExecutionException, InterruptedException {

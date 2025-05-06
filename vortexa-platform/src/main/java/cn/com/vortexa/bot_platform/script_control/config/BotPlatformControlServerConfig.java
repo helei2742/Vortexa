@@ -2,6 +2,7 @@ package cn.com.vortexa.bot_platform.script_control.config;
 
 import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
 import cn.com.vortexa.bot_platform.script_control.service.DBRegistryService;
+import cn.com.vortexa.bot_platform.service.IBotInfoService;
 import cn.com.vortexa.bot_platform.service.IScriptNodeService;
 import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;
 import cn.com.vortexa.common.util.NamedThreadFactory;
@@ -37,6 +38,9 @@ public class BotPlatformControlServerConfig {
     private List<RPCServiceInfo<?>> rpcServiceInfos;
 
     @Autowired
+    private IBotInfoService botInfoService;
+
+    @Autowired
     private IScriptNodeService scriptNodeService;
 
     @Autowired
@@ -56,7 +60,7 @@ public class BotPlatformControlServerConfig {
 
     @Bean
     public IRegistryService registryService() throws FileNotFoundException {
-        return new DBRegistryService(scriptNodeService, controlServerThreadPool());
+        return new DBRegistryService(scriptNodeService, botInfoService, controlServerThreadPool());
     }
 
     @Bean

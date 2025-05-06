@@ -1,10 +1,12 @@
 package cn.com.vortexa.bot_platform.script_control.service;
 
 import cn.com.vortexa.bot_platform.constants.VortexaPlatFormConstants;
+import cn.com.vortexa.bot_platform.service.IBotInfoService;
 import cn.com.vortexa.bot_platform.service.IScriptNodeService;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
+import cn.com.vortexa.common.entity.BotInfo;
 import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.control.constant.RegistryState;
@@ -23,6 +25,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,11 +44,17 @@ import static cn.com.vortexa.bot_platform.constants.VortexaPlatFormConstants.PLA
 public class DBRegistryService implements IRegistryService {
 
     private final IScriptNodeService scriptNodeService;
+    private final IBotInfoService botInfoService;
     private final LinkedBlockingQueue<RegisteredScriptNode> updatedCache = new LinkedBlockingQueue<>();
     private boolean running = true;
 
-    public DBRegistryService(IScriptNodeService scriptNodeService, ExecutorService executorService) {
+    public DBRegistryService(
+            IScriptNodeService scriptNodeService,
+            IBotInfoService botInfoService,
+            ExecutorService executorService
+    ) {
         this.scriptNodeService = scriptNodeService;
+        this.botInfoService = botInfoService;
 
         executorService.execute(() -> {
             while (running) {
@@ -84,6 +93,21 @@ public class DBRegistryService implements IRegistryService {
                     // 写入对应bot配置文件
                     trySaveRawScriptNodeBotConfig(scriptNodeName, botKey, autoBotConfig);
                 }
+
+                // 保存BotInfo
+                scriptNode.getBotMetaInfoMap().forEach((botName, metaInfo) -> {
+                    try {
+                        BotInfo botRawInfo = BotInfo.builder()
+                                .name(botName)
+                                .image(metaInfo.getIcon())
+                                .version(metaInfo.getVersion())
+                                .build();
+
+                        botInfoService.insertOrUpdate(botRawInfo);
+                    } catch (SQLException e) {
+                        log.error("save bot[{}] info error", botName, e);
+                    }
+                });
 
                 scriptNodeService.insertOrUpdate(scriptNode);
                 return RegistryState.OK;

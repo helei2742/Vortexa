@@ -152,6 +152,47 @@ public class RestApiClient {
         });
     }
 
+    /**
+     *rawRequest
+     * @param url   url
+     * @param method    method
+     * @param headers   headers
+     * @param params    params
+     * @param body  body
+     * @return  CompletableFuture<ResponseBody>
+     */
+    public CompletableFuture<Response> rawRequest(
+            String url,
+            HttpMethod method,
+            Map<String, String> headers,
+            JSONObject params,
+            JSONObject body
+    ) {
+        return CompletableFuture.supplyAsync(() -> {
+            Request request = null;
+            try {
+                request = buildRequest(url, method, headers, params, body);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            Exception exception = null;
+            for (int i = 0; i < RETRY_TIMES; i++) {
+                // 发送请求并获取响应
+                try (Response response = okHttpClient.newCall(request).execute()) {
+                    return rawRequest(url, response);
+                } catch (SocketTimeoutException e) {
+                    log.warn("请求[{}]超时，尝试重新请求 [{}]/{}],", url, i, RETRY_TIMES);
+                    exception = e;
+                } catch (IOException e) {
+                    throw new RuntimeException("请求url [" + url + "] 失败", e);
+                }
+            }
+
+            throw new RuntimeException("请求重试次数超过限制, " + RETRY_TIMES, exception);
+        });
+    }
+
     @NotNull
     private static Request buildRequest(
             String url,
@@ -247,7 +288,6 @@ public class RestApiClient {
         BufferedSource source = responseBody.source();
         while (!source.exhausted()) {
             String chunk = source.readUtf8Line();
-            System.out.println(chunk);
             if (chunk != null) {
                 result.add(chunk);
             }
@@ -255,6 +295,14 @@ public class RestApiClient {
         return result;
     }
 
+    @NotNull
+    private static Response rawRequest(String url, Response response) throws IOException {
+        ResponseBody responseBody = response.body();
+        if (response.isSuccessful() || responseBody == null) {
+            throw new RuntimeException("请求 " + url + "失败, " + (responseBody == null ? null : responseBody.string()));
+        }
+        return response;
+    }
 
     @Nullable
     private String normalRequest(String url, HttpMethod method, Request request, int retryTimes) {

@@ -1,5 +1,6 @@
 package cn.com.vortexa.bot_platform.service;
 
+import cn.com.vortexa.bot_platform.vo.ScriptNodeDetail;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeVO;
 
 import cn.com.vortexa.common.dto.Result;
@@ -37,6 +38,14 @@ public interface IScriptNodeService extends IService<ScriptNode> {
      * @return ScriptNode
      */
     ScriptNode queryByScriptNodeName(String scriptNodeName);
+
+    /**
+     * 查详情， 包括节点bot的详细信息
+     *
+     * @param scriptNodeName scriptNodeName
+     * @return ScriptNodeDetail
+     */
+    ScriptNodeDetail queryScriptNodeDetail(String scriptNodeName);
 
     /**
      * 加载script node 配置

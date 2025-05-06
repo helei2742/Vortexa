@@ -137,20 +137,21 @@ public abstract class AbstractAutoBot {
             botInfo = buildBotInfo();
             resolveBotJobMethod();
             botInfo.setVersion(autoBotConfig.getMetaInfo().getVersion());
+            botInfo.setImage(autoBotConfig.getMetaInfo().getIcon());
         } catch (Exception e) {
             throw new BotInitException("resolve bot job error", e);
         }
 
         // Step 2.2 保存bot info
         try {
-            if (botApi.getBotInfoRPC().insertOrUpdateRPC(botInfo) == 1) {
-                Map<String, Object> query = new HashMap<>();
-                query.put("name", botInfo.getName());
-                // 保存成还需查询botId
-                Integer id = botApi.getBotInfoRPC().conditionQueryRPC(query).getFirst().getId();
-                botInfo.setId(id);
-                logger.info("save bot info success, id:" + botInfo.getId());
-            }
+            botApi.getBotInfoRPC().insertOrUpdateRPC(botInfo);
+
+            Map<String, Object> query = new HashMap<>();
+            query.put("name", botInfo.getName());
+            // 保存成还需查询botId
+            Integer id = botApi.getBotInfoRPC().conditionQueryRPC(query).getFirst().getId();
+            botInfo.setId(id);
+            logger.info("save bot info success, id:" + botInfo.getId());
         } catch (SQLException e) {
             throw new BotInitException("save bot info error", e);
         }
@@ -573,7 +574,7 @@ public abstract class AbstractAutoBot {
      * @throws SQLException SQLException
      */
     private void initDBTable(BotApi botApi) throws SQLException {
-        logger.info("start init database table");
+        logger.info("start init database table. %s-%s".formatted(botInfo.getId(), getAutoBotConfig().getBotKey()));
         // 检查对应分表是否存在
         if (!botApi.getBotAccountService()
                 .checkAndCreateShardedTable(botInfo.getId(), getAutoBotConfig().getBotKey(), true)) {

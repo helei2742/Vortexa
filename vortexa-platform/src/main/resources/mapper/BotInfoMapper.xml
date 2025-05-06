@@ -20,9 +20,10 @@
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.BotInfo">
         INSERT INTO t_bot_info
-        (name, description, limit_project_ids, image, job_params, params, version update_datetime, valid)
+        (name, description, limit_project_ids, image, job_params, params, version, update_datetime, valid)
         VALUES (
-        #{name}, #{description}, #{limitProjectIds}, #{image}, #{jobParams}, #{params}, #{version}, current_timestamp, 1 )
+        #{name}, #{description}, #{limitProjectIds}, #{image}, #{jobParams}, #{params}, #{version}, current_timestamp, 1
+        )
         ON DUPLICATE KEY UPDATE
         <trim suffixOverrides=",">
             <if test="description != null">

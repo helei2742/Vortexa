@@ -2,11 +2,15 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.bot_platform.constants.VortexaPlatFormConstants;
 import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
+import cn.com.vortexa.bot_platform.vo.ScriptNodeDetail;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeVO;
 import cn.com.vortexa.common.constants.ScriptNodeStatus;
+import cn.com.vortexa.common.dto.BotMetaInfo;
 import cn.com.vortexa.common.dto.Result;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.control_server.dto.ConnectEntry;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -23,11 +27,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -71,6 +72,54 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
         ScriptNode query = new ScriptNode();
         query.setScriptNodeName(scriptNodeName);
         return getOne(new QueryWrapper<>(query));
+    }
+
+    @Override
+    public ScriptNodeDetail queryScriptNodeDetail(String scriptNodeName) {
+        // 查node基本信息
+        ScriptNode scriptNode = queryByScriptNodeName(scriptNodeName);
+        String key = ControlServerUtil.generateServiceInstanceKey(
+                scriptNode.getGroupId(), scriptNode.getServiceId(), scriptNode.getInstanceId()
+        );
+        // 是否在线
+        ConnectEntry connectEntry = botControlServer.getConnectionService().getServiceInstanceChannel(key);
+        boolean online = connectEntry != null && connectEntry.isUsable();
+
+        // 在线的bot查询
+        Map<String, List<String>> onlineBotName2Keys = new HashMap<>();;
+        botControlServer.selectScriptNodeOnlineBot(key).forEach(botInstanceKey -> {
+            String[] gsiArr = botInstanceKey.split(ControlServerUtil.SERVICE_INSTANCE_KEY_DISPATCHER);
+            onlineBotName2Keys.compute(gsiArr[1], (k,v)->{
+                if (v == null) {
+                    v = new ArrayList<>();
+                }
+                v.add(gsiArr[2]);
+                return v;
+            });
+        });
+
+        ScriptNodeVO scriptNodeVO = ScriptNodeVO.of(
+                scriptNode,
+                online,
+                new ArrayList<>(scriptNode.getBotConfigMap().keySet())
+        );
+
+        Map<String, BotMetaInfo> metaInfoMap = scriptNode.getBotMetaInfoMap();
+
+        // 存在的实例
+        Map<String, List<String>> botNameToBotKeys = scriptNode.getBotConfigMap().values()
+                .stream()
+                .collect(Collectors.groupingBy(AutoBotConfig::getBotName,
+                        Collectors.mapping(AutoBotConfig::getBotKey,
+                                Collectors.toList())
+                ));
+
+        return new ScriptNodeDetail(
+                scriptNodeVO,
+                metaInfoMap,
+                botNameToBotKeys,
+                onlineBotName2Keys
+        );
     }
 
     @Override

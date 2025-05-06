@@ -29,8 +29,8 @@ vortexa:
       - magic_newton_v2
     bot-common-config:
       two_captcha_api_key: ''
-    bot-instance-jar-names:
-      - vortexa-script-bot-1.0-SNAPSHOT
+    load-bot-names:
+      - vortexa-script-bot
 
   script-agent:
     registryCenterUrl: ws://localhost:18848
