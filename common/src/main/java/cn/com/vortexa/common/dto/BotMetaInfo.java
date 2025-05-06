@@ -19,6 +19,12 @@ public class BotMetaInfo implements Serializable {
      * bot name，需要与对应类的@BotApplication注解中的name一致
      */
     private String botName;
+
+    /**
+     * bot版本
+     */
+    private String version;
+
     /**
      * 资源文件dir, 运行时写入，为class文件所在目录(bot-instance-config所在目录)
      */
