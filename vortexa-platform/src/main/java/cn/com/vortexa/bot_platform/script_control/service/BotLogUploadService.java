@@ -4,13 +4,14 @@ import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
 import cn.com.vortexa.bot_platform.wsController.FrontWSException;
 import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;
 import cn.com.vortexa.bot_platform.wsController.UIWSMessage;
-import cn.com.vortexa.common.constants.BotInstanceStatus;
 import cn.com.vortexa.common.constants.BotRemotingCommandFlagConstants;
 import cn.com.vortexa.common.constants.BotExtFieldConstants;
+import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.control_server.dto.ConnectEntry;
 import cn.hutool.core.util.StrUtil;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
@@ -63,16 +64,35 @@ public class BotLogUploadService {
                 botInstanceKey
         );
 
-        BotInstanceStatus status = platformControlServer.getBotInstanceStatus(botInstanceKey);
-
-        // Step 1 判断bot是否可用
-        if (status != BotInstanceStatus.RUNNING) {
-            log.warn("bot [{}] not running, can't upload runtime log", botInstanceKey);
-
+        ScriptNode scriptNode = platformControlServer.getScriptNodeService().queryByScriptNodeName(group);
+        String scriptNodeKey = null;
+        if (scriptNode == null) {
             responseBuilder.success(false);
-            responseBuilder.errorMsg("browser instance status is " + status);
+            responseBuilder.errorMsg("scriptNode not found");
             return responseBuilder.build();
+        } else {
+            scriptNodeKey =  ControlServerUtil.generateServiceInstanceKey(
+                    scriptNode.getGroupId(), scriptNode.getServiceId(), scriptNode.getInstanceId()
+            );
+            ConnectEntry connectEntry = platformControlServer.getConnectionService().getServiceInstanceChannel(
+                    scriptNodeKey
+            );
+            if (connectEntry == null || !connectEntry.isUsable()) {
+                responseBuilder.success(false);
+                responseBuilder.errorMsg("scriptNode connection can't use");
+                return responseBuilder.build();
+            }
         }
+//        BotInstanceStatus status = platformControlServer.getBotInstanceStatus(botInstanceKey);
+
+//        // Step 1 判断bot是否可用
+//        if (status != BotInstanceStatus.RUNNING) {
+//            log.warn("bot [{}] not running, can't upload runtime log", botInstanceKey);
+//
+//            responseBuilder.success(false);
+//            responseBuilder.errorMsg("browser instance status is " + status);
+//            return responseBuilder.build();
+//        }
 
 
         // Step 2 发送命令到该Bot，让它开始发
@@ -90,7 +110,6 @@ public class BotLogUploadService {
             botLogTxIdToFrontTokenMap.put(logUploadTxId, token);
             botLogTxIdToFrontInstanceKeyMap.put(logUploadTxId, botInstanceKey);
 
-            String scriptNodeKey = platformControlServer.getBotInstanceKey2ScriptNodeKeyMap().get(botInstanceKey);
             // 发送，并等待结果
             RemotingCommand botStartResponse = platformControlServer.sendCommandToServiceInstance(
                     scriptNodeKey, command

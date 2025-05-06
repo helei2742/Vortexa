@@ -77,7 +77,6 @@ public class FrontWebSocketServer {
             UIWSMessage uiwsMessage = JSONObject.parseObject(message, UIWSMessage.class);
             log.info("receive:{}, message:{}", token, message);
 
-
             List<UIMessageHandler> handlerList = messageHandlerMap.get(uiwsMessage.getCode());
             if (handlerList != null) {
                 for (UIMessageHandler handler : handlerList) {

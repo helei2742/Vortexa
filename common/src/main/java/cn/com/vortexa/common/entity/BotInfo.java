@@ -57,6 +57,9 @@ public class BotInfo implements Serializable {
     @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
     private Map<String, Object> params = new HashMap<>();
 
+    @TableField("version")
+    private String version;
+
     @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
     private LocalDateTime insertDatetime;
 

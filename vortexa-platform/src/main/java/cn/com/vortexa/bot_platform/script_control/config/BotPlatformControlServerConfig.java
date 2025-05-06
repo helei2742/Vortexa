@@ -68,7 +68,9 @@ public class BotPlatformControlServerConfig {
     public BotPlatformControlServer botControlServer() throws Exception {
         ControlServerConfig controlServerConfig = controlServerConfig();
         log.info("start launch BotPlatFormNameserver[{}]", controlServerConfig.getServiceInstance());
-        BotPlatformControlServer botControlServer = new BotPlatformControlServer(controlServerConfig, frontWebSocketServer, rpcServiceInfos);
+        BotPlatformControlServer botControlServer = new BotPlatformControlServer(
+                controlServerConfig, frontWebSocketServer, rpcServiceInfos, scriptNodeService
+        );
         botControlServer.init(registryService(), connectionService());
         botControlServer.start().get();
         log.info("BotPlatFormNameserver[{}] launch finish", controlServerConfig.getServiceInstance());

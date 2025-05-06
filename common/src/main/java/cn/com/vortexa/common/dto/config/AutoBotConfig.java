@@ -16,7 +16,7 @@ public class AutoBotConfig implements Serializable {
     @Serial
     private static final long serialVersionUID = -3278263726328378273L;
 
-    public static int LOG_CACHE_COUNT = 50; // 日志缓存数量
+    public static int LOG_CACHE_COUNT = 100; // 日志缓存数量
 
     /**
      * bot名

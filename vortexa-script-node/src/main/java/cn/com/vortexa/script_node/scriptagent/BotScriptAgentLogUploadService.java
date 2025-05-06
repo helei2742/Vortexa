@@ -13,6 +13,7 @@ import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -164,31 +165,31 @@ public class BotScriptAgentLogUploadService {
         botScriptAgent.getCallbackInvoker().execute(() -> {
             String logPath = FileUtil.getBotInstanceCurrentLogPath(scriptNodeName, botKey);
             File file = new File(logPath);
+
             try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
                 long pointer = findStartOffsetFromLastLines(file, AutoBotConfig.LOG_CACHE_COUNT);
                 raf.seek(pointer);
-                String line;
-                while (true) {
-                    long fileLength = raf.length();
-                    if (fileLength < pointer) {
-                        log.info("file truncated, reset pointer");
-                        pointer = fileLength;
-                        raf.seek(pointer);
-                    }
 
-                    while ((line = raf.readLine()) != null) {
-                        if (!logUploadTXID.equals(this.bindUploadTXId)) {
-                            log.warn("[{}] upload txId not used, stop tail log file [{}]", logUploadTXID, logPath);
-                            return;
+                // 把 FileDescriptor 包装成支持 UTF-8 的 reader
+                try (
+                        FileInputStream fis = new FileInputStream(raf.getFD());
+                        InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+                        BufferedReader reader = new BufferedReader(isr)
+                ) {
+                    String line;
+                    while (true) {
+                        while ((line = reader.readLine()) != null) {
+                            if (!logUploadTXID.equals(this.bindUploadTXId)) {
+                                log.warn("[{}] upload txId not used, stop tail log file [{}]", logUploadTXID, logPath);
+                                return;
+                            }
+                            if (!logBuffer.offer(line, LOG_SEND_MAX_INTERVAL, TimeUnit.SECONDS)) {
+                                log.warn("offer log content into buffer fail");
+                                break;
+                            }
                         }
-                        if (!logBuffer.offer(line, LOG_SEND_MAX_INTERVAL, TimeUnit.SECONDS)) {
-                            log.warn("offer log content into buffer fail");
-                            break;
-                        }
+                        TimeUnit.MILLISECONDS.sleep(500);
                     }
-
-                    pointer = raf.getFilePointer();
-                    TimeUnit.MILLISECONDS.sleep(500);
                 }
             } catch (Exception e) {
                 log.error("start log file tail task error", e);

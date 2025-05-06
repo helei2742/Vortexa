@@ -1,6 +1,7 @@
 package cn.com.vortexa.bot_platform.script_control;
 
 import cn.com.vortexa.bot_platform.script_control.service.BotLogUploadService;
+import cn.com.vortexa.bot_platform.service.IScriptNodeService;
 import cn.com.vortexa.bot_platform.wsController.FrontWebSocketServer;
 import cn.com.vortexa.bot_platform.wsController.UIWSMessage;
 import cn.com.vortexa.common.constants.*;
@@ -50,6 +51,8 @@ public class BotPlatformControlServer extends BotControlServer {
     private final BotLogUploadService botLogUploadService;
     @Getter
     private final FrontWebSocketServer frontWebSocketServer;
+    @Getter
+    private final IScriptNodeService scriptNodeService;
 
     @Override
     public ChannelFuture start() throws ControlServerException {
@@ -61,11 +64,13 @@ public class BotPlatformControlServer extends BotControlServer {
     public BotPlatformControlServer(
             ControlServerConfig controlServerConfig,
             FrontWebSocketServer frontWebSocketServer,
-            List<RPCServiceInfo<?>> rpcServiceInfos
+            List<RPCServiceInfo<?>> rpcServiceInfos,
+            IScriptNodeService scriptNodeService
     ) throws ControlServerException {
         super(controlServerConfig);
         this.rpcServiceInfos = rpcServiceInfos;
         this.frontWebSocketServer = frontWebSocketServer;
+        this.scriptNodeService = scriptNodeService;
         this.botLogUploadService = new BotLogUploadService(this);
     }
 
