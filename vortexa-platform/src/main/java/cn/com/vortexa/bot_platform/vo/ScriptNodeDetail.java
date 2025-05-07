@@ -1,7 +1,6 @@
 package cn.com.vortexa.bot_platform.vo;
 
 
-import cn.com.vortexa.common.dto.BotMetaInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,8 +18,6 @@ import java.util.Map;
 public class ScriptNodeDetail {
 
     private ScriptNodeVO scriptNode;
-
-    private Map<String, BotMetaInfo> metaInfoMap;
 
     private Map<String, List<String>> botNameToBotKeys;
 

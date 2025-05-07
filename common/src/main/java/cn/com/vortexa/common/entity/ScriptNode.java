@@ -1,9 +1,7 @@
 package cn.com.vortexa.common.entity;
 
-import cn.com.vortexa.common.dto.BotMetaInfo;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
-import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
@@ -46,9 +44,6 @@ public class ScriptNode extends ServiceInstance implements Serializable {
 
     @TableField("bot_config_map")
     private Map<String, AutoBotConfig> botConfigMap;    //  bot实例配置
-
-    @TableField("bot_meta_info_map")
-    private Map<String, BotMetaInfo> botMetaInfoMap;    // bot元信息
 
     @TableField("node_app_config")
     private String nodeAppConfig;   // script node 的application.yaml文件

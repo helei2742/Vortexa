@@ -2,7 +2,7 @@ package cn.com.vortexa.control_server.service.impl;
 
 import cn.com.vortexa.control_server.dto.ConnectEntry;
 import cn.com.vortexa.control_server.service.IConnectionService;
-import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.common.util.ServerInstanceUtil;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 @Slf4j
 public class MemoryConnectionService implements IConnectionService {
+
+    public static int OFF_LINE_SECONDS = 120;
 
     private final ConcurrentMap<String, ConnectEntry> connectionMap = new ConcurrentHashMap<>();
 
@@ -41,7 +43,7 @@ public class MemoryConnectionService implements IConnectionService {
 
     @Override
     public void addServiceChannel(String group, String serviceId, String instanceId, Channel channel) {
-        String key = ControlServerUtil.generateServiceInstanceKey(
+        String key = ServerInstanceUtil.generateServiceInstanceKey(
                 group,
                 serviceId,
                 instanceId
@@ -63,7 +65,16 @@ public class MemoryConnectionService implements IConnectionService {
 
     @Override
     public ConnectEntry getServiceInstanceChannel(String key) {
-        return connectionMap.get(key);
+        return connectionMap.compute(key, (k,v)->{
+            if (v == null) {
+                return null;
+            }
+            if (System.currentTimeMillis() - v.getLastActiveTimestamp() > OFF_LINE_SECONDS * 1000L) {
+                log.warn("{} long time on refresh, offline.", key);
+                return null;
+            }
+            return v;
+        });
     }
 
     @Override

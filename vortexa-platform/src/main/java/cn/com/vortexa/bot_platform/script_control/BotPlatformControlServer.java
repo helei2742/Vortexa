@@ -22,8 +22,9 @@ import cn.com.vortexa.control.exception.CustomCommandInvokeException;
 import cn.com.vortexa.common.util.protocol.Serializer;
 import cn.com.vortexa.control_server.service.IConnectionService;
 import cn.com.vortexa.control_server.service.IRegistryService;
-import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.common.util.ServerInstanceUtil;
 import cn.com.vortexa.control.util.RPCMethodUtil;
+import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import cn.hutool.core.util.StrUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -42,8 +43,10 @@ import java.util.concurrent.ConcurrentMap;
  */
 @Slf4j
 public class BotPlatformControlServer extends BotControlServer {
+    // 存放正在运行的script node key -》botInstanceKey
     @Getter
     private final ConcurrentMap<String, Set<String>> scriptNodeKey2BotInstanceKeyMap = new ConcurrentHashMap<>();
+    // 正在运行的botInstanceKey -》 script node key
     @Getter
     private final ConcurrentMap<String, String> botInstanceKey2ScriptNodeKeyMap = new ConcurrentHashMap<>();
 
@@ -86,6 +89,55 @@ public class BotPlatformControlServer extends BotControlServer {
 
         // 2 日志上传
         initScriptNodeUploadLogHandler();
+    }
+
+    @Override
+    public void closeChannel(Channel channel) {
+        super.closeChannel(channel);
+        String scriptNodeKey = channel.attr(NettyConstants.CLIENT_NAME).get();
+        if (StrUtil.isBlank(scriptNodeKey)) {
+            return;
+        }
+        // 清除运行的scripNodeKey和botInstance的key
+        Set<String> botInstanceKeys = scriptNodeKey2BotInstanceKeyMap.remove(scriptNodeKey);
+        log.warn("script node[{}] offline...node running bot:{}", scriptNodeKey, botInstanceKeys);
+        if (botInstanceKeys != null) {
+            for (String botInstanceKey : botInstanceKeys) {
+                botInstanceKey2ScriptNodeKeyMap.remove(botInstanceKey);
+            }
+        }
+    }
+
+    @Override
+    public void handleServiceInstancePingCommand(Channel channel, String instanceKey, RemotingCommand ping) {
+        super.handleServiceInstancePingCommand(channel, instanceKey, ping);
+        String runningBotInstanceKeyStr = ping.getExtFieldsValue(BotExtFieldConstants.RUNNING_BOT_INSTANCE_KEYS);
+        Set<String> newestBots = new HashSet<>();
+        if (StrUtil.isNotBlank(runningBotInstanceKeyStr)) {
+            newestBots.addAll(Arrays.asList(runningBotInstanceKeyStr.split(",")));
+        }
+        // 更新在线bot的map
+        scriptNodeKey2BotInstanceKeyMap.compute(instanceKey, (k, v) -> {
+            if (v == null) {
+                v = new HashSet<>();
+            }
+            Set<String> oldBots = new HashSet<>(v);
+            Set<String> newBots = new HashSet<>(newestBots);
+            oldBots.removeAll(newestBots);
+            newBots.removeAll(oldBots);
+            for (String oldBot : oldBots) {
+                v.remove(oldBot);
+                botInstanceKey2ScriptNodeKeyMap.remove(oldBot);
+                log.warn("scriptNode[{}] bot[{}] offline", instanceKey, oldBot);
+            }
+            for (String newBot : newBots) {
+                v.add(newBot);
+
+                botInstanceKey2ScriptNodeKeyMap.put(newBot, k);
+                log.warn("scriptNode[{}] bot[{}] online", instanceKey, newBot);
+            }
+            return v;
+        });
     }
 
     /**
@@ -194,10 +246,10 @@ public class BotPlatformControlServer extends BotControlServer {
         ) {
             throw new IllegalArgumentException("scriptNodeName or groupId、serviceId、instanceId are required");
         }
-        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
+        String scriptNodeKey = ServerInstanceUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
 
         // Step 1 判断目标Bot是否在线
-        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
+        String botInstanceKey = ServerInstanceUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
 
         BotInstanceStatus status = getBotInstanceStatus(botInstanceKey);
         if (status != BotInstanceStatus.RUNNING) {
@@ -239,7 +291,7 @@ public class BotPlatformControlServer extends BotControlServer {
      * @return BotInstanceStatus
      */
     public BotInstanceStatus getBotInstanceStatus(String scriptNodeName, String botName, String botKey) {
-        String instanceKey = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
+        String instanceKey = ServerInstanceUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
         return getBotInstanceStatus(instanceKey);
     }
 
@@ -253,6 +305,7 @@ public class BotPlatformControlServer extends BotControlServer {
         String scriptNodeKey = botInstanceKey2ScriptNodeKeyMap.get(botInstanceKey);
         if (scriptNodeKey == null) return BotInstanceStatus.STOPPED;
         ConnectEntry connectEntry = getConnectionService().getServiceInstanceChannel(scriptNodeKey);
+
         return connectEntry == null ? BotInstanceStatus.STOPPED :
                 (connectEntry.isUsable() ? BotInstanceStatus.RUNNING : BotInstanceStatus.UN_USABLE);
     }
@@ -269,13 +322,13 @@ public class BotPlatformControlServer extends BotControlServer {
         String serviceId = remotingCommand.getServiceId();
         String instanceId = remotingCommand.getInstanceId();
 
-        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(group, serviceId, instanceId);
+        String scriptNodeKey = ServerInstanceUtil.generateServiceInstanceKey(group, serviceId, instanceId);
 
         String botGroup = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_GROUP_KEY);
         String botName = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_NAME_KEY);
         String botKey = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
 
-        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(botGroup, botName, botKey);
+        String botInstanceKey = ServerInstanceUtil.generateServiceInstanceKey(botGroup, botName, botKey);
 
         scriptNodeKey2BotInstanceKeyMap.compute(scriptNodeKey, (k, v) -> {
             if (v == null) {
@@ -308,13 +361,13 @@ public class BotPlatformControlServer extends BotControlServer {
         String serviceId = remotingCommand.getServiceId();
         String instanceId = remotingCommand.getInstanceId();
 
-        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(group, serviceId, instanceId);
+        String scriptNodeKey = ServerInstanceUtil.generateServiceInstanceKey(group, serviceId, instanceId);
 
         String botGroup = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_GROUP_KEY);
         String botName = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_NAME_KEY);
         String botKey = remotingCommand.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
 
-        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(botGroup, botName, botKey);
+        String botInstanceKey = ServerInstanceUtil.generateServiceInstanceKey(botGroup, botName, botKey);
 
         Set<String> onLineBotInstanceKeys = scriptNodeKey2BotInstanceKeyMap.get(scriptNodeKey);
         if (onLineBotInstanceKeys == null || !onLineBotInstanceKeys.contains(botInstanceKey)) {
@@ -351,12 +404,12 @@ public class BotPlatformControlServer extends BotControlServer {
      * 查询script node下的botKey是否在线
      *
      * @param scriptNodeName scriptNodeName
-     * @param botKey        botKey
+     * @param botKey         botKey
      * @return boolean
      */
     public boolean isScriptNodeBotOnline(String scriptNodeName, String botName, String botKey) {
-        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
-        String scriptNodeKey =  botInstanceKey2ScriptNodeKeyMap.get(botInstanceKey);
+        String botInstanceKey = ServerInstanceUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
+        String scriptNodeKey = botInstanceKey2ScriptNodeKeyMap.get(botInstanceKey);
         if (StrUtil.isBlank(scriptNodeKey)) {
             return false;
         }
@@ -373,7 +426,7 @@ public class BotPlatformControlServer extends BotControlServer {
      * @return WebsocketClientStatus
      */
     public ScriptNodeStatus queryScriptNodeStatus(String groupId, String serviceId, String instanceId) {
-        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
+        String scriptNodeKey = ServerInstanceUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
         ConnectEntry connectEntry = getConnectionService().getServiceInstanceChannel(scriptNodeKey);
         if (connectEntry == null) {
             return ScriptNodeStatus.UNKNOWN;
@@ -394,7 +447,7 @@ public class BotPlatformControlServer extends BotControlServer {
      * @return Result
      */
     public CompletableFuture<Result> startScriptNodeBot(String groupId, String serviceId, String instanceId, String botKey) {
-        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
+        String scriptNodeKey = ServerInstanceUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
 
         RemotingCommand command = newRemotingCommand(BotRemotingCommandFlagConstants.START_BOT, true);
         command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);
@@ -427,7 +480,7 @@ public class BotPlatformControlServer extends BotControlServer {
      * @return CompletableFuture<Result>
      */
     public CompletableFuture<Result> stopScriptNodeBot(String groupId, String serviceId, String instanceId, String botKey) {
-        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
+        String scriptNodeKey = ServerInstanceUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
 
         RemotingCommand command = newRemotingCommand(BotRemotingCommandFlagConstants.STOP_BOT, true);
         command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);
@@ -477,7 +530,7 @@ public class BotPlatformControlServer extends BotControlServer {
         ) {
             throw new IllegalArgumentException("scriptNodeName or groupId、serviceId、instanceId are required");
         }
-        String scriptNodeKey = ControlServerUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
+        String scriptNodeKey = ServerInstanceUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
 
         RemotingCommand command = newRemotingCommand(BotRemotingCommandFlagConstants.QUERY_BOT_ACCOUNT, true);
         command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);

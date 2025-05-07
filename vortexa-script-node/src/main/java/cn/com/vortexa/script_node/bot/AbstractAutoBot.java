@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
+        import java.util.function.Supplier;
 
 public abstract class AbstractAutoBot {
 
@@ -142,20 +142,7 @@ public abstract class AbstractAutoBot {
             throw new BotInitException("resolve bot job error", e);
         }
 
-        // Step 2.2 保存bot info
-        try {
-            botApi.getBotInfoRPC().insertOrUpdateRPC(botInfo);
-
-            Map<String, Object> query = new HashMap<>();
-            query.put("name", botInfo.getName());
-            // 保存成还需查询botId
-            Integer id = botApi.getBotInfoRPC().conditionQueryRPC(query).getFirst().getId();
-            botInfo.setId(id);
-            logger.info("save bot info success, id:" + botInfo.getId());
-        } catch (SQLException e) {
-            throw new BotInitException("save bot info error", e);
-        }
-
+        // Step 2.2 构建BotInstance
         this.botInstance = BotInstance.builder()
                 .botId(botInfo.getId())
                 .botKey(autoBotConfig.getBotKey())
@@ -163,6 +150,7 @@ public abstract class AbstractAutoBot {
                 .scriptNodeName(scriptNodeConfiguration.getScriptNodeName())
                 .jobParams(botInfo.getJobParams())
                 .params(botInfo.getParams())
+                .version(botInfo.getVersion())
                 .build();
 
         // Step 2.3 设置logger前缀与线程池
@@ -176,7 +164,9 @@ public abstract class AbstractAutoBot {
             // Step 2.5 初始化BotInstance实例
             logger.info("start init bot instance");
 
-            BotInstance dbInstance = getBotApi().getBotInstanceRPC().selectOneRPC(botInstance);
+            BotInstance dbInstance = getBotApi().getBotInstanceRPC().selectOneRPC(
+                    BotInstance.builder().scriptNodeName(botInstance.getScriptNodeName()).botKey(botInstance.getBotKey()).build()
+            );
             // 数据库存在bot instance实例信息合并数据库的。
             if (dbInstance != null) {
                 mergeDbBotInstance(dbInstance);
@@ -517,7 +507,16 @@ public abstract class AbstractAutoBot {
     }
 
     protected synchronized void setJobParam(String jobKey, AutoBotJobParam jobParam) {
-        this.botInfo.getJobParams().put(jobKey, jobParam);
+        Map<String, AutoBotJobParam> jobParams = this.botInfo.getJobParams();
+        jobParams.compute(jobKey, (k,v)->{
+            if (v == null) {
+                return jobParam;
+            } else {
+                v.merge(jobParam);
+                return v;
+            }
+        });
+        jobParams.put(jobKey, jobParam);
     }
 
     protected abstract BotInfo buildBotInfo() throws BotInitException;

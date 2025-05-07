@@ -30,4 +30,14 @@ public class AutoBotJobWSParam implements Serializable {
 
     private Integer reconnectCountDownSecond;
 
+    public void merge(AutoBotJobWSParam autoBotJobWSParam) {
+        if (autoBotJobWSParam == null) return;
+        if (autoBotJobWSParam.getIsRefreshWSConnection() != null) { this.isRefreshWSConnection = autoBotJobWSParam.getIsRefreshWSConnection();}
+        if (autoBotJobWSParam.getWsUnlimitedRetry() != null) { this.wsUnlimitedRetry = autoBotJobWSParam.getWsUnlimitedRetry(); }
+        if (autoBotJobWSParam.getNioEventLoopGroupThreads() != null) { this.nioEventLoopGroupThreads = autoBotJobWSParam.getNioEventLoopGroupThreads(); }
+        if (autoBotJobWSParam.getWsConnectCount() != null) { this.wsConnectCount = autoBotJobWSParam.getWsConnectCount(); }
+        if (autoBotJobWSParam.getReconnectLimit() != null) { this.reconnectLimit = autoBotJobWSParam.getReconnectLimit(); }
+        if (autoBotJobWSParam.getHeartBeatIntervalSecond() != null) { this.heartBeatIntervalSecond = autoBotJobWSParam.getHeartBeatIntervalSecond(); }
+        if (autoBotJobWSParam.getReconnectCountDownSecond() != null) { this.reconnectCountDownSecond = autoBotJobWSParam.getReconnectCountDownSecond(); }
+    }
 }

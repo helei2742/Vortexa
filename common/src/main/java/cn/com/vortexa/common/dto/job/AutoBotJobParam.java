@@ -51,4 +51,33 @@ public class AutoBotJobParam implements Serializable {
 
         params.put(key, value);
     }
+
+    public void merge(AutoBotJobParam jobParam) {
+        if (jobParam == null) return;
+
+        if (jobParam.getJobType() != null) { this.jobType = jobParam.getJobType(); }
+        if (jobParam.getJobName() != null) { this.jobName = jobParam.getJobName(); }
+        if (jobParam.getDescription() != null) { this.description = jobParam.getDescription(); }
+        if (jobParam.getCronExpression() != null) { this.cronExpression = jobParam.getCronExpression(); }
+        if (jobParam.getIntervalInSecond() != null) { this.intervalInSecond = jobParam.getIntervalInSecond(); }
+        if (jobParam.getConcurrentCount() != null) { this.concurrentCount = jobParam.getConcurrentCount(); }
+        if (jobParam.getAutoBotJobWSParam() != null) {
+            if (this.autoBotJobWSParam == null) {
+                this.autoBotJobWSParam = jobParam.getAutoBotJobWSParam();
+            } else {
+                this.autoBotJobWSParam.merge(jobParam.getAutoBotJobWSParam());
+            }
+        }
+        if (jobParam.getUniqueAccount() != null) { this.uniqueAccount = jobParam.getUniqueAccount(); }
+        if (jobParam.getSyncExecute() != null) { this.syncExecute = jobParam.getSyncExecute(); }
+        if (jobParam.getDynamicTrigger() != null) { this.dynamicTrigger = jobParam.getDynamicTrigger(); }
+        if (jobParam.getDynamicTimeWindowMinute() != null) { this.dynamicTimeWindowMinute = jobParam.getDynamicTimeWindowMinute(); }
+        if (jobParam.getParams() != null) {
+            if (this.params == null) {
+                this.params = jobParam.getParams();
+            } else {
+                this.params.putAll(jobParam.getParams());
+            }
+        }
+    }
 }

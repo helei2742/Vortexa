@@ -24,8 +24,8 @@ vortexa:
       # - optim_ai_test
 #      - klok_test
       # - flow3_bot_test
-      - taker_google
-      - beamable_test
+#      - taker_google
+#      - beamable_test
       - magic_newton_v2
     bot-common-config:
       two_captcha_api_key: ''

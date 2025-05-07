@@ -21,7 +21,7 @@ import cn.com.vortexa.control_server.service.IRegistryService;
 import cn.com.vortexa.control.processor.CustomCommandProcessor;
 import cn.com.vortexa.control_server.service.impl.InfluxDBMetricsService;
 import cn.com.vortexa.control.util.DistributeIdMaker;
-import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.common.util.ServerInstanceUtil;
 import cn.com.vortexa.control.util.RemotingCommandDecoder;
 import cn.com.vortexa.control.util.RemotingCommandEncoder;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
@@ -239,15 +239,15 @@ public class BotControlServer {
             String instanceId,
             RemotingCommand remotingCommand
     ) {
-        String key = ControlServerUtil.generateServiceInstanceKey(group, serviceId, instanceId);
+        String key = ServerInstanceUtil.generateServiceInstanceKey(group, serviceId, instanceId);
         return sendCommandToServiceInstance(key, remotingCommand);
     }
 
     /**
      * 给服务实例发送命令
      *
-     * @param serviceInstanceKey             serviceInstanceKey
-     * @param remotingCommand remotingCommand
+     * @param serviceInstanceKey serviceInstanceKey
+     * @param remotingCommand    remotingCommand
      * @return CompletableFuture<RemotingCommand>
      */
     public CompletableFuture<RemotingCommand> sendCommandToServiceInstance(
@@ -304,6 +304,18 @@ public class BotControlServer {
         } else if (channel.isActive()) {
             channel.close();
         }
+    }
+
+    /**
+     * ping命令处理
+     *
+     * @param channel     channel
+     * @param instanceKey instanceKey
+     * @param ping        ping
+     */
+    public void handleServiceInstancePingCommand(Channel channel, String instanceKey, RemotingCommand ping) {
+        // 刷新连接状态
+        getConnectionService().freshServiceInstanceConnection(instanceKey, channel);
     }
 
     /**

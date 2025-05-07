@@ -19,11 +19,11 @@ public class ScriptNodeVO {
     private Long id;    // 节点id
     private String scriptNodeName;  //  节点名
     private String description; //  表述
-    protected String groupId;
-    protected String serviceId;
-    protected String instanceId;
-    protected String host;
-    protected Integer port;
+    private String groupId;
+    private String serviceId;
+    private String instanceId;
+    private String host;
+    private Integer port;
     private Boolean online; //  是否在线
     private List<String> managedBotKeyList; //  管理的botKey列表
     private LocalDateTime insertDatetime;

@@ -76,7 +76,7 @@ public class DBLayerAutoConfig {
     public MybatisConfiguration mybatisConfiguration() {
         MybatisConfiguration configuration = new MybatisConfiguration();
         configuration.setMapUnderscoreToCamelCase(true);
-//        configuration.setLogImpl(StdOutImpl.class);
+        configuration.setLogImpl(StdOutImpl.class);
         return configuration;
     }
 

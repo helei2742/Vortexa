@@ -5,11 +5,10 @@ import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeDetail;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeVO;
 import cn.com.vortexa.common.constants.ScriptNodeStatus;
-import cn.com.vortexa.common.dto.BotMetaInfo;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.util.FileUtil;
-import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.common.util.ServerInstanceUtil;
 import cn.com.vortexa.control_server.dto.ConnectEntry;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -56,7 +55,7 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
         Set<String> onLines = new HashSet<>(botControlServer.getConnectionService().queryOnlineInstanceKey());
 
         return list.stream().map(scriptNode -> {
-            String key = ControlServerUtil.generateServiceInstanceKey(
+            String key = ServerInstanceUtil.generateServiceInstanceKey(
                     scriptNode.getGroupId(), scriptNode.getServiceId(), scriptNode.getInstanceId()
             );
             return ScriptNodeVO.of(
@@ -78,7 +77,7 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
     public ScriptNodeDetail queryScriptNodeDetail(String scriptNodeName) {
         // 查node基本信息
         ScriptNode scriptNode = queryByScriptNodeName(scriptNodeName);
-        String key = ControlServerUtil.generateServiceInstanceKey(
+        String key = ServerInstanceUtil.generateServiceInstanceKey(
                 scriptNode.getGroupId(), scriptNode.getServiceId(), scriptNode.getInstanceId()
         );
         // 是否在线
@@ -88,7 +87,7 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
         // 在线的bot查询
         Map<String, List<String>> onlineBotName2Keys = new HashMap<>();;
         botControlServer.selectScriptNodeOnlineBot(key).forEach(botInstanceKey -> {
-            String[] gsiArr = botInstanceKey.split(ControlServerUtil.SERVICE_INSTANCE_KEY_DISPATCHER);
+            String[] gsiArr = botInstanceKey.split(ServerInstanceUtil.SERVICE_INSTANCE_KEY_DISPATCHER);
             onlineBotName2Keys.compute(gsiArr[1], (k,v)->{
                 if (v == null) {
                     v = new ArrayList<>();
@@ -104,7 +103,6 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
                 new ArrayList<>(scriptNode.getBotConfigMap().keySet())
         );
 
-        Map<String, BotMetaInfo> metaInfoMap = scriptNode.getBotMetaInfoMap();
 
         // 存在的实例
         Map<String, List<String>> botNameToBotKeys = scriptNode.getBotConfigMap().values()
@@ -116,7 +114,6 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
 
         return new ScriptNodeDetail(
                 scriptNodeVO,
-                metaInfoMap,
                 botNameToBotKeys,
                 onlineBotName2Keys
         );

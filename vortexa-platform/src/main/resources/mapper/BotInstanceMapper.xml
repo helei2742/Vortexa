@@ -12,6 +12,7 @@
         <result column="account_table_name" property="accountTableName"/>
         <result column="job_params" property="jobParams"/>
         <result column="params" property="params"/>
+        <result column="version" property="version"/>
         <result column="insert_datetime" property="insertDatetime"/>
         <result column="update_datetime" property="updateDatetime"/>
         <result column="valid" property="valid"/>
@@ -19,9 +20,9 @@
 
     <insert id="insertOrUpdate" parameterType="cn.com.vortexa.common.entity.BotInstance">
         INSERT INTO t_bot_instance
-        (bot_id, bot_name, script_node_name, bot_key, account_table_name, job_params, params, update_datetime, valid)
+        (bot_id, bot_name, script_node_name, bot_key, account_table_name, job_params, params, version,update_datetime, valid)
         VALUES (
-        #{botId}, #{botName}, #{scriptNodeName}, #{botKey}, #{accountTableName}, #{jobParams}, #{params}, now(), 1
+        #{botId}, #{botName}, #{scriptNodeName}, #{botKey}, #{accountTableName}, #{jobParams}, #{params}, #{version}, now(), 1
         )
         ON DUPLICATE KEY UPDATE
         <trim suffixOverrides=",">
@@ -37,6 +38,9 @@
             <if test="params != null">
                 params = values (params),
             </if>
+            <if test="version != null">
+                version = values (version),
+            </if>
             <if test="updateDatetime != null">
                 update_datetime = values (update_datetime),
             </if>
@@ -48,18 +52,18 @@
 
     <insert id="insertOrUpdateBatch" parameterType="java.util.List">
         INSERT INTO t_bot_instance
-        (bot_id, bot_name, script_node_name, bot_key, account_table_name, job_params, params, update_datetime, valid)
+        (bot_id, bot_name, script_node_name, bot_key, account_table_name, job_params, params, version,update_datetime, valid)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.botId}, #{item.botName}, #{item.scriptNodeName}, #{item.botKey}, #{item.accountTableName},
-            #{item.jobParams},
-            #{item.params}, current_timestamp, 1)
+            #{item.jobParams}, #{item.version}, #{item.params}, current_timestamp, 1)
         </foreach>
         ON DUPLICATE KEY UPDATE
         bot_id = values(bot_id),
         account_table_name = values(account_table_name),
         job_params = values(job_params),
         params = values(params),
+        version = values(version),
         update_datetime = values(updateDatetime),
         valid =values (valid)
     </insert>
@@ -77,6 +81,7 @@
         t.account_table_name as accountTableName,
         t.job_params as jobParams,
         t.params,
+        t.version,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,
         t.valid as valid
@@ -98,6 +103,9 @@
             </if>
             <if test="accountTableName != null">
                 and t.account_table_name = #{accountTableName}
+            </if>version
+            <if test="version != null">
+                and t.version = #{version}
             </if>
             <if test="params != null and !params.isEmpty()">
                 AND JSON_CONTAINS(

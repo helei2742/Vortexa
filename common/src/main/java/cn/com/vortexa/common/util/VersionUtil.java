@@ -7,12 +7,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * @author h30069248
+ * @author helei
  * @since 2025/5/6 14:35
  */
 @Slf4j
@@ -25,22 +29,39 @@ public class VersionUtil {
      * @return Map<String, String>
      * @throws IOException IOException
      */
-    public static Map<String, String> scanJarLibForBotVersionMap(String jarDir) throws IOException {
-        Map<String, String> map = new HashMap<>();
-        try (Stream<Path> list = Files.list(Paths.get(FileUtil.getLibraryDir()));) {
+    public static Map<String, List<String>> scanJarLibForBotVersionMap(String jarDir) throws IOException {
+        Path dir = Paths.get(jarDir);
+        if (!Files.exists(dir)) {
+            return new HashMap<>();
+        }
+        Map<String, Set<String>> map = new HashMap<>();
+        try (Stream<Path> list = Files.list(dir)) {
             list.filter(path -> path.toString().endsWith(".jar"))
                     .forEach(path -> {
                         String fileName = path.getFileName().toString();
                         try {
                             Pair<String, String> nameAndVersion = VersionUtil.getBotNameAndVersionFromJarPath(
                                     fileName);
-                            map.put(nameAndVersion.getKey(), nameAndVersion.getValue());
+                            map.compute(nameAndVersion.getKey(), (k, v) -> {
+                                if (v == null) {
+                                    v = new HashSet<>();
+                                }
+                                v.add(nameAndVersion.getValue());
+                                return v;
+                            });
                         } catch (Exception e) {
                             log.error("resolve bot version failed, jar name:{}", fileName, e);
                         }
                     });
         }
-        return map;
+        Map<String, List<String>> versionMap = new HashMap<>();
+
+        for (Map.Entry<String, Set<String>> entry : map.entrySet()) {
+            ArrayList<String> versionList = new ArrayList<>(entry.getValue());
+            versionList.sort((v1, v2) -> VersionUtil.compareVersion(v2, v1));
+            versionMap.put(entry.getKey(), versionList);
+        }
+        return versionMap;
     }
 
     /**

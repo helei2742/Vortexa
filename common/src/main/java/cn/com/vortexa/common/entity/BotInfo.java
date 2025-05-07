@@ -11,6 +11,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,9 +49,6 @@ public class BotInfo implements Serializable {
     @TableField("image")
     private String image;
 
-    @TableField("limit_project_ids")
-    private String limitProjectIds;
-
     @TableField("job_params")
     private Map<String, AutoBotJobParam> jobParams = new HashMap<>();
 
@@ -69,6 +67,9 @@ public class BotInfo implements Serializable {
     @TableField(value = "valid", fill = FieldFill.INSERT)
     @TableLogic
     private Integer valid;
+
+    @TableField(exist = false)
+    private List<String> botNames;
 
 
     public void setJobParams(Map<String, Object> params) {

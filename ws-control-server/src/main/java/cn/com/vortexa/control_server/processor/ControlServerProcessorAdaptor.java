@@ -4,7 +4,7 @@ import cn.com.vortexa.control.constant.*;
 import cn.com.vortexa.control.dto.RemotingCommand;
 import cn.com.vortexa.control_server.BotControlServer;
 import cn.com.vortexa.control_server.service.IRegistryService;
-import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.common.util.ServerInstanceUtil;
 import cn.com.vortexa.websocket.netty.handler.BaseWebSocketInboundHandler;
 import cn.com.vortexa.websocket.netty.constants.NettyConstants;
 import io.netty.channel.Channel;
@@ -33,11 +33,11 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
     private final ScriptAgentMetricsCommandProcessor scriptAgentMetricsCommandProcessor;
 
     public ControlServerProcessorAdaptor(
-            BotControlServer nameServerService,
+            BotControlServer botControlServer,
             IRegistryService registryService
     ) {
         super();
-        this.botControlServer = nameServerService;
+        this.botControlServer = botControlServer;
         this.pingCommandProcessor = new PingCommandProcessor(botControlServer);
         this.pongCommandProcessor = new PongCommandProcessor(botControlServer);
         this.serviceRegistryProcessor = new ServiceRegistryProcessor(registryService);
@@ -67,7 +67,7 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
                             String group = remotingCommand.getGroup();
                             String serviceId = remotingCommand.getServiceId();
                             String clientId = remotingCommand.getInstanceId();
-                            String newKey = ControlServerUtil.generateServiceInstanceKey(group, serviceId, clientId);
+                            String newKey = ServerInstanceUtil.generateServiceInstanceKey(group, serviceId, clientId);
 
                             channel.attr(NettyConstants.CLIENT_NAME).set(newKey);
 

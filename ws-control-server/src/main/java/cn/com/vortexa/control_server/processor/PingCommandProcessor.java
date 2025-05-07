@@ -20,9 +20,7 @@ public class PingCommandProcessor {
 
     public RemotingCommand handlerPing(String clientName, Channel channel, RemotingCommand remotingCommand) {
         log.debug("receive client[{}] ping", clientName);
-        // 刷新连接状态
-        botControlServer.getConnectionService().freshServiceInstanceConnection(clientName, channel);
-
+        botControlServer.handleServiceInstancePingCommand(channel, clientName, remotingCommand);
         // 返回pong
         RemotingCommand pong = RemotingCommand.generatePongCommand(clientName);
         pong.setTransactionId(remotingCommand.getTransactionId());

@@ -5,7 +5,6 @@ import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.YamlConfigLoadUtil;
 import cn.com.vortexa.common.util.http.RestApiClientFactory;
-import cn.hutool.core.lang.Pair;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;

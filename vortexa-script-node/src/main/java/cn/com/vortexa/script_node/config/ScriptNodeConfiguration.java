@@ -1,6 +1,6 @@
+
 package cn.com.vortexa.script_node.config;
 
-import cn.com.vortexa.common.util.ImageBase64Util;
 import com.alibaba.fastjson.JSONObject;
 
 import cn.com.vortexa.common.constants.HttpMethod;
@@ -8,6 +8,7 @@ import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.config.AutoBotAccountConfig;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.util.FileUtil;
+import cn.com.vortexa.common.util.JarFileResolveUtil;
 import cn.com.vortexa.common.util.VersionUtil;
 import cn.com.vortexa.common.util.YamlConfigLoadUtil;
 import cn.com.vortexa.common.util.http.RestApiClientFactory;
@@ -17,7 +18,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 import org.springframework.beans.factory.InitializingBean;
@@ -45,9 +45,8 @@ import java.util.stream.Stream;
 @ConfigurationProperties(prefix = "vortexa.script-node")
 public class ScriptNodeConfiguration implements InitializingBean {
     public static Map<String, Object> RAW_CONFIG = null;
-    public static final String BOT_META_INF_FILE_NAME = "bot-meta-info.yaml";
-    public static final String BOT_ICON_FILE_NAME = "icon.png";
-    public static final List<String> BOT_META_INFO_PREFIX = List.of("vortexa", "botMetaInfo");
+
+
     public static final List<String> BOT_INSTANCE_CONFIG_PREFIX = List.of("vortexa", "botInstance");
 
     /**
@@ -95,7 +94,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
     /**
      * bot版本   （解析目录自动写入）
      */
-    private Map<String, String> botVersionMap;
+    private Map<String, List<String>> botVersionMap;
 
     /**
      * 自动时自动启动的botKey
@@ -111,6 +110,8 @@ public class ScriptNodeConfiguration implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        FileUtil.LIBRARY_DIR_NAME = FileUtil.LIBRARY_DIR_NAME + File.separator + scriptNodeName;
+        FileUtil.JAR_FILE_DIR_NAME = FileUtil.JAR_FILE_DIR_NAME + File.separator + scriptNodeName;
         // 解析地址，
         scriptNodeBasePath = FileUtil.getAppResourceAppConfigDir() + File.separator + scriptNodeName;
 
@@ -145,31 +146,44 @@ public class ScriptNodeConfiguration implements InitializingBean {
      */
     private void tryUpdateNewestBotJarFile() throws IOException {
         // Step 1 扫描script node jar包目录，获取botName -> version
-        botVersionMap = VersionUtil.scanJarLibForBotVersionMap(FileUtil.getJarFileDir());
+        botVersionMap = VersionUtil.scanJarLibForBotVersionMap(FileUtil.getLibraryDir());
 
         // Step 2 从platform获取最新的版本信息
-        Map<String, String> newestBotVersion = fetchRemoteNewestBotVersion(buildBotVersionRestApi(),
-                new ArrayList<>(botVersionMap.keySet()));
+        Map<String, String> newestBotVersion = fetchRemoteNewestBotVersion(buildBotVersionRestApi(), new ArrayList<>(loadBotNames));
+
         if (newestBotVersion != null) {
             // Step 3 对比版本，如果有新版本，则下载
-            Iterator<Map.Entry<String, String>> iterator = botVersionMap.entrySet().iterator();
+            Iterator<Map.Entry<String, String>> iterator = newestBotVersion.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<String, String> entry = iterator.next();
                 String botName = entry.getKey();
-                String v1 = entry.getKey();
-                String v2 = newestBotVersion.get(botName);
-                if (StrUtil.isBlank(v2)) {
-                    // 远程没这个版本的bot, 去除后续不使用
-                    iterator.remove();
+                String v2 = entry.getValue();
+
+                List<String> existBotVersions = botVersionMap.get(botName);
+                if (CollUtil.isEmpty(existBotVersions)) {
+                    try {
+                        downloadNewestBotJarFile(botName, v2);
+                        botVersionMap.put(botName, List.of(v2));
+                    } catch (ExecutionException | InterruptedException e) {
+                        log.error("download newest bot[{}] version[{}] jar file error", botName, v2, e);
+                    }
                 } else {
-                    int compare = VersionUtil.compareVersion(v1, v2);
-                    if (compare < 0) {
-                        try {
-                            downloadNewestBotJarFile(botName, v2);
-                            botVersionMap.put(botName, v2);
-                        } catch (ExecutionException | InterruptedException e) {
-                            log.error("download newest bot[{}] version[{}] jar file error", botName, v2, e);
-                            botVersionMap.remove(botName);
+                    String v1 = botVersionMap.get(botName).getFirst();
+                    if (StrUtil.isBlank(v2)) {
+                        // 远程没这个版本的bot, 去除后续不使用
+                        iterator.remove();
+                    } else {
+                        int compare = VersionUtil.compareVersion(v1, v2);
+                        if (compare < 0) {
+                            try {
+                                downloadNewestBotJarFile(botName, v2);
+                                ArrayList<String> newVersions = new ArrayList<>();
+                                newVersions.add(v2);
+                                newVersions.addAll(existBotVersions);
+                                botVersionMap.put(botName, newVersions);
+                            } catch (ExecutionException | InterruptedException e) {
+                                log.error("download newest bot[{}] version[{}] jar file error", botName, v2, e);
+                            }
                         }
                     }
                 }
@@ -184,35 +198,37 @@ public class ScriptNodeConfiguration implements InitializingBean {
      * @param version version
      */
     private void downloadNewestBotJarFile(String botName, String version)
-            throws ExecutionException, InterruptedException, IOException {
+            throws ExecutionException, InterruptedException {
         // 本地版本小于远程版本，需要更新
         log.info("botName[{}] local version less than remote version[{}], try update ...", botName, version);
-        String downloadUrl = remoteRestUrl + "/version/bot/download" + botName + "/" + version;
+        String downloadUrl = remoteRestUrl + "/version/bot/download/" + botName + "/" + version;
         String fileName = VersionUtil.getBotJarFileName(botName, version);
 
-        Response response = RestApiClientFactory.getClient().rawRequest(
+        RestApiClientFactory.getClient().rawRequest(
                 downloadUrl,
                 HttpMethod.GET,
                 new HashMap<>(),
                 null,
-                null
+                null,
+                response -> {
+                    // 保存文件到本地
+                    File file = FileUtil.getAndCreateLibraryPath(fileName).toFile();
+                    ResponseBody responseBody = response.body();
+                    if (!response.isSuccessful() || responseBody == null) {
+                        throw new IOException("response body is null");
+                    }
+                    try (InputStream in = responseBody.byteStream();
+                         OutputStream out = Files.newOutputStream(file.toPath())
+                    ) {
+                        byte[] buffer = new byte[8192];
+                        int len;
+                        while ((len = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, len);
+                        }
+                        log.info("update bot[{}]-[{}] jar file success, path: {}", botName, version, file.getAbsolutePath());
+                    }
+                }
         ).get();
-        // 保存文件到本地
-        File file = new File(FileUtil.getJarFilePath(fileName));
-        ResponseBody responseBody = response.body();
-        if (responseBody == null) {
-            throw new IOException("response body is null");
-        }
-        try (InputStream in = responseBody.byteStream();
-             OutputStream out = Files.newOutputStream(file.toPath())
-        ) {
-            byte[] buffer = new byte[8192];
-            int len;
-            while ((len = in.read(buffer)) != -1) {
-                out.write(buffer, 0, len);
-            }
-            log.info("update bot[{}]-[{}] jar file success, path: {}", botName, version, file.getAbsolutePath());
-        }
     }
 
     /**
@@ -327,60 +343,17 @@ public class ScriptNodeConfiguration implements InitializingBean {
     private void initBotMetaInfo() throws IOException {
         botNameMetaInfoMap = new HashMap<>();
         if (CollUtil.isNotEmpty(loadBotNames)) {
-            for (String loadBotName : loadBotNames) {
-                String version = this.botVersionMap.get(loadBotName);
-                if (StrUtil.isBlank(version)) {
+            List<String> jarFileNames = loadBotNames.stream().map(loadBotName -> {
+                String version;
+                if (this.botVersionMap.get(loadBotName) == null
+                        || StrUtil.isBlank(version = this.botVersionMap.get(loadBotName).getFirst())) {
                     log.warn("bot[{}] no version, skip load it", loadBotName);
-                    continue;
+                    return null;
                 }
-                String botJarFileName = VersionUtil.getBotJarFileName(loadBotName, version)
-                        .replace(".jar", "");
-                String jarLibraryPath = FileUtil.getLibraryPath(botJarFileName);
-                Path jarFilePath = Paths.get(FileUtil.getJarFilePath(botJarFileName));
-                if (!Files.exists(jarFilePath)) {
-                    FileUtil.extractJar(
-                            jarLibraryPath,
-                            jarFilePath.toString()
-                    );
-                } else {
-                    log.info("jar[{}] extracted, skip extract it", botJarFileName);
-                }
+                return VersionUtil.getBotJarFileName(loadBotName, version);
+            }).filter(Objects::nonNull).toList();
 
-
-                // 解析文件夹
-                log.info("start resolve bot meta info config from dir[{}]", jarFilePath);
-                try (Stream<Path> walk = Files.walk(jarFilePath, 5)) {
-                    walk.filter(Files::isDirectory).forEach(dir -> {
-                        Path configFilePath = dir.resolve(BOT_META_INF_FILE_NAME);
-                        if (Files.exists(configFilePath)) {
-                            BotMetaInfo metaInfo = YamlConfigLoadUtil.load(configFilePath.toFile(),
-                                    BOT_META_INFO_PREFIX, BotMetaInfo.class);
-
-                            // 配置文件校验
-                            if (metaInfo == null) {
-                                throw new IllegalArgumentException(
-                                        "bot meta info file [" + BOT_META_INF_FILE_NAME + "] illegal");
-                            }
-
-                            // 设置bot资源目录
-                            metaInfo.setResourceDir(dir.toString());
-                            // 设置所在jar包路径
-                            metaInfo.setClassJarPath(jarLibraryPath);
-
-                            try {
-                                metaInfo.setIcon(
-                                        ImageBase64Util.pngToBase64DataUrl(metaInfo.getResourceDir() + File.separator + BOT_ICON_FILE_NAME)
-                                );
-                            } catch (IOException e) {
-                                log.warn("bot[{}] icon png image load fail, {}", loadBotName, e.getMessage());
-                            }
-                            metaInfo.setVersion(version);
-                            botNameMetaInfoMap.put(metaInfo.getBotName(), metaInfo);
-                            log.info("botName[{}]-[{}] meta info loaded", metaInfo.getBotName(), version);
-                        }
-                    });
-                }
-            }
+            botNameMetaInfoMap.putAll(JarFileResolveUtil.tryExtractJarAndResolveBotMetaInfo(jarFileNames));
         }
     }
 

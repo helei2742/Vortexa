@@ -1,17 +1,15 @@
 package cn.com.vortexa.bot_platform.script_control.service;
 
 import cn.com.vortexa.bot_platform.constants.VortexaPlatFormConstants;
-import cn.com.vortexa.bot_platform.service.IBotInfoService;
 import cn.com.vortexa.bot_platform.service.IScriptNodeService;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
-import cn.com.vortexa.common.entity.BotInfo;
 import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.control.constant.RegistryState;
 import cn.com.vortexa.control_server.service.IRegistryService;
-import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.common.util.ServerInstanceUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -25,7 +23,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,17 +41,14 @@ import static cn.com.vortexa.bot_platform.constants.VortexaPlatFormConstants.PLA
 public class DBRegistryService implements IRegistryService {
 
     private final IScriptNodeService scriptNodeService;
-    private final IBotInfoService botInfoService;
     private final LinkedBlockingQueue<RegisteredScriptNode> updatedCache = new LinkedBlockingQueue<>();
     private boolean running = true;
 
     public DBRegistryService(
             IScriptNodeService scriptNodeService,
-            IBotInfoService botInfoService,
             ExecutorService executorService
     ) {
         this.scriptNodeService = scriptNodeService;
-        this.botInfoService = botInfoService;
 
         executorService.execute(() -> {
             while (running) {
@@ -93,21 +87,6 @@ public class DBRegistryService implements IRegistryService {
                     // 写入对应bot配置文件
                     trySaveRawScriptNodeBotConfig(scriptNodeName, botKey, autoBotConfig);
                 }
-
-                // 保存BotInfo
-                scriptNode.getBotMetaInfoMap().forEach((botName, metaInfo) -> {
-                    try {
-                        BotInfo botRawInfo = BotInfo.builder()
-                                .name(botName)
-                                .image(metaInfo.getIcon())
-                                .version(metaInfo.getVersion())
-                                .build();
-
-                        botInfoService.insertOrUpdate(botRawInfo);
-                    } catch (SQLException e) {
-                        log.error("save bot[{}] info error", botName, e);
-                    }
-                });
 
                 scriptNodeService.insertOrUpdate(scriptNode);
                 return RegistryState.OK;
@@ -150,7 +129,7 @@ public class DBRegistryService implements IRegistryService {
 
     @Override
     public List<RegisteredScriptNode> queryServiceInstance(String key) {
-        String[] split = key.split(ControlServerUtil.SERVICE_INSTANCE_KEY_DISPATCHER);
+        String[] split = key.split(ServerInstanceUtil.SERVICE_INSTANCE_KEY_DISPATCHER);
         return queryServiceInstance(
                 ServiceInstance.builder().groupId(split[0]).serviceId(split[1]).instanceId(split[2]).build()
         );
@@ -165,7 +144,7 @@ public class DBRegistryService implements IRegistryService {
 
     @Override
     public boolean existServiceInstance(String key) {
-        String[] split = key.split(ControlServerUtil.SERVICE_INSTANCE_KEY_DISPATCHER);
+        String[] split = key.split(ServerInstanceUtil.SERVICE_INSTANCE_KEY_DISPATCHER);
         ScriptNode scriptNode = new ScriptNode();
         scriptNode.setGroupId(split[0]);
         scriptNode.setServiceId(split[1]);

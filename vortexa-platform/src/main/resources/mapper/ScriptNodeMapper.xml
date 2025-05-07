@@ -14,7 +14,6 @@
         <result column="description" property="description" />
         <result column="node_app_config" property="nodeAppConfig" />
         <result column="bot_config_map" property="botConfigMap" />
-        <result column="bot_meta_info_map" property="botMetaInfoMap" />
         <result column="params" property="params" />
         <result column="version" property="version" />
         <result column="insert_datetime" property="insertDatetime" />
@@ -24,10 +23,12 @@
 
     <insert id="insertOrUpdate">
         INSERT INTO t_script_node
-        (group_id, service_id, instance_id, host, port, script_node_name, description, node_app_config, bot_config_map, bot_meta_info_map,params, version, update_datetime,  valid)
+        (group_id, service_id, instance_id, host, port, script_node_name, description, node_app_config,
+        bot_config_map,params, version, update_datetime, valid)
         VALUES (
-        #{groupId}, #{serviceId}, #{instanceId}, #{host}, #{port}, #{scriptNodeName}, #{description}, #{nodeAppConfig}, #{botConfigMap}, #{botMetaInfoMap}, #{params}, #{version}, current_timestamp, 1
-        ) ON DUPLICATE KEY  UPDATE
+        #{groupId}, #{serviceId}, #{instanceId}, #{host}, #{port}, #{scriptNodeName}, #{description}, #{nodeAppConfig},
+        #{botConfigMap}, #{params}, #{version}, current_timestamp, 1
+        ) ON DUPLICATE KEY UPDATE
         <trim suffixOverrides=",">
             <if test="groupId != null">
                 group_id = values(group_id),
@@ -55,9 +56,6 @@
             </if>
             <if test="botConfigMap != null">
                 bot_config_map = values(bot_config_map),
-            </if>
-            <if test="botMetaInfoMap != null">
-                bot_meta_info_map = values(bot_meta_info_map),
             </if>
             <if test="params != null">
                 params = values(params),

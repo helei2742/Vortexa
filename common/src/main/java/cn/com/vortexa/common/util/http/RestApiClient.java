@@ -24,7 +24,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-
 @Slf4j
 public class RestApiClient {
 
@@ -153,23 +152,25 @@ public class RestApiClient {
     }
 
     /**
-     *rawRequest
-     * @param url   url
-     * @param method    method
-     * @param headers   headers
-     * @param params    params
-     * @param body  body
-     * @return  CompletableFuture<ResponseBody>
+     * rawRequest
+     *
+     * @param url     url
+     * @param method  method
+     * @param headers headers
+     * @param params  params
+     * @param body    body
+     * @return CompletableFuture<ResponseBody>
      */
-    public CompletableFuture<Response> rawRequest(
+    public CompletableFuture<Void> rawRequest(
             String url,
             HttpMethod method,
             Map<String, String> headers,
             JSONObject params,
-            JSONObject body
+            JSONObject body,
+            RawResponseHandler responseHandler
     ) {
-        return CompletableFuture.supplyAsync(() -> {
-            Request request = null;
+        return CompletableFuture.runAsync(() -> {
+            Request request;
             try {
                 request = buildRequest(url, method, headers, params, body);
             } catch (IOException e) {
@@ -180,7 +181,8 @@ public class RestApiClient {
             for (int i = 0; i < RETRY_TIMES; i++) {
                 // 发送请求并获取响应
                 try (Response response = okHttpClient.newCall(request).execute()) {
-                    return rawRequest(url, response);
+                    responseHandler.handle(response);
+                    return;
                 } catch (SocketTimeoutException e) {
                     log.warn("请求[{}]超时，尝试重新请求 [{}]/{}],", url, i, RETRY_TIMES);
                     exception = e;
@@ -262,7 +264,7 @@ public class RestApiClient {
 
         if (HttpMethod.GET.equals(method)) {
             builder.get();
-        } else if(HttpMethod.POST.equals(method)) {
+        } else if (HttpMethod.POST.equals(method)) {
             builder.method(method.name(), requestBody);
         } else {
             builder.method(method.name(), requestBody);
@@ -293,15 +295,6 @@ public class RestApiClient {
             }
         }
         return result;
-    }
-
-    @NotNull
-    private static Response rawRequest(String url, Response response) throws IOException {
-        ResponseBody responseBody = response.body();
-        if (response.isSuccessful() || responseBody == null) {
-            throw new RuntimeException("请求 " + url + "失败, " + (responseBody == null ? null : responseBody.string()));
-        }
-        return response;
     }
 
     @Nullable
@@ -345,5 +338,10 @@ public class RestApiClient {
 
         throw new NetworkException("请求重试次数超过限制[" + retryTimes + "], "
                 + (exception != null ? exception.getMessage() : "known"), exception);
+    }
+
+
+    public interface RawResponseHandler {
+        void handle(Response response) throws IOException;
     }
 }

@@ -8,6 +8,7 @@ import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.account.BotInstanceAccount;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.common.entity.AccountContext;
+import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.script_agent.ScriptAgent;
@@ -20,7 +21,7 @@ import cn.com.vortexa.control.dto.RequestHandleResult;
 import cn.com.vortexa.control.exception.CustomCommandException;
 import cn.com.vortexa.control.exception.CustomCommandInvokeException;
 import cn.com.vortexa.common.util.protocol.Serializer;
-import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.common.util.ServerInstanceUtil;
 import cn.com.vortexa.control.util.RPCMethodUtil;
 import cn.com.vortexa.script_node.bot.AutoLaunchBot;
 import cn.com.vortexa.script_node.config.ScriptNodeConfiguration;
@@ -39,6 +40,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -72,7 +74,6 @@ public class BotScriptAgent extends ScriptAgent {
             ScriptNode scriptNode = ScriptNode.generateFromServiceInstance(serviceInstance);
             scriptNode.setScriptNodeName(scriptNodeConfiguration.getScriptNodeName());
             scriptNode.setBotConfigMap(scriptNodeConfiguration.getBotKeyConfigMap());
-            scriptNode.setBotMetaInfoMap(scriptNodeConfiguration.getBotNameMetaInfoMap());
             scriptNode.setNodeAppConfig(JSONObject.toJSONString(ScriptNodeConfiguration.RAW_CONFIG));
 
             return scriptNode;
@@ -182,7 +183,7 @@ public class BotScriptAgent extends ScriptAgent {
      * @param bot     bot
      */
     public void addRunningBot(String botName, String botKey, AutoLaunchBot<?> bot) {
-        String key = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
+        String key = ServerInstanceUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
 
         if (runningBotMap.containsKey(key)) {
             throw new IllegalArgumentException("bot[%s][%s] exist".formatted(botName, botKey));
@@ -204,7 +205,7 @@ public class BotScriptAgent extends ScriptAgent {
      * @param botKey  botKey
      */
     public void removeRunningBot(String botName, String botKey) {
-        String key = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
+        String key = ServerInstanceUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
         runningBotMap.remove(key);
 
         // 上报bot下线
@@ -290,7 +291,7 @@ public class BotScriptAgent extends ScriptAgent {
         String jobName = remotingCommand.getExtFieldsValue(BotExtFieldConstants.JOB_NAME);
 
         // Step 1 生成key，从map中查找存在的bot
-        String key = ControlServerUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
+        String key = ServerInstanceUtil.generateServiceInstanceKey(scriptNodeName, botName, botKey);
 
         RemotingCommand response = new RemotingCommand();
         response.setCode(RemotingCommandCodeConstants.FAIL);
@@ -443,5 +444,27 @@ public class BotScriptAgent extends ScriptAgent {
             log.error("page query bot account error", e);
         }
         return response;
+    }
+
+    @Override
+    public RemotingCommand buildPingCommand() {
+        RemotingCommand ping =  super.buildPingCommand();
+        List<String> list = runningBotMap.values().stream().map(instanceMetaInfo -> {
+            AutoLaunchBot<?> bot = instanceMetaInfo.getBot();
+            if (bot == null) {
+                return null;
+            }
+            BotInstance botInstance = bot.getBotInstance();
+            return ServerInstanceUtil.generateServiceInstanceKey(
+                    botInstance.getScriptNodeName(),
+                    botInstance.getBotName(),
+                    botInstance.getBotKey()
+            );
+        }).filter(Objects::nonNull).toList();
+        // 添加当前运行的botKey
+        ping.addExtField(
+                BotExtFieldConstants.RUNNING_BOT_INSTANCE_KEYS, String.join(",", list)
+        );
+        return ping;
     }
 }

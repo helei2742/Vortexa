@@ -10,7 +10,7 @@ import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.control.constant.ExtFieldsConstants;
 import cn.com.vortexa.control.constant.RemotingCommandCodeConstants;
 import cn.com.vortexa.control.dto.RemotingCommand;
-import cn.com.vortexa.control.util.ControlServerUtil;
+import cn.com.vortexa.common.util.ServerInstanceUtil;
 import cn.com.vortexa.control_server.dto.ConnectEntry;
 import cn.hutool.core.util.StrUtil;
 import io.netty.channel.Channel;
@@ -57,7 +57,7 @@ public class BotLogUploadService {
         }
 
         //.收到开始获取bot的日志命令
-        String botInstanceKey = ControlServerUtil.generateServiceInstanceKey(group, botName, botKey);
+        String botInstanceKey = ServerInstanceUtil.generateServiceInstanceKey(group, botName, botKey);
 
         log.info("receive command[{}] to start get bot[{}] runtime log",
                 BotRemotingCommandFlagConstants.START_UP_BOT_LOG,
@@ -71,7 +71,7 @@ public class BotLogUploadService {
             responseBuilder.errorMsg("scriptNode not found");
             return responseBuilder.build();
         } else {
-            scriptNodeKey =  ControlServerUtil.generateServiceInstanceKey(
+            scriptNodeKey =  ServerInstanceUtil.generateServiceInstanceKey(
                     scriptNode.getGroupId(), scriptNode.getServiceId(), scriptNode.getInstanceId()
             );
             ConnectEntry connectEntry = platformControlServer.getConnectionService().getServiceInstanceChannel(

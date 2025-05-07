@@ -13,6 +13,7 @@ import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
@@ -84,10 +85,7 @@ public class ScriptAgentProcessorAdaptor extends AbstractWebSocketClientHandler<
     @Override
     protected void handleAllIdle(ChannelHandlerContext ctx) {
         super.handleAllIdle(ctx);
-        RemotingCommand ping = RemotingCommand.generatePingCommand(scriptAgent.getName());
-        ping.setTransactionId(
-                DistributeIdMaker.DEFAULT.nextId(scriptAgent.getName())
-        );
+        RemotingCommand ping = scriptAgent.buildPingCommand();
         log.info("send ping to remote");
         scriptAgent.sendRequest(ping).whenComplete((response, throwable) -> {
             if (throwable != null) {

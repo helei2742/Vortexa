@@ -1,7 +1,10 @@
+
+
 package cn.com.vortexa.script_node.bot;
 
 import cn.com.vortexa.common.dto.ACListOptResult;
 import cn.com.vortexa.common.dto.BotACJobResult;
+import cn.com.vortexa.common.dto.BotMetaInfo;
 import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.common.entity.RewordInfo;
 import cn.com.vortexa.script_node.anno.BotApplication;
@@ -20,7 +23,6 @@ import cn.com.vortexa.common.exception.BotInitException;
 import cn.com.vortexa.script_node.dto.job.AutoBotJobRuntimeParam;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSONArray;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -87,8 +89,16 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                         throw new IllegalArgumentException("缺乏Bot必要参数[%s]".formatted(key));
                     }
                 }
+                BotMetaInfo botMetaInfo = getScriptNodeConfiguration().getBotNameMetaInfoMap().get(botName);
 
-                return generateFromAnno(annotation);
+                List<BotInfo> botInfoList = getBotApi().getBotInfoRPC().conditionQueryRPC(
+                        Map.of("name", botName, "version", botMetaInfo.getVersion())
+                );
+                if (CollUtil.isNotEmpty(botInfoList)) {
+                    return botInfoList.getFirst();
+                } else {
+                    throw new BotInitException("remote bot[%s]-[%s] not found".formatted(botName, botMetaInfo.getVersion()));
+                }
             } else {
                 throw new IllegalArgumentException("bot 应该带有 @BotApplication注解");
             }
@@ -236,7 +246,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 || method.getParameters()[0].getType() != AccountContext.class
                 || (method.getParameterCount() == 2 && method.getParameters()[1].getType() != List.class)
         ) {
-            throw new BotMethodFormatException("time task method " +method.getName()+ " error, " +
+            throw new BotMethodFormatException("time task method " + method.getName() + " error, " +
                     "use void methodName(AccountContext ac) or " +
                     "void methodName(AccountContext exampleAC, List<AccountContext> sameABIIdList) ");
         }
@@ -318,11 +328,10 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
         botInfo.setName(annotation.name());
         botInfo.setDescription(annotation.describe());
         botInfo.setImage(annotation.image());
-        botInfo.setLimitProjectIds(Arrays.toString(annotation.limitProjectIds()));
         botInfo.getParams()
-                .put(CONFIG_PARAMS_KEY, JSONArray.parseArray(JSONArray.toJSONString(annotation.configParams())));
+                .put(CONFIG_PARAMS_KEY, List.of(annotation.configParams()));
         botInfo.getParams()
-                .put(ACCOUNT_PARAMS_KEY, JSONArray.parseArray(JSONArray.toJSONString(annotation.accountParams())));
+                .put(ACCOUNT_PARAMS_KEY, List.of(annotation.accountParams()));
 
         return botInfo;
     }

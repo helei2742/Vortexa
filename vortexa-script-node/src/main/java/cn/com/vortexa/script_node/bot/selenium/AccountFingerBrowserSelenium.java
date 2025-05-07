@@ -23,6 +23,9 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
 
     private final ReentrantLock lock = new ReentrantLock();
 
+    @Getter
+    private final AccountContext accountContext;
+
     @Override
     protected void addDefaultChromeOptions(ChromeOptions chromeOptions) {
 
@@ -46,6 +49,7 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
             AppendLogger logger
     ) throws IOException {
         super(accountContext.getSimpleInfo(), params, logger);
+        this.accountContext = accountContext;
     }
 
     @Override
@@ -73,28 +77,28 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
         lock.lock();
         try {
             running = true;
-            log.info("[{}] start all added bot selenium execute...", getInstanceId());
+            getLogger().info(getInstanceId() + " start all added bot selenium execute...");
 
             for (ACBotTypedSeleniumExecuteInfo executeInfo : executeInfoList) {
                 try {
-                    log.info("[{}]-[{}] start selenium execute...", getInstanceId(), executeInfo.getBotKey());
+                    getLogger().info("[%s]-[%s] start selenium execute...".formatted(getInstanceId(), executeInfo.getBotKey()));
                     List<ExecuteGroup> seleniumExecuteChain = super.getSeleniumExecuteChain();
                     seleniumExecuteChain.clear();
                     seleniumExecuteChain.addAll(executeInfo.getSeleniumExecuteChain());
 
                     syncStart();
-                    log.info("[{}]-[{}] selenium execute finish", getInstanceId(), executeInfo.getBotKey());
+                    getLogger().info("[%s]-[%s] selenium execute finish".formatted(getInstanceId(), executeInfo.getBotKey()));
                 } catch (Exception e) {
-                    log.error("[{}]-[{}] selenium execute error", getInstanceId(), executeInfo.getBotKey(), e);
+                    getLogger().error("[%s]-[%s] selenium execute error".formatted(getInstanceId(), executeInfo.getBotKey()), e);
                     randomWait(3);
                 }
             }
 
-            log.info("[{}] all selenium execute finish", getInstanceId());
+            getLogger().info(getInstanceId() + " all selenium execute finish");
         } finally {
-            log.info("[{}] closing webDriver", getInstanceId());
+            getLogger().debug(getInstanceId() + "  closing webDriver");
             close();
-            log.info("[{}] close webDriver finish", getInstanceId());
+            getLogger().debug(getInstanceId() + " close webDriver finish");
 
             running = false;
             lock.unlock();
@@ -107,12 +111,12 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
      * @param executeInfo executeInfo
      */
     public void addExecuteInfo(ACBotTypedSeleniumExecuteInfo executeInfo) {
-        log.info("[{}]-[{}] adding execute info...", getInstanceId(), executeInfo.getBotKey());
+        getLogger().info("[%s]-[%s] adding execute info...".formatted(getInstanceId(), executeInfo.getBotKey()));
         lock.lock();
         try {
             executeInfoList.add(executeInfo);
             addedBotExecutionSet.add(executeInfo.getBotKey());
-            log.info("[{}]-[{}] add execute info finish", getInstanceId(), executeInfo.getBotKey());
+            log.info("[%s]-[%s] add execute info finish".formatted(getInstanceId(), executeInfo.getBotKey()));
         } finally {
             lock.unlock();
         }

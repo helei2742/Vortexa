@@ -117,6 +117,19 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
     }
 
     /**
+     * 构建ping命令
+     *
+     * @return RemotingCommand
+     */
+    public RemotingCommand buildPingCommand() {
+        RemotingCommand ping = RemotingCommand.generatePingCommand(getName());
+        ping.setTransactionId(
+                DistributeIdMaker.DEFAULT.nextId(getName())
+        );
+        return ping;
+    }
+
+    /**
      * 发送服务注册命令
      */
     public void sendRegistryCommand() {

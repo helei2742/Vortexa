@@ -3,7 +3,7 @@ package cn.com.vortexa.common.util;
 import cn.com.vortexa.common.constants.FilePathType;
 
 import java.io.*;
-import java.nio.file.Files;
+        import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Enumeration;
@@ -12,6 +12,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class FileUtil {
+    public static String LIBRARY_DIR_NAME = "lib";
+    public static String JAR_FILE_DIR_NAME = "jarFile";
 
     public static final String BASE_DIR_NAME = "vortexa-data";
 
@@ -152,9 +154,8 @@ public class FileUtil {
      * @return String
      */
     public static String getLibraryDir() {
-        return USER_DIR + File.separator + "lib";
+        return USER_DIR + File.separator + LIBRARY_DIR_NAME;
     }
-
     /**
      * 依赖文件
      *
@@ -165,12 +166,25 @@ public class FileUtil {
     }
 
     /**
+     * 依赖文件
+     *
+     * @return String
+     */
+    public static Path getAndCreateLibraryPath(String fileName) throws IOException {
+        Path path = Paths.get(getLibraryPath(fileName));
+        if (Files.notExists(path)) {
+            Files.createDirectories(path.getParent());
+        }
+        return path;
+    }
+
+    /**
      * 依赖目录
      *
      * @return String
      */
     public static String getJarFileDir() {
-        return RESOURCE_ROOT_DIR + File.separator + "jarFile";
+        return RESOURCE_ROOT_DIR + File.separator + JAR_FILE_DIR_NAME;
     }
 
     /**
