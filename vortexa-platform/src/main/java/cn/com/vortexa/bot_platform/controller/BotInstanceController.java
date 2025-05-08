@@ -3,6 +3,8 @@ package cn.com.vortexa.bot_platform.controller;
 import cn.com.vortexa.bot_platform.dto.BotInstanceAccountQuery;
 import cn.com.vortexa.bot_platform.dto.BotJob;
 import cn.com.vortexa.bot_platform.dto.BotInstanceUpdate;
+import cn.com.vortexa.bot_platform.entity.BotLaunchConfig;
+import cn.com.vortexa.bot_platform.service.IBotLaunchConfigService;
 import cn.com.vortexa.common.dto.control.RegisteredScriptNode;
 import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.common.vo.PageQuery;
@@ -35,6 +37,9 @@ public class BotInstanceController {
     @Autowired
     private IBotInstanceService botInstanceService;
 
+    @Autowired
+    private IBotLaunchConfigService botLaunchConfigService;
+
     @PostMapping("/pageQuery")
     public Result pageQuery(@RequestBody PageQuery query) throws SQLException, SchedulerException {
         return Result.ok(botInstanceService.conditionPageQueryAllInfo(
@@ -47,6 +52,11 @@ public class BotInstanceController {
     @PostMapping("/detail")
     public Result detail(@RequestBody BotInstance botInstance) throws SchedulerException, IOException {
         return Result.ok(botInstanceService.detail(botInstance.getScriptNodeName(), botInstance.getBotKey()));
+    }
+
+    @PostMapping("/create")
+    public Result create(@RequestBody BotLaunchConfig botLaunchConfig) {
+        return botLaunchConfigService.create(botLaunchConfig);
     }
 
     @PostMapping("/updateJobParam")

@@ -1,11 +1,14 @@
 package cn.com.vortexa.common.util;
 
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -146,6 +149,19 @@ public class YamlConfigLoadUtil {
             }
         }
         return yaml.loadAs(yaml.dump(yamlData), tClass);
+    }
+
+    public static void writeYamlFile(Path path, Map<String, Object> content) throws IOException {
+        // 配置输出格式（可选）
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK); // 块风格输出
+        options.setPrettyFlow(true);
+        options.setIndent(2);
+        Yaml yaml = new Yaml(options);
+
+        try (FileWriter writer = new FileWriter(path.toFile())) {
+            yaml.dump(content, writer);
+        }
     }
 
     private static String toCamelCase(String name) {

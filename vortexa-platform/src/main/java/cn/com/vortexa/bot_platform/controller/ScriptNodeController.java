@@ -1,5 +1,6 @@
 package cn.com.vortexa.bot_platform.controller;
 
+import cn.com.vortexa.bot_platform.service.IBotLaunchConfigService;
 import cn.com.vortexa.bot_platform.service.IScriptNodeService;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeDetail;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeVO;
@@ -9,7 +10,7 @@ import cn.hutool.core.util.StrUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
+        import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -27,6 +28,9 @@ public class ScriptNodeController {
 
     @Autowired
     private IScriptNodeService scriptNodeService;
+
+    @Autowired
+    private IBotLaunchConfigService botLaunchConfigService;
 
     @PostMapping("/remote-config/{scriptNodeName}")
     public Result remoteConfig(@PathVariable("scriptNodeName") String scriptNodeName) {
@@ -47,16 +51,14 @@ public class ScriptNodeController {
             @RequestParam("scriptNodeName") String scriptNodeName,
             @RequestParam("botKey") String botKey
     ) {
-        String configStr = null;
-        try {
-            configStr = scriptNodeService.loadScriptNodeBotLaunchConfig(scriptNodeName, botKey);
-            if (StrUtil.isBlank(configStr)) {
-                return Result.fail(" config is empty");
-            }
-            return Result.ok(configStr);
-        } catch (IOException e) {
-            return Result.fail(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
-        }
+        return Result.ok(botLaunchConfigService.queryScriptNodeBotLaunchConfig(scriptNodeName, botKey));
+    }
+
+    @PostMapping("/remote-config/all")
+    public Result allBotRemoteConfig(
+            @RequestParam("scriptNodeName") String scriptNodeName
+    ) {
+        return Result.ok(botLaunchConfigService.queryScriptNodeAllBotLaunchConfig(scriptNodeName));
     }
 
     @PostMapping("/all")
@@ -81,7 +83,7 @@ public class ScriptNodeController {
     }
 
     @PostMapping("/stop_bot")
-    public Result stopBot(@RequestBody BotInstance botInstance) throws ExecutionException, InterruptedException {
+    public Result stopBot(@RequestBody BotInstance botInstance) {
         return scriptNodeService.stopBot(
                 botInstance.getScriptNodeName(),
                 botInstance.getBotKey()

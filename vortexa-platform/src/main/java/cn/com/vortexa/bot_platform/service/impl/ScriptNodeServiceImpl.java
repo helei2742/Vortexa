@@ -85,10 +85,11 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
         boolean online = connectEntry != null && connectEntry.isUsable();
 
         // 在线的bot查询
-        Map<String, List<String>> onlineBotName2Keys = new HashMap<>();;
+        Map<String, List<String>> onlineBotName2Keys = new HashMap<>();
+        ;
         botControlServer.selectScriptNodeOnlineBot(key).forEach(botInstanceKey -> {
             String[] gsiArr = botInstanceKey.split(ServerInstanceUtil.SERVICE_INSTANCE_KEY_DISPATCHER);
-            onlineBotName2Keys.compute(gsiArr[1], (k,v)->{
+            onlineBotName2Keys.compute(gsiArr[1], (k, v) -> {
                 if (v == null) {
                     v = new ArrayList<>();
                 }
@@ -128,20 +129,6 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
         Path applicationConfigFile = dir.resolve(VortexaPlatFormConstants.SCRIPT_NODE_CONFIG_FILE);
         if (Files.exists(applicationConfigFile)) {
             return Files.readString(applicationConfigFile, StandardCharsets.UTF_8);
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public String loadScriptNodeBotLaunchConfig(String scriptNodeName, String botKey) throws IOException {
-        Path dir = Paths.get(FileUtil.getScriptNodeConfigDir(), scriptNodeName, botKey);
-        if (Files.notExists(dir)) {
-            Files.createDirectories(dir);
-        }
-        Path botLaunchConfigFile = dir.resolve(VortexaPlatFormConstants.SCRIPT_NODE_BOT_CONFIG_FILE);
-        if (Files.exists(botLaunchConfigFile)) {
-            return Files.readString(botLaunchConfigFile, StandardCharsets.UTF_8);
         } else {
             return null;
         }

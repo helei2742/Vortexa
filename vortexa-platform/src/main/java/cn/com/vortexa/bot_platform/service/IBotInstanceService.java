@@ -114,4 +114,12 @@ public interface IBotInstanceService extends IBaseService<BotInstance> {
      * @return Result
      */
     Result conditionPageQueryAccount(BotInstanceAccountQuery accountQuery);
+
+    /**
+     * 判断是否存在
+     *
+     * @param query query
+     * @return boolean
+     */
+    boolean exist(BotInstance query);
 }

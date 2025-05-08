@@ -1,5 +1,6 @@
 package cn.com.vortexa.script_node.service.impl;
 
+import cn.com.vortexa.rpc.api.platform.IBotLaunchConfigRPC;
 import cn.com.vortexa.rpc.api.platform.IRewordInfoRPC;
 import cn.com.vortexa.script_node.service.BotApi;
 import cn.com.vortexa.script_node.service.IBotAccountContextService;
@@ -38,6 +39,9 @@ public class DBBotApi implements BotApi {
 
     @RPCReference
     private IBotInfoRPC botInfoRPC;
+
+    @RPCReference
+    private IBotLaunchConfigRPC botLaunchConfigRPC;
 
     @RPCReference
     private IBotInstanceRPC botInstanceRPC;

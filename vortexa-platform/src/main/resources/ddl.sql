@@ -217,3 +217,18 @@ create table t_web3_wallet
         unique (mnemonic)
 );
 
+
+
+create table t_bot_launch_config
+(
+    id               bigint auto_increment primary key,
+    script_node_name varchar(255)                         not null,
+    bot_name         varchar(255)                         not null,
+    bot_key          varchar(255)                         not null,
+    custom_config    json,
+    account_config   json,
+    insert_datetime  datetime   default CURRENT_TIMESTAMP null,
+    update_datetime  datetime   default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    valid            tinyint(1) default 1                 null,
+    unique (script_node_name, bot_key)
+)

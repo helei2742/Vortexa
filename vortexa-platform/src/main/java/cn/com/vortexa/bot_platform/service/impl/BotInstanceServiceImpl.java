@@ -4,7 +4,9 @@ import cn.com.vortexa.bot_platform.dto.BotInstanceAccountQuery;
 import cn.com.vortexa.bot_platform.dto.BotJob;
 import cn.com.vortexa.bot_platform.dto.BotInstanceUpdate;
 import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
+import cn.com.vortexa.bot_platform.service.IBotLaunchConfigService;
 import cn.com.vortexa.bot_platform.service.IScriptNodeService;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.common.exception.BotStartException;
@@ -69,6 +71,10 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
 
     @Autowired
     private BotJobService botJobService;
+
+    @Lazy
+    @Autowired
+    private IBotLaunchConfigService botLaunchConfigService;
 
     @Override
     public PageResult<BotInstanceVO> conditionPageQueryAllInfo(Integer page, Integer limit,
@@ -135,7 +141,7 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
             throw new RuntimeException("bot info not found");
         }
         // Step 3 查询实例的启动yaml配置
-        String botLaunchConfig = scriptNodeService.loadScriptNodeBotLaunchConfig(scriptNodeName, botKey);
+        AutoBotConfig botLaunchConfig = botLaunchConfigService.queryScriptNodeBotLaunchConfig(scriptNodeName, botKey);
         // Step 4 查询是否正在运行
         boolean online = botControlServer.isScriptNodeBotOnline(
                 scriptNodeName,
@@ -220,6 +226,11 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
             log.error(e.getMessage(), e);
             return Result.fail(e.getMessage());
         }
+    }
+
+    @Override
+    public boolean exist(BotInstance query) {
+        return baseMapper.exists(new QueryWrapper<>(query));
     }
 
     @Override

@@ -1,6 +1,6 @@
-
 package cn.com.vortexa.script_node.config;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 import cn.com.vortexa.common.constants.HttpMethod;
@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 @ConfigurationProperties(prefix = "vortexa.script-node")
 public class ScriptNodeConfiguration implements InitializingBean {
     public static Map<String, Object> RAW_CONFIG = null;
-
 
     public static final List<String> BOT_INSTANCE_CONFIG_PREFIX = List.of("vortexa", "botInstance");
 
@@ -270,6 +269,43 @@ public class ScriptNodeConfiguration implements InitializingBean {
      */
     private void initBotInstance() {
         botKeyConfigMap = new HashMap<>();
+        // 加载本地bot实例配置
+        loadScriptNodeLocalBotInstanceConfig();
+        // 加载远程bot实例配置
+        loadRemoteBotInstanceConfig();
+    }
+
+    /**
+     * 加载远程的bot实例配置
+     */
+    private void loadRemoteBotInstanceConfig() {
+        List<AutoBotConfig> botConfigs = fetchNodeAllBotConfigs(buildRemoteConfigRestApi(), scriptNodeName);
+        if (botConfigs == null) {
+            return;
+        }
+        for (AutoBotConfig botConfig : botConfigs) {
+            if (botKeyConfigMap.containsKey(botConfig.getBotKey())) {
+                // local 加载时，会拉取一次远程配置。跳过local加载过的
+                continue;
+            }
+            if (botConfig.getCustomConfig() == null) {
+                botConfig.setCustomConfig(new HashMap<>());
+            }
+            BotMetaInfo botMetaInfo = botNameMetaInfoMap.get(botConfig.getBotName());
+            if (botMetaInfo == null) {
+                log.warn("botName[{}] didn't loaded in script node, cancel load this remote bot instance", botConfig.getBotName());
+                continue;
+            }
+            fillPublicBotConfig(botConfig, botMetaInfo);
+
+            botKeyConfigMap.put(botConfig.getBotKey(), botConfig);
+        }
+    }
+
+    /**
+     * 加载本地的bot实例配置
+     */
+    private void loadScriptNodeLocalBotInstanceConfig() {
         Path botInstanceConfigPath = Paths.get(FileUtil.getBotInstanceConfigDir());
         if (!Files.exists(botInstanceConfigPath) || !Files.isDirectory(botInstanceConfigPath)) {
             log.warn("no bot instance config dir [{}]", botInstanceConfigPath);
@@ -286,30 +322,13 @@ public class ScriptNodeConfiguration implements InitializingBean {
                         throw new IllegalArgumentException(
                                 "bot instance config file [" + configFile.getFileName() + "] illegal");
                     }
-
-                    if (botConfig.getCustomConfig() == null) {
-                        botConfig.setCustomConfig(new HashMap<>());
-                    }
-
                     BotMetaInfo botMetaInfo = botNameMetaInfoMap.get(botConfig.getBotName());
 
                     if (botMetaInfo == null) {
                         log.warn("botName[{}] didn't loaded in script node", botConfig.getBotName());
                         return;
                     }
-
-                    botConfig.setMetaInfo(botMetaInfo);
-
-                    // 相对路径转绝对路径
-                    reactivePathConfigConvert(
-                            botConfig,
-                            botMetaInfo.getResourceDir()
-                    );
-
-                    // 合并bot公共配置
-                    if (botCommonConfig != null) {
-                        botConfig.getCustomConfig().putAll(botCommonConfig);
-                    }
+                    fillPublicBotConfig(botConfig, botMetaInfo);
 
                     // 合并远程配置
                     AutoBotConfig remoteBotConfig = fetchRemoteBotConfig(
@@ -331,6 +350,28 @@ public class ScriptNodeConfiguration implements InitializingBean {
             });
         } catch (IOException e) {
             log.error("load bot instance config error", e);
+        }
+    }
+
+    private void fillPublicBotConfig(AutoBotConfig botConfig, BotMetaInfo botMetaInfo) {
+        if (botConfig.getCustomConfig() == null) {
+            botConfig.setCustomConfig(new HashMap<>());
+        }
+        botConfig.setMetaInfo(botMetaInfo);
+
+        // 相对路径转绝对路径
+        reactivePathConfigConvert(
+                botConfig,
+                botMetaInfo.getResourceDir()
+        );
+
+        // 合并bot公共配置
+        if (botCommonConfig != null) {
+            for (Map.Entry<String, Object> entry : botCommonConfig.entrySet()) {
+                if (!botConfig.getCustomConfig().containsKey(entry.getKey())) {
+                    botConfig.getCustomConfig().put(entry.getKey(), entry.getValue());
+                }
+            }
         }
     }
 
@@ -362,6 +403,40 @@ public class ScriptNodeConfiguration implements InitializingBean {
      *
      * @param configUrl      configUrl
      * @param scriptNodeName scriptNodeName
+     * @return String
+     */
+    private List<AutoBotConfig> fetchNodeAllBotConfigs(String configUrl, String scriptNodeName) {
+        if (StrUtil.isBlank(configUrl)) {
+            return null;
+        }
+        try {
+            JSONObject params = new JSONObject();
+            params.put("scriptNodeName", scriptNodeName);
+            String response = RestApiClientFactory.getClient().request(
+                    configUrl + "/all",
+                    HttpMethod.POST,
+                    new HashMap<>(),
+                    params,
+                    new JSONObject()
+            ).get();
+            Result result = JSONObject.parseObject(response, Result.class);
+            if (result.getSuccess()) {
+                return JSONArray.parseArray(JSONObject.toJSONString(result.getData()), AutoBotConfig.class);
+            } else {
+                log.warn("script node[{}] config not found in remote", scriptNodeName);
+                return null;
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("script node[{}] remote fetch error", scriptNodeName, e);
+            return null;
+        }
+    }
+
+    /**
+     * 获取远程配置
+     *
+     * @param configUrl      configUrl
+     * @param scriptNodeName scriptNodeName
      * @param botKey         botKey
      * @return String
      */
@@ -369,7 +444,6 @@ public class ScriptNodeConfiguration implements InitializingBean {
         if (StrUtil.isBlank(configUrl)) {
             return null;
         }
-
         try {
             JSONObject params = new JSONObject();
             params.put("scriptNodeName", scriptNodeName);
@@ -383,8 +457,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
             ).get();
             Result result = JSONObject.parseObject(response, Result.class);
             if (result.getSuccess()) {
-                AutoBotConfig load = YamlConfigLoadUtil.load(String.valueOf(result.getData()),
-                        BOT_INSTANCE_CONFIG_PREFIX, AutoBotConfig.class);
+                AutoBotConfig load = JSONObject.parseObject(JSONObject.toJSONString(result.getData()), AutoBotConfig.class);
                 log.info("remote config fetch success, merge into [{}] bot config...", botKey);
                 return load;
             } else {
@@ -408,7 +481,7 @@ public class ScriptNodeConfiguration implements InitializingBean {
             local.setAccountConfig(remote.getAccountConfig());
         }
         if (remote.getCustomConfig() != null) {
-            local.setCustomConfig(remote.getCustomConfig());
+            local.getCustomConfig().putAll(remote.getCustomConfig());
         }
     }
 

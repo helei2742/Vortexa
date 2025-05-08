@@ -56,15 +56,6 @@ public interface IScriptNodeService extends IService<ScriptNode> {
     String loadScriptNodeConfig(String scriptNodeName) throws IOException;
 
     /**
-     * 加载script node 下运行的bot的启动配置
-     *
-     * @param scriptNodeName scriptNodeName
-     * @param botKey         botKey
-     * @return String
-     */
-    String loadScriptNodeBotLaunchConfig(String scriptNodeName, String botKey) throws IOException;
-
-    /**
      * 更新script node 下的bot的启动配置
      *
      * @param scriptNodeName  scriptNodeName

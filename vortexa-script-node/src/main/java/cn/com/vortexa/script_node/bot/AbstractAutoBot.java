@@ -136,7 +136,7 @@ public abstract class AbstractAutoBot {
             // Step 2.1 获取BotInfo,解析Bot Job
             botInfo = buildBotInfo();
             resolveBotJobMethod();
-            botInfo.setVersion(autoBotConfig.getMetaInfo().getVersion());
+            botInfo.setVersionCode(autoBotConfig.getMetaInfo().getVersion());
             botInfo.setImage(autoBotConfig.getMetaInfo().getIcon());
         } catch (Exception e) {
             throw new BotInitException("resolve bot job error", e);
@@ -150,7 +150,7 @@ public abstract class AbstractAutoBot {
                 .scriptNodeName(scriptNodeConfiguration.getScriptNodeName())
                 .jobParams(botInfo.getJobParams())
                 .params(botInfo.getParams())
-                .version(botInfo.getVersion())
+                .versionCode(botInfo.getVersionCode())
                 .build();
 
         // Step 2.3 设置logger前缀与线程池

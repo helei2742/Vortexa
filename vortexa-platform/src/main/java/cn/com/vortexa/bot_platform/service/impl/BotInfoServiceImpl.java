@@ -1,5 +1,7 @@
 package cn.com.vortexa.bot_platform.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+
 import cn.com.vortexa.db_layer.service.AbstractBaseService;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.BotInfo;
@@ -49,6 +51,10 @@ public class BotInfoServiceImpl extends AbstractBaseService<BotInfoMapper, BotIn
         return Result.ok(bindAccountBaseInfoList);
     }
 
+    @Override
+    public boolean exist(BotInfo query) {
+        return baseMapper.exists(new QueryWrapper<>(query));
+    }
 
     @Override
     public List<BotInfo> batchQueryByIdsRPC(List<Serializable> ids) {

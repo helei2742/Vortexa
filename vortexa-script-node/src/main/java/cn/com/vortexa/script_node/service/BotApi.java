@@ -6,6 +6,7 @@ import cn.com.vortexa.job.service.BotJobService;
 import cn.com.vortexa.rpc.api.platform.IAccountBaseInfoRPC;
 import cn.com.vortexa.rpc.api.platform.IBotInfoRPC;
 import cn.com.vortexa.rpc.api.platform.IBotInstanceRPC;
+import cn.com.vortexa.rpc.api.platform.IBotLaunchConfigRPC;
 import cn.com.vortexa.rpc.api.platform.IBrowserEnvRPC;
 import cn.com.vortexa.rpc.api.platform.IDiscordAccountRPC;
 import cn.com.vortexa.rpc.api.platform.IProxyInfoRPC;
@@ -17,6 +18,8 @@ import cn.com.vortexa.web3.service.IWeb3WalletOPTRPC;
 public interface BotApi {
 
     IBotInfoRPC getBotInfoRPC();
+
+    IBotLaunchConfigRPC getBotLaunchConfigRPC();
 
     IBotInstanceRPC getBotInstanceRPC();
 
