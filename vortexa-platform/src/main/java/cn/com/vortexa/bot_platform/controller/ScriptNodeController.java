@@ -6,11 +6,12 @@ import cn.com.vortexa.bot_platform.vo.ScriptNodeDetail;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeVO;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.entity.BotInstance;
+import cn.com.vortexa.common.entity.ScriptNode;
 import cn.hutool.core.util.StrUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-        import java.io.IOException;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -41,6 +42,19 @@ public class ScriptNodeController {
                 return Result.fail(scriptNodeName + " config is empty");
             }
             return Result.ok(configStr);
+        } catch (IOException e) {
+            return Result.fail(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
+        }
+    }
+
+    @PostMapping("/remote-config/update")
+    public Result remoteConfigUpdate(@RequestBody ScriptNode update) {
+        try {
+            scriptNodeService.saveRawScriptNodeConfig(
+                    update.getScriptNodeName(),
+                    update.getNodeAppConfig()
+            );
+            return Result.ok();
         } catch (IOException e) {
             return Result.fail(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
         }

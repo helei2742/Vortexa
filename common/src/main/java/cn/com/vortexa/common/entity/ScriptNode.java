@@ -1,16 +1,15 @@
 package cn.com.vortexa.common.entity;
 
-import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
+import cn.com.vortexa.common.util.typehandler.ListTextTypeHandler;
 import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import lombok.*;
@@ -42,11 +41,11 @@ public class ScriptNode extends ServiceInstance implements Serializable {
     @TableField("description")
     private String description;
 
-    @TableField("bot_config_map")
-    private Map<String, AutoBotConfig> botConfigMap;    //  bot实例配置
-
     @TableField("node_app_config")
     private String nodeAppConfig;   // script node 的application.yaml文件
+
+    @TableField(value = "loaded_bot_infos", typeHandler = ListTextTypeHandler.class)
+    private List<String> loadedBotInfos;
 
     @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
     private Map<String, Object> params;
@@ -67,18 +66,6 @@ public class ScriptNode extends ServiceInstance implements Serializable {
     public boolean usable() {
         return StrUtil.isNotBlank(groupId) && StrUtil.isNotBlank(serviceId) && StrUtil.isNotBlank(instanceId)
                 && StrUtil.isNotBlank(host) && port != null && StrUtil.isNotBlank(scriptNodeName);
-    }
-
-
-    public void setBotConfigMap(Map<String, ?> map) {
-        botConfigMap = new HashMap<>();
-        map.forEach((k, v) -> {
-            if (v instanceof JSONObject) {
-                botConfigMap.put(k, JSONObject.parseObject(JSONObject.toJSONString(v), AutoBotConfig.class));
-            } else if (v instanceof AutoBotConfig p) {
-                botConfigMap.put(k, p);
-            }
-        });
     }
 
     public static ScriptNode generateFromServiceInstance(ServiceInstance serviceInstance) {

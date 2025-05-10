@@ -29,6 +29,9 @@ public enum FilePathType {
     ;
 
     public static FilePathType resolveFilePathType(String filePath) {
+        if (filePath == null) {
+            return null;
+        }
         if (filePath.startsWith(absolute.name() + ":")) return absolute;
         else if (filePath.startsWith(instance_resource.name() + ":")) return instance_resource;
         else if (filePath.startsWith(app_resource.name() + ":")) return app_resource;

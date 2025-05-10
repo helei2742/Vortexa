@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -77,7 +78,9 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
     protected void afterBoostrapConnected(Channel channel) {
         // 每次连接成功，都发送注册消息
         channel.attr(NettyConstants.CLIENT_NAME).set(getName());
-        sendRegistryCommand();
+        if (getSuccessConnectionCount().get() > 0) {
+            sendRegistryCommand();
+        }
     }
 
     @Override
@@ -131,8 +134,10 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
 
     /**
      * 发送服务注册命令
+     *
+     * @return  response
      */
-    public void sendRegistryCommand() {
+    public CompletableFuture<RemotingCommand> sendRegistryCommand() {
         RemotingCommand remotingCommand = newRequestCommand(RemotingCommandFlagConstants.CLIENT_REGISTRY_SERVICE);
         Serializable body = null;
         if (registryBodySetter != null) {
@@ -140,7 +145,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
         }
         remotingCommand.setObjBody(body);
 
-        sendRequest(remotingCommand).whenComplete((response, throwable) -> {
+        return sendRequest(remotingCommand).whenComplete((response, throwable) -> {
             if (throwable != null) {
                 log.error("{} -> [{}] channel active error",
                         clientConfig.getServiceInstance(), clientConfig.getRegistryCenterUrl(), throwable);
@@ -153,8 +158,7 @@ public class ScriptAgent extends AbstractWebsocketClient<RemotingCommand> {
                     afterRegistryHandler.accept(response);
                 }
 
-                ServiceInstance nameserviceInstance = Serializer.Algorithm.Protostuff
-                        .deserialize(response.getBody(), ServiceInstance.class);
+                ServiceInstance nameserviceInstance = response.getObjBody(ServiceInstance.class);
 
                 remoteStatus.setNameserverInstance(nameserviceInstance);
             } else {

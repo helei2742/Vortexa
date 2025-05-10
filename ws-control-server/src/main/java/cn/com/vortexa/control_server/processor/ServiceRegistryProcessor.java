@@ -21,8 +21,11 @@ public class ServiceRegistryProcessor {
 
     private final IRegistryService registryService;
 
-    public ServiceRegistryProcessor(IRegistryService registryService) {
+    private final ServiceInstance platformServiceInstance;
+
+    public ServiceRegistryProcessor(IRegistryService registryService, ServiceInstance serviceInstance) {
         this.registryService = registryService;
+        this.platformServiceInstance = serviceInstance;
     }
 
     /**
@@ -75,6 +78,7 @@ public class ServiceRegistryProcessor {
                 response.setCode(RemotingCommandCodeConstants.FAIL);
             }
 
+            response.setObjBody(platformServiceInstance);
             log.info("client[{}] registry state [{}]", serviceInstance, registryState);
         } catch (Exception e) {
             log.error("[{}]-[{}] registry error", group, serviceId, e);

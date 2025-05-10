@@ -19,4 +19,6 @@ public interface IBotInfoService extends IBaseService<BotInfo> {
     Result bindBotAccountBaseInfo(Integer botId, String botKey, List<Integer> bindAccountBaseInfoList);
 
     boolean exist(BotInfo build);
+
+    BotInfo queryByName(String name);
 }

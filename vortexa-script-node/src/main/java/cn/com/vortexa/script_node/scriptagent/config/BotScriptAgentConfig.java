@@ -43,8 +43,6 @@ public class BotScriptAgentConfig extends ScriptAgentConfig {
     @Bean
     public BotScriptAgent scriptAgent() throws ExecutionException, InterruptedException {
         ScriptAgentConfig scriptAgentConfig = scriptAgentClientConfig();
-        BotScriptAgent botScriptAgent = new BotScriptAgent(scriptAgentConfig, scriptNodeConfiguration, rpcServiceInfos);
-        botScriptAgent.connect().get();
-        return botScriptAgent;
+        return new BotScriptAgent(scriptAgentConfig, scriptNodeConfiguration, rpcServiceInfos);
     }
 }

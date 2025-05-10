@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -42,6 +41,7 @@ public abstract class AutoConnectWSService implements IWSService {
     private static final AtomicReferenceFieldUpdater<AutoConnectWSService, Channel> CHANNEL_ATOMIC_UPDATER
             = AtomicReferenceFieldUpdater.newUpdater(AutoConnectWSService.class, Channel.class, "channel");
     private static volatile EventLoopGroup eventLoopGroup;    //netty线程组
+    private final AtomicInteger successConnectionCount = new AtomicInteger(0);  //  成功连接数
     private final AtomicInteger reconnectTimes = new AtomicInteger(0);  //重链接次数
     private final ReentrantLock reconnectLock = new ReentrantLock();    //重连锁
     private final Condition startingWaitCondition = reconnectLock.newCondition();   //启动中阻塞的condition
@@ -221,7 +221,7 @@ public abstract class AutoConnectWSService implements IWSService {
                     } else {
                         log.info("connect client [{}], url[{}] success, current times [{}]", name, url,
                                 reconnectTimes.get());
-
+                        successConnectionCount.incrementAndGet();
                         updateClientStatus(WebsocketClientStatus.RUNNING);
                     }
                 }
@@ -327,7 +327,7 @@ public abstract class AutoConnectWSService implements IWSService {
      *
      * @throws InterruptedException InterruptedException
      */
-    protected abstract void afterBoostrapConnected(Channel channel) throws InterruptedException;
+    protected abstract void afterBoostrapConnected(Channel channel) throws InterruptedException, ExecutionException;
 
     /**
      * 等待启动完成

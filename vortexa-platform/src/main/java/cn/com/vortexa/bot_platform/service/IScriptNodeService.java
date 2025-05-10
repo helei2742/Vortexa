@@ -56,15 +56,6 @@ public interface IScriptNodeService extends IService<ScriptNode> {
     String loadScriptNodeConfig(String scriptNodeName) throws IOException;
 
     /**
-     * 更新script node 下的bot的启动配置
-     *
-     * @param scriptNodeName  scriptNodeName
-     * @param botKey          botKey
-     * @param botLaunchConfig botLaunchConfig
-     */
-    void updateScriptNodeBotLaunchConfig(String scriptNodeName, String botKey, String botLaunchConfig) throws IOException;
-
-    /**
      * 启动bot
      *
      * @param scriptNodeName scriptNodeName
@@ -81,4 +72,12 @@ public interface IScriptNodeService extends IService<ScriptNode> {
      * @return Result
      */
     Result stopBot(String scriptNodeName, String botKey);
+
+    /**
+     * 保存script node原始配置
+     *
+     * @param scriptNodeName
+     * @param nodeAppConfig
+     */
+    void saveRawScriptNodeConfig(String scriptNodeName, String nodeAppConfig) throws IOException;
 }

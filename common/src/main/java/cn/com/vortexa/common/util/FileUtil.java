@@ -236,6 +236,7 @@ public class FileUtil {
      */
     public static String generateAbsPath(String patternPath, String botResourcePath) {
         FilePathType filePathType = FilePathType.resolveFilePathType(patternPath);
+        if (filePathType == null) return null;
         return switch (filePathType) {
             case absolute -> {
                 if (patternPath.startsWith(filePathType.name())) {

@@ -55,7 +55,7 @@ public class BotInstanceController {
     }
 
     @PostMapping("/create")
-    public Result create(@RequestBody BotLaunchConfig botLaunchConfig) {
+    public Result create(@RequestBody BotLaunchConfig botLaunchConfig) throws SQLException {
         return botLaunchConfigService.create(botLaunchConfig);
     }
 
@@ -66,8 +66,9 @@ public class BotInstanceController {
 
     @PostMapping("/saveBotLaunchConfig")
     public Result saveBotLaunchConfig(@RequestBody BotInstanceUpdate update) throws IOException {
-        return botInstanceService.saveBotInstanceLaunchConfig(
+        return botLaunchConfigService.saveBotLaunchConfig(
                 update.getScriptNodeName(),
+                update.getBotName(),
                 update.getBotKey(),
                 update.getBotLaunchConfig()
         );

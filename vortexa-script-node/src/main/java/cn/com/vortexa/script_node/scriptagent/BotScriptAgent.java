@@ -6,6 +6,7 @@ import cn.com.vortexa.common.constants.BotStatus;
 import cn.com.vortexa.common.dto.BotACJobResult;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.account.BotInstanceAccount;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.dto.control.ServiceInstance;
 import cn.com.vortexa.common.entity.AccountContext;
 import cn.com.vortexa.common.entity.BotInstance;
@@ -37,10 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -57,6 +55,7 @@ public class BotScriptAgent extends ScriptAgent {
     private final Map<String, BotInstanceMetaInfo> runningBotMap = new HashMap<>(); // key map bot
     private final String scriptNodeName;
     private final List<RPCServiceInfo<?>> rpcServiceInfos;  // RPC方法信息
+    private final ScriptNodeConfiguration scriptNodeConfiguration;
 
     @Setter
     private BotApi botApi;
@@ -73,13 +72,14 @@ public class BotScriptAgent extends ScriptAgent {
 
             ScriptNode scriptNode = ScriptNode.generateFromServiceInstance(serviceInstance);
             scriptNode.setScriptNodeName(scriptNodeConfiguration.getScriptNodeName());
-            scriptNode.setBotConfigMap(scriptNodeConfiguration.getBotKeyConfigMap());
+            scriptNode.setLoadedBotInfos(new ArrayList<>(scriptNodeConfiguration.getBotNameMetaInfoMap().keySet()));
             scriptNode.setNodeAppConfig(JSONObject.toJSONString(ScriptNodeConfiguration.RAW_CONFIG));
 
             return scriptNode;
         });
 
         this.scriptNodeName = scriptNodeConfiguration.getScriptNodeName();
+        this.scriptNodeConfiguration = scriptNodeConfiguration;
         this.rpcServiceInfos = rpcServiceInfos;
     }
 
@@ -333,6 +333,7 @@ public class BotScriptAgent extends ScriptAgent {
         response.setCode(RemotingCommandCodeConstants.SUCCESS);
         response.setFlag(BotRemotingCommandFlagConstants.START_BOT_RESPONSE);
 
+
         String botKey = request.getExtFieldsValue(BotExtFieldConstants.TARGET_BOT_KEY_KEY);
         String group = request.getGroup();
         String serviceId = request.getServiceId();
@@ -344,7 +345,11 @@ public class BotScriptAgent extends ScriptAgent {
         } else {
             log.info("remote[{}]-[{}]-[{}] try launch bot[{}]", group, serviceId, instanceId, botKey);
             try {
-                BotStatus botStatus = ScriptBotLauncher.INSTANCE.loadAndLaunchBot(botKey);
+                AutoBotConfig launchConfig = request.getObjBody(AutoBotConfig.class);
+                launchConfig.setMetaInfo(
+                    scriptNodeConfiguration.getBotNameMetaInfoMap().get(launchConfig.getBotName())
+                );
+                BotStatus botStatus = ScriptBotLauncher.INSTANCE.loadAndLaunchBot(launchConfig);
                 response.setObjBody(botStatus);
                 log.info("remote[{}]-[{}]-[{}] try launch bot[{}] success", group, serviceId, instanceId, botKey);
             } catch (Exception e) {
@@ -440,7 +445,7 @@ public class BotScriptAgent extends ScriptAgent {
             response.setBody(Serializer.Algorithm.JDK.serialize(result));
         } catch (SQLException e) {
             response.setCode(RemotingCommandCodeConstants.FAIL);
-            response.setErrorMessage(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
+            response.setErrorMessage("query bot account fail");
             log.error("page query bot account error", e);
         }
         return response;

@@ -26,6 +26,7 @@ public class ScriptNodeVO {
     private Integer port;
     private Boolean online; //  是否在线
     private List<String> managedBotKeyList; //  管理的botKey列表
+    private List<String> loadedBotInfos;
     private LocalDateTime insertDatetime;
     private LocalDateTime updateDatetime;
 
@@ -40,6 +41,7 @@ public class ScriptNodeVO {
         scriptNodeVO.setHost(scriptNode.getHost());
         scriptNodeVO.setPort(scriptNode.getPort());
         scriptNodeVO.setOnline(online);
+        scriptNodeVO.setLoadedBotInfos(scriptNode.getLoadedBotInfos());
         scriptNodeVO.setManagedBotKeyList(managedBotKeyList);
         scriptNodeVO.setInsertDatetime(scriptNode.getInsertDatetime());
         scriptNodeVO.setUpdateDatetime(scriptNode.getUpdateDatetime());

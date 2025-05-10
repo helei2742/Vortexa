@@ -143,7 +143,7 @@ public class DBRegistryService implements IRegistryService {
      * @param nodeAppConfig  nodeAppConfig
      * @throws IOException IOException
      */
-    private void trySaveRawScriptNodeApplicationConfig(String scriptNodeName, String nodeAppConfig) throws IOException {
+    public void trySaveRawScriptNodeApplicationConfig(String scriptNodeName, String nodeAppConfig) throws IOException {
         synchronized (scriptNodeName.intern()) {
             Path path = FileUtil.getScriptNodeConfig(scriptNodeName + File.separator + VortexaPlatFormConstants.SCRIPT_NODE_CONFIG_FILE);
             if (!Files.exists(path)) {

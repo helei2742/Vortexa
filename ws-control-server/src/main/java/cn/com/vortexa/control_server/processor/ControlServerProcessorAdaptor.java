@@ -40,7 +40,9 @@ public class ControlServerProcessorAdaptor extends BaseWebSocketInboundHandler<R
         this.botControlServer = botControlServer;
         this.pingCommandProcessor = new PingCommandProcessor(botControlServer);
         this.pongCommandProcessor = new PongCommandProcessor(botControlServer);
-        this.serviceRegistryProcessor = new ServiceRegistryProcessor(registryService);
+        this.serviceRegistryProcessor = new ServiceRegistryProcessor(
+                registryService, botControlServer.getControlServerConfig().getServiceInstance()
+        );
         this.serviceDiscoverProcessor = new ServiceDiscoverProcessor(registryService);
         this.scriptAgentMetricsCommandProcessor = new ScriptAgentMetricsCommandProcessor(botControlServer);
 

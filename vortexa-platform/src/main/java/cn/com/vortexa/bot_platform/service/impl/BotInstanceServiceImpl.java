@@ -126,6 +126,11 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
     }
 
     @Override
+    public List<BotInstance> conditionQuery(BotInstance query) {
+        return list(new QueryWrapper<>(query));
+    }
+
+    @Override
     public BotInstanceVO detail(String scriptNodeName, String botKey) throws IOException, SchedulerException {
         if (StrUtil.isBlank(scriptNodeName) || StrUtil.isBlank(botKey)) {
             throw new IllegalArgumentException("scriptNodeName or botKey should not be blank");
@@ -141,7 +146,12 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
             throw new RuntimeException("bot info not found");
         }
         // Step 3 查询实例的启动yaml配置
-//        AutoBotConfig botLaunchConfig = botLaunchConfigService.queryScriptNodeBotLaunchConfig(scriptNodeName, botKey);
+        AutoBotConfig autoBotConfig = botLaunchConfigService.queryScriptNodeBotLaunchConfig(scriptNodeName, botKey);
+        Map<String, Object> launchConfig = new HashMap<>();
+        if (autoBotConfig != null) {
+            launchConfig.putAll(autoBotConfig.getCustomConfig());
+        }
+
         // Step 4 查询是否正在运行
         boolean online = botControlServer.isScriptNodeBotOnline(
                 scriptNodeName,
@@ -156,7 +166,7 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
         return BotInstanceVO.builder()
                 .botInstance(instance)
                 .botInfo(botInfo)
-                .botLaunchConfig(null)
+                .botLaunchConfig(launchConfig)
                 .online(online)
                 .jobTriggers(triggerMap)
                 .build();
@@ -195,11 +205,6 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
         return Result.ok();
     }
 
-    @Override
-    public Result saveBotInstanceLaunchConfig(String scriptNodeName, String botKey, String botLaunchConfig) throws IOException {
-        scriptNodeService.updateScriptNodeBotLaunchConfig(scriptNodeName, botKey, botLaunchConfig);
-        return Result.ok();
-    }
 
     @Override
     public Result conditionPageQueryAccount(BotInstanceAccountQuery accountQuery) {
@@ -231,6 +236,11 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
     @Override
     public boolean exist(BotInstance query) {
         return baseMapper.exists(new QueryWrapper<>(query));
+    }
+
+    @Override
+    public BotInstance getOne(String scriptNodeName, String botKey) {
+        return getOne(new QueryWrapper<>(BotInstance.builder().scriptNodeName(scriptNodeName).botKey(botKey).build()));
     }
 
     @Override

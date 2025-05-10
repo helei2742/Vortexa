@@ -14,4 +14,5 @@ import cn.com.vortexa.bot_platform.entity.BotLaunchConfig;
  */
 public interface BotLaunchConfigMapper extends BaseMapper<BotLaunchConfig> {
 
+    int insertOrUpdate(BotLaunchConfig botLaunchConfig);
 }

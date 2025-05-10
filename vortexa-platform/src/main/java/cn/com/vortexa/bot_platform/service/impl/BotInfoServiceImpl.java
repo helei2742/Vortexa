@@ -57,6 +57,14 @@ public class BotInfoServiceImpl extends AbstractBaseService<BotInfoMapper, BotIn
     }
 
     @Override
+    public BotInfo queryByName(String name) {
+        if (StrUtil.isBlank(name)) {
+            return null;
+        }
+        return baseMapper.selectOne(new QueryWrapper<>(BotInfo.builder().name(name).build()));
+    }
+
+    @Override
     public List<BotInfo> batchQueryByIdsRPC(List<Serializable> ids) {
         return super.batchQueryByIds(ids);
     }

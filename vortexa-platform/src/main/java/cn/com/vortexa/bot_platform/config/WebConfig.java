@@ -1,5 +1,6 @@
 package cn.com.vortexa.bot_platform.config;
 
+import cn.com.vortexa.common.util.typehandler.ListTextTypeHandler;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
@@ -35,6 +36,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Autowired
     private LocalDateTimeTypeHandler localDateTimeTypeHandler;
+
+    @Autowired
+    private ListTextTypeHandler listTextTypeHandler;
+
     @Autowired
     private MybatisConfiguration mybatisConfiguration;
 
@@ -64,7 +69,7 @@ public class WebConfig implements WebMvcConfigurer {
         factoryBean.setDataSource(dataSource);
         factoryBean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/*.xml"));
         factoryBean.setTypeHandlers(
-                jsonTypeHandler, mapTextTypeHandler, localDateTimeTypeHandler
+                jsonTypeHandler, mapTextTypeHandler, localDateTimeTypeHandler, listTextTypeHandler
         );
         factoryBean.setTypeAliasesPackage("cn.com.vortexa.entity");
         factoryBean.setConfiguration(mybatisConfiguration);

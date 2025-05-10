@@ -2,15 +2,21 @@ package cn.com.vortexa.bot_platform.service.impl;
 
 import cn.com.vortexa.bot_platform.constants.VortexaPlatFormConstants;
 import cn.com.vortexa.bot_platform.script_control.BotPlatformControlServer;
+import cn.com.vortexa.bot_platform.service.IBotInstanceService;
+import cn.com.vortexa.bot_platform.service.IBotLaunchConfigService;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeDetail;
 import cn.com.vortexa.bot_platform.vo.ScriptNodeVO;
 import cn.com.vortexa.common.constants.ScriptNodeStatus;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.common.dto.config.AutoBotConfig;
+import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.ServerInstanceUtil;
+import cn.com.vortexa.common.util.YamlConfigLoadUtil;
 import cn.com.vortexa.control_server.dto.ConnectEntry;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
@@ -21,13 +27,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -44,6 +51,14 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
     @Autowired
     private BotPlatformControlServer botControlServer;
 
+    @Lazy
+    @Autowired
+    private IBotInstanceService botInstanceService;
+
+    @Lazy
+    @Autowired
+    private IBotLaunchConfigService botLaunchConfigService;
+
     @Override
     public Boolean insertOrUpdate(ScriptNode scriptNode) {
         return getBaseMapper().insertOrUpdate(scriptNode) > 0;
@@ -58,10 +73,14 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
             String key = ServerInstanceUtil.generateServiceInstanceKey(
                     scriptNode.getGroupId(), scriptNode.getServiceId(), scriptNode.getInstanceId()
             );
+            List<BotInstance> scriptNodeBotInstanceList = botInstanceService.conditionQuery(
+                    BotInstance.builder().scriptNodeName(scriptNode.getScriptNodeName()).build()
+            );
+
             return ScriptNodeVO.of(
                     scriptNode,
                     onLines.contains(key),
-                    new ArrayList<>(scriptNode.getBotConfigMap().keySet())
+                    scriptNodeBotInstanceList.stream().map(BotInstance::getBotKey).toList()
             );
         }).toList();
     }
@@ -86,7 +105,6 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
 
         // 在线的bot查询
         Map<String, List<String>> onlineBotName2Keys = new HashMap<>();
-        ;
         botControlServer.selectScriptNodeOnlineBot(key).forEach(botInstanceKey -> {
             String[] gsiArr = botInstanceKey.split(ServerInstanceUtil.SERVICE_INSTANCE_KEY_DISPATCHER);
             onlineBotName2Keys.compute(gsiArr[1], (k, v) -> {
@@ -98,21 +116,31 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
             });
         });
 
+        List<BotInstance> scriptNodeBotInstanceList = botInstanceService.conditionQuery(
+                BotInstance.builder().scriptNodeName(scriptNodeName).build()
+        );
+
+        List<String> managedBotKeys = new ArrayList<>(scriptNodeBotInstanceList.size());
+
+        // 存在的实例
+        Map<String, List<String>> botNameToBotKeys = new HashMap<>();
+
+        for (BotInstance botInstance : scriptNodeBotInstanceList) {
+            botNameToBotKeys.compute(botInstance.getBotName(), (k,v)->{
+                if (v == null) {
+                    v = new ArrayList<>();
+                }
+                v.add(botInstance.getBotKey());
+                return v;
+            });
+            managedBotKeys.add(botInstance.getBotKey());
+        }
+
         ScriptNodeVO scriptNodeVO = ScriptNodeVO.of(
                 scriptNode,
                 online,
-                new ArrayList<>(scriptNode.getBotConfigMap().keySet())
+                managedBotKeys
         );
-
-
-        // 存在的实例
-        Map<String, List<String>> botNameToBotKeys = scriptNode.getBotConfigMap().values()
-                .stream()
-                .collect(Collectors.groupingBy(AutoBotConfig::getBotName,
-                        Collectors.mapping(AutoBotConfig::getBotKey,
-                                Collectors.toList())
-                ));
-
         return new ScriptNodeDetail(
                 scriptNodeVO,
                 botNameToBotKeys,
@@ -135,25 +163,25 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
     }
 
     @Override
-    public void updateScriptNodeBotLaunchConfig(String scriptNodeName, String botKey, String botLaunchConfig) throws IOException {
-        Path dir = Paths.get(FileUtil.getScriptNodeConfigDir(), scriptNodeName, botKey);
-        if (Files.notExists(dir)) {
-            Files.createDirectories(dir);
-        }
-        Path botLaunchConfigFile = dir.resolve(VortexaPlatFormConstants.SCRIPT_NODE_BOT_CONFIG_FILE);
-        Files.writeString(botLaunchConfigFile, botLaunchConfig, StandardCharsets.UTF_8);
-    }
-
-    @Override
     public Result startBot(String scriptNodeName, String botKey) {
         try {
             ScriptNode dbScriptNode = scriptNodeStatusCheck(scriptNodeName, botKey);
+            List<BotInstance> botInstances = botInstanceService.conditionQuery(BotInstance.builder().scriptNodeName(scriptNodeName).botKey(botKey).build());
+            if (CollUtil.isEmpty(botInstances)) {
+                throw new IllegalArgumentException("bot instance not found");
+            }
+            BotInstance bot = botInstances.getFirst();
+            AutoBotConfig launchConfig = botLaunchConfigService.queryOrCreateScriptNodeBotLaunchConfig(
+                    scriptNodeName,
+                    bot.getBotName(),
+                    botKey
+            );
 
             return botControlServer.startScriptNodeBot(
                     dbScriptNode.getGroupId(),
                     dbScriptNode.getServiceId(),
                     dbScriptNode.getInstanceId(),
-                    botKey
+                    launchConfig
             ).get();
         } catch (Exception e) {
             return Result.fail(e.getMessage());
@@ -176,6 +204,16 @@ public class ScriptNodeServiceImpl extends ServiceImpl<ScriptNodeMapper, ScriptN
         }
     }
 
+    @Override
+    public void saveRawScriptNodeConfig(String scriptNodeName, String nodeAppConfig) throws IOException {
+        Path path = FileUtil.getScriptNodeConfig(scriptNodeName + File.separator + VortexaPlatFormConstants.SCRIPT_NODE_CONFIG_FILE);
+        if (!Files.exists(path.getParent())) {
+          Files.createDirectories(path.getParent());
+        }
+        try (FileWriter writer = new FileWriter(path.toFile())) {
+            writer.write(nodeAppConfig);
+        }
+    }
 
     /**
      * 检查节点状态

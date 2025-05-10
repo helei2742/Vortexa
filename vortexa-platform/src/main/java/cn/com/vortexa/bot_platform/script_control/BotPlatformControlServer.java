@@ -8,6 +8,7 @@ import cn.com.vortexa.common.constants.*;
 import cn.com.vortexa.common.dto.BotACJobResult;
 import cn.com.vortexa.common.dto.PageResult;
 import cn.com.vortexa.common.dto.Result;
+import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.entity.ScriptNode;
 import cn.com.vortexa.common.exception.BotStartException;
 import cn.com.vortexa.common.vo.PageQuery;
@@ -443,23 +444,32 @@ public class BotPlatformControlServer extends BotControlServer {
      * @param groupId    groupId
      * @param serviceId  serviceId
      * @param instanceId instanceId
-     * @param botKey     botKey
+     * @param botConfig     botConfig
      * @return Result
      */
-    public CompletableFuture<Result> startScriptNodeBot(String groupId, String serviceId, String instanceId, String botKey) {
+    public CompletableFuture<Result> startScriptNodeBot(
+            String groupId, String serviceId, String instanceId, AutoBotConfig botConfig
+    ) {
         String scriptNodeKey = ServerInstanceUtil.generateServiceInstanceKey(groupId, serviceId, instanceId);
 
         RemotingCommand command = newRemotingCommand(BotRemotingCommandFlagConstants.START_BOT, true);
+        String botKey = botConfig.getBotKey();
         command.addExtField(BotExtFieldConstants.TARGET_BOT_KEY_KEY, botKey);
+        command.setObjBody(botConfig);
 
         return sendCommandToServiceInstance(
                 scriptNodeKey,
                 command
         ).thenApplyAsync(response -> {
             if (response.isSuccess()) {
-                log.info("[{}] start bot[{}] success", scriptNodeKey, botKey);
                 BotStatus botStatus = response.getObjBody(BotStatus.class);
-                return Result.ok(botStatus);
+                if (BotStatus.RUNNING.equals(botStatus)) {
+                    log.info("[{}] start bot[{}] success", scriptNodeKey, botKey);
+                    return Result.ok(botStatus);
+                } else {
+                    return Result.fail("start fail, bot status: " + botStatus.name());
+                }
+
             } else {
                 log.error("[{}] start bot[{}] fail, {}", scriptNodeKey, botKey, response.getPayLoad());
                 return Result.fail(response.getErrorMessage());
@@ -548,7 +558,9 @@ public class BotPlatformControlServer extends BotControlServer {
                 return Result.ok(result);
             } else {
                 log.error("query[{}] bot[{}] account fail, {}", scriptNode, botKey, response.getErrorMessage());
-                return Result.fail(response.getErrorMessage());
+                return Result.fail(
+                        response.getErrorMessage() == null ? "query bot account fail" : response.getErrorMessage()
+                );
             }
         });
     }

@@ -81,6 +81,13 @@ public interface IBotInstanceService extends IBaseService<BotInstance> {
             throws SQLException, SchedulerException;
 
     /**
+     * 条件查询 bot instance
+     * @param query query
+     * @return BotInstance
+     */
+    List<BotInstance> conditionQuery(BotInstance query);
+
+    /**
      * 查询详情
      *
      * @param scriptNodeName scriptNodeName
@@ -98,16 +105,6 @@ public interface IBotInstanceService extends IBaseService<BotInstance> {
     Result updateJobParam(BotInstanceUpdate saveBotJobParamParam);
 
     /**
-     * 保存bot instance 启动配置
-     *
-     * @param scriptNodeName  scriptNodeName
-     * @param botKey          botKey
-     * @param botLaunchConfig botLaunchConfig
-     * @return Result
-     */
-    Result saveBotInstanceLaunchConfig(String scriptNodeName, String botKey, String botLaunchConfig) throws IOException;
-
-    /**
      * 条件条件查询bot instance 账户
      *
      * @param accountQuery accountQuery
@@ -122,4 +119,14 @@ public interface IBotInstanceService extends IBaseService<BotInstance> {
      * @return boolean
      */
     boolean exist(BotInstance query);
+
+    /**
+     * 查询一个
+     *
+     * @param scriptNodeName scriptNodeName
+     * @param botKey         botKey
+     * @return BotInstance
+     */
+    BotInstance getOne(String scriptNodeName, String botKey);
+
 }

@@ -1,6 +1,7 @@
 package cn.com.vortexa.db_layer;
 
 import cn.com.vortexa.common.util.typehandler.JsonTypeHandler;
+import cn.com.vortexa.common.util.typehandler.ListTextTypeHandler;
 import cn.com.vortexa.common.util.typehandler.LocalDateTimeTypeHandler;
 import cn.com.vortexa.common.util.typehandler.MapTextTypeHandler;
 import cn.com.vortexa.db_layer.config.MyMetaObjectHandler;
@@ -63,7 +64,7 @@ public class DBLayerAutoConfig {
         factoryBean.setDataSource(dataSource);
         factoryBean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/*.xml"));
         factoryBean.setTypeHandlers(
-                jsonTypeHandler(), mapTextTypeHandler()
+                jsonTypeHandler(), mapTextTypeHandler(), listTextTypeHandler()
         );
         factoryBean.setTypeAliasesPackage("cn.com.vortexa.entity");
         factoryBean.setConfiguration(mybatisConfiguration());
@@ -121,5 +122,11 @@ public class DBLayerAutoConfig {
     @ConditionalOnMissingBean
     public LocalDateTimeTypeHandler localDateTimeTypeHandler() {
         return new LocalDateTimeTypeHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ListTextTypeHandler listTextTypeHandler() {
+        return new ListTextTypeHandler();
     }
 }

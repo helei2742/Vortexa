@@ -81,7 +81,6 @@
         t.account_table_name as accountTableName,
         t.job_params as jobParams,
         t.version_code as versionCode,
-        t.version,
         t.insert_datetime as insertDatetime,
         t.update_datetime as updateDatetime,
         t.valid as valid

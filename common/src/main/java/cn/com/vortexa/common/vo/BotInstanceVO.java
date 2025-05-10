@@ -1,6 +1,5 @@
 package cn.com.vortexa.common.vo;
 
-import cn.com.vortexa.common.dto.config.AutoBotConfig;
 import cn.com.vortexa.common.dto.job.JobTrigger;
 import cn.com.vortexa.common.entity.BotInfo;
 import cn.com.vortexa.common.entity.BotInstance;
@@ -10,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,5 +43,5 @@ public class BotInstanceVO {
     /**
      * 启动配置
      */
-    private AutoBotConfig botLaunchConfig;
+    private Map<String, Object> botLaunchConfig = new HashMap<>();
 }

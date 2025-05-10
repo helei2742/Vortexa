@@ -51,7 +51,7 @@ public abstract class AbstractWebsocketClient<T> extends AutoConnectWSService {
     }
 
     @Override
-    protected void afterBoostrapConnected(Channel channel) throws InterruptedException {
+    protected void afterBoostrapConnected(Channel channel) throws InterruptedException, ExecutionException {
         if (handshake && handler.handshakeFuture() != null) {
             handler.handshakeFuture().sync();
         }

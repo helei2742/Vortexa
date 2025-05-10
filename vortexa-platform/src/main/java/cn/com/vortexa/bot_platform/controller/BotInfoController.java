@@ -1,6 +1,6 @@
 package cn.com.vortexa.bot_platform.controller;
 
-import cn.com.vortexa.common.vo.BotBindVO;
+import cn.com.vortexa.common.entity.BotInfo;
 import cn.com.vortexa.common.vo.PageQuery;
 import cn.com.vortexa.common.dto.Result;
 import cn.com.vortexa.bot_platform.service.IBotInfoService;
@@ -19,7 +19,7 @@ import java.sql.SQLException;
  * @since 2025-02-07
  */
 @RestController
-@RequestMapping("/bot")
+@RequestMapping("/botInfo")
 public class BotInfoController {
 
     @Autowired
@@ -34,9 +34,9 @@ public class BotInfoController {
         ));
     }
 
-    @PostMapping("/create")
-    public Result create(@RequestBody BotBindVO botBindVO) {
-        return botInfoService.bindBotAccountBaseInfo(botBindVO.getBotId(), botBindVO.getBotKey(),
-                botBindVO.getBindAccountBaseInfoList());
+    @PostMapping("/queryByName")
+    public Result queryByName(@RequestBody BotInfo botInfo) throws SQLException {
+        BotInfo bi = botInfoService.queryByName(botInfo.getName());
+        return bi == null ? Result.fail("bot not found") : Result.ok(bi);
     }
 }

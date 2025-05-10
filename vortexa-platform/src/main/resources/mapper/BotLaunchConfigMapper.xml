@@ -2,4 +2,23 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.com.vortexa.bot_platform.mapper.BotLaunchConfigMapper">
 
+    <insert id="insertOrUpdate" parameterType="cn.com.vortexa.bot_platform.entity.BotLaunchConfig">
+        INSERT INTO t_bot_launch_config
+        (script_node_name, bot_name, bot_key, custom_config, update_datetime, valid)
+        VALUES (
+        #{scriptNodeName}, #{botName}, #{botKey}, #{customConfig}, now(), 1
+        )
+        ON DUPLICATE KEY UPDATE
+        <trim suffixOverrides=",">
+            <if test="customConfig != null">
+                custom_config = values (custom_config),
+            </if>
+            <if test="updateDatetime != null">
+                update_datetime = values (update_datetime),
+            </if>
+            <if test="valid != null">
+                valid = values(valid),
+            </if>
+        </trim>
+    </insert>
 </mapper>
