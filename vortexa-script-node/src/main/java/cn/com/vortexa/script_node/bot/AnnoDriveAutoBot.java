@@ -5,6 +5,7 @@ package cn.com.vortexa.script_node.bot;
 import cn.com.vortexa.common.dto.ACListOptResult;
 import cn.com.vortexa.common.dto.BotACJobResult;
 import cn.com.vortexa.common.dto.BotMetaInfo;
+import cn.com.vortexa.common.dto.job.AutoBotJobParam;
 import cn.com.vortexa.common.entity.BotInstance;
 import cn.com.vortexa.common.entity.RewordInfo;
 import cn.com.vortexa.script_node.anno.BotApplication;
@@ -92,12 +93,12 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 BotMetaInfo botMetaInfo = getScriptNodeConfiguration().getBotNameMetaInfoMap().get(botName);
 
                 List<BotInfo> botInfoList = getBotApi().getBotInfoRPC().conditionQueryRPC(
-                        Map.of("name", botName, "version", botMetaInfo.getVersion())
+                        Map.of("name", botName, "versionCode", botMetaInfo.getVersion_code())
                 );
                 if (CollUtil.isNotEmpty(botInfoList)) {
                     return botInfoList.getFirst();
                 } else {
-                    throw new BotInitException("remote bot[%s]-[%s] not found".formatted(botName, botMetaInfo.getVersion()));
+                    throw new BotInitException("remote bot[%s]-[%s] not found".formatted(botName, botMetaInfo.getVersion_code()));
                 }
             } else {
                 throw new IllegalArgumentException("bot 应该带有 @BotApplication注解");
@@ -108,9 +109,11 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
     }
 
     @Override
-    protected void resolveBotJobMethod() {
+    protected Map<String, AutoBotJobParam> resolveBotJobMethod() {
         // 解析bot job 参数
         logger.debug("resole job method...");
+
+        Map<String, AutoBotJobParam> jobParamMap = new HashMap<>();
         // Step 1 遍历方法
         for (Method method : allMethods()) {
             method.setAccessible(true);
@@ -120,13 +123,19 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 BotMethod botJobMethod = method.getAnnotation(BotMethod.class);
 
                 // Step 3 根据BotMethod注解 的jobType，方法分类
-                switch (botJobMethod.jobType()) {
+                AutoBotJobParam jobParam = switch (botJobMethod.jobType()) {
                     case QUERY_REWARD -> queryRewardMethodHandler(method, botJobMethod);
                     case ONCE_TASK, TIMED_TASK -> timedTaskMethodHandler(method, botJobMethod);
                     case WEB_SOCKET_CONNECT -> webSocketConnectMethodHandler(method, botJobMethod);
+                    case ACCOUNT_SPLIT_JOB -> null;
+                };
+                if (jobParam != null) {
+                    jobParamMap.put(jobParam.getJobName(), jobParam);
                 }
             }
         }
+
+        return jobParamMap;
     }
 
     @Override
@@ -173,7 +182,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
      * @param method       method
      * @param botJobMethod botJobMethod
      */
-    private void queryRewardMethodHandler(Method method, BotMethod botJobMethod) {
+    private AutoBotJobParam queryRewardMethodHandler(Method method, BotMethod botJobMethod) {
         logger.debug("add reword query method");
         if (method.getReturnType() == AccountRewordSnapshot.class
                 && method.getParameterCount() == 2
@@ -187,15 +196,17 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                 throw new BotMethodFormatException("收益查询方法只能有一个");
             }
 
-            String updateRewordJobName = registryJobInBot(
+            AutoBotJobParam jobParam = registryJobInBot(
                     getInstance(),
                     updateRewordMethod,
                     null,
                     botJobMethod
             );
             // 替换奖励查询方法为代理方法
-            getJobRuntimeParamMap().get(updateRewordJobName).setMethod(updateRewordProxyMethod);
-            addJobExecuteResultHandler(updateRewordJobName, this::saveAndUploadRewordQueryResult);
+            getJobRuntimeParamMap().get(jobParam.getJobName()).setMethod(updateRewordProxyMethod);
+            addJobExecuteResultHandler(jobParam.getJobName(), this::saveAndUploadRewordQueryResult);
+
+            return jobParam;
         } else {
             throw new BotMethodFormatException("收益查询方法错误, " +
                     "应为 AccountRewordSnapshot methodName(AccountContext ac, List<AccountContext> sameAccountBaseInfoIdLists)");
@@ -238,7 +249,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
      * @param method       method
      * @param botJobMethod botJobMethod
      */
-    private void timedTaskMethodHandler(Method method, BotMethod botJobMethod) {
+    private AutoBotJobParam timedTaskMethodHandler(Method method, BotMethod botJobMethod) {
         logger.debug("add [%s] method".formatted(botJobMethod));
 
         if (method.getParameterCount() > 2
@@ -251,7 +262,7 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
                     "void methodName(AccountContext exampleAC, List<AccountContext> sameABIIdList) ");
         }
 
-        registryJobInBot(
+       return registryJobInBot(
                 getInstance(),
                 method,
                 null,
@@ -265,34 +276,35 @@ public abstract class AnnoDriveAutoBot<T extends JobInvokeAutoBot> extends JobIn
      * @param method           method
      * @param botJobMethodAnno botJobMethodAnno
      */
-    private void webSocketConnectMethodHandler(Method method, BotMethod botJobMethodAnno) {
+    private AutoBotJobParam webSocketConnectMethodHandler(Method method, BotMethod botJobMethodAnno) {
         logger.debug("add ws [%s] method".formatted(botJobMethodAnno));
         Class<?> returnType = method.getReturnType();
 
         // 检查方法是否符合要求
-        if (cn.com.vortexa.script_node.websocket.BaseBotWSClient.class.isAssignableFrom(returnType)
+        if (BaseBotWSClient.class.isAssignableFrom(returnType)
                 && method.getParameterCount() == 1
                 && method.getParameters()[0].getType() == AccountContext.class
         ) {
             try {
                 // 符合要求，添加到jobMap
-                String jobName = registryJobInBot(
+                AutoBotJobParam jobParam = registryJobInBot(
                         webSocketClientLauncher,
                         WebSocketClientLauncher.lanuchMethod,
                         null,
                         botJobMethodAnno
                 );
 
-                AutoBotJobRuntimeParam runtimeParam = getJobRuntimeParamMap().get(jobName);
+                AutoBotJobRuntimeParam runtimeParam = getJobRuntimeParamMap().get(jobParam.getJobName());
 
                 if (runtimeParam != null) {
                     // 添加额外参数
-                    runtimeParam.setExtraParams(new Object[]{getJobParam(jobName), (AccountWSClientBuilder) accountContext -> {
+                    runtimeParam.setExtraParams(new Object[]{getJobParam(jobParam.getJobName()), (AccountWSClientBuilder) accountContext -> {
                         Object invoke = method.invoke(getInstance(), accountContext);
                         return (BaseBotWSClient<?>) invoke;
                     }});
                 }
 
+                return jobParam;
             } catch (Exception e) {
                 throw new BotMethodFormatException(e);
             }

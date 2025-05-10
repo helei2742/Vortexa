@@ -59,7 +59,7 @@ public class VersionServiceImpl implements IVersionService, InitializingBean {
                         .name(botName)
                         .description(botMetaInfo.getDescription())
                         .image(botMetaInfo.getIcon())
-                        .versionCode(botMetaInfo.getVersion());
+                        .versionCode(botMetaInfo.getVersion_code());
                 if (CollUtil.isNotEmpty(botMetaInfo.getJobParams())) {
                     Map<String, AutoBotJobParam> jobParamMap = botMetaInfo.getJobParams()
                             .stream()

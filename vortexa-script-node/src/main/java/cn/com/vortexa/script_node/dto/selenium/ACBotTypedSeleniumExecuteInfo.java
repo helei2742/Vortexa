@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Data
 @Builder
@@ -15,6 +16,12 @@ import java.util.List;
 public class ACBotTypedSeleniumExecuteInfo {
 
     private String botKey;
+
+    private String jobName;
+
+    private Integer waitTime;
+
+    private TimeUnit waitTimeUnit;
 
     private List<ExecuteGroup> seleniumExecuteChain;
 

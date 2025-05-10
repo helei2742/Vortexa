@@ -136,7 +136,7 @@ public abstract class SeleniumInstance implements SeleniumOperate {
             // Step 3 遍历execute chain 执行
             executeChainInvoke();
         } catch (Exception e) {
-            logger.error("selenium instance invoke error", e);
+            logger.error(getInstanceId() + " selenium instance invoke error", e);
         } finally {
             if (finishHandler != null) {
                 finishHandler.accept(System.currentTimeMillis() - start);

@@ -141,7 +141,7 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
             throw new RuntimeException("bot info not found");
         }
         // Step 3 查询实例的启动yaml配置
-        AutoBotConfig botLaunchConfig = botLaunchConfigService.queryScriptNodeBotLaunchConfig(scriptNodeName, botKey);
+//        AutoBotConfig botLaunchConfig = botLaunchConfigService.queryScriptNodeBotLaunchConfig(scriptNodeName, botKey);
         // Step 4 查询是否正在运行
         boolean online = botControlServer.isScriptNodeBotOnline(
                 scriptNodeName,
@@ -156,7 +156,7 @@ public class BotInstanceServiceImpl extends AbstractBaseService<BotInstanceMappe
         return BotInstanceVO.builder()
                 .botInstance(instance)
                 .botInfo(botInfo)
-                .botLaunchConfig(botLaunchConfig)
+                .botLaunchConfig(null)
                 .online(online)
                 .jobTriggers(triggerMap)
                 .build();

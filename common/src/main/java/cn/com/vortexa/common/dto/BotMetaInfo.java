@@ -5,9 +5,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author com.helei
@@ -48,7 +46,7 @@ public class BotMetaInfo implements Serializable {
     /**
      * bot版本
      */
-    private String version;
+    private String version_code;
 
     /**
      * 图标，base64字符串

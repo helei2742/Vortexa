@@ -16,7 +16,6 @@ import cn.com.vortexa.common.exception.BotStatusException;
 import cn.com.vortexa.common.util.FileUtil;
 import cn.com.vortexa.common.util.NamedThreadFactory;
 import cn.com.vortexa.common.util.http.RestApiClientFactory;
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 
@@ -29,10 +28,11 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-        import java.util.function.Supplier;
+import java.util.function.Supplier;
 
 public abstract class AbstractAutoBot {
 
@@ -135,9 +135,17 @@ public abstract class AbstractAutoBot {
         try {
             // Step 2.1 获取BotInfo,解析Bot Job
             botInfo = buildBotInfo();
-            resolveBotJobMethod();
-            botInfo.setVersionCode(autoBotConfig.getMetaInfo().getVersion());
-            botInfo.setImage(autoBotConfig.getMetaInfo().getIcon());
+            botInfo.setVersionCode(autoBotConfig.getMetaInfo().getVersion_code());
+
+            // 获取方法上的job配置，判断是否有变化，有变化需要发到远程更新
+            Map<String, AutoBotJobParam> remoteBotJobParamMap = botInfo.getJobParams();
+            Map<String, AutoBotJobParam> classJobParamMap = resolveBotJobMethod();
+
+            if (judgeClassJobParamChanged(remoteBotJobParamMap, classJobParamMap)) {
+                mergeBotInfoJobParamMap(remoteBotJobParamMap, classJobParamMap);
+
+                botApi.getBotInfoRPC().insertOrUpdateRPC(botInfo);
+            }
         } catch (Exception e) {
             throw new BotInitException("resolve bot job error", e);
         }
@@ -169,7 +177,15 @@ public abstract class AbstractAutoBot {
             );
             // 数据库存在bot instance实例信息合并数据库的。
             if (dbInstance != null) {
-                mergeDbBotInstance(dbInstance);
+                Map<String, AutoBotJobParam> clsssJobParamMap = botInstance.getJobParams();
+                Map<String, AutoBotJobParam> remoteJobParamMap = dbInstance.getJobParams();
+                for (Map.Entry<String, AutoBotJobParam> entry : clsssJobParamMap.entrySet()) {
+                    String jobName = entry.getKey();
+                    AutoBotJobParam remoteJobParam = remoteJobParamMap.get(jobName);
+                    if (remoteJobParamMap.containsKey(jobName)) {
+                        entry.getValue().merge(remoteJobParam);
+                    }
+                }
                 logger.info("exist db botInstance, marge exist instance config...");
             }
 
@@ -508,7 +524,7 @@ public abstract class AbstractAutoBot {
 
     protected synchronized void setJobParam(String jobKey, AutoBotJobParam jobParam) {
         Map<String, AutoBotJobParam> jobParams = this.botInfo.getJobParams();
-        jobParams.compute(jobKey, (k,v)->{
+        jobParams.compute(jobKey, (k, v) -> {
             if (v == null) {
                 return jobParam;
             } else {
@@ -521,45 +537,29 @@ public abstract class AbstractAutoBot {
 
     protected abstract BotInfo buildBotInfo() throws BotInitException;
 
-    protected abstract void resolveBotJobMethod();
+    protected abstract Map<String, AutoBotJobParam> resolveBotJobMethod();
+
 
     /**
-     * 比较botInfo 和 BotInstance是否发生变化
+     * 判断jar包内的job param与远程配置相比是否发生变化
      *
-     * @param botInfo    botInfo
-     * @param dbInstance dbInstance
-     * @return boolean
+     * @param remoteBotJobParamMap remoteBotJobParamMap
+     * @param classBotJobParamMap  classBotJobParamMap
+     * @return 是否有变化
      */
-    private boolean compareBotJobParamsChanged(BotInfo botInfo, BotInstance dbInstance) {
-        Map<String, AutoBotJobParam> botJobParam = botInfo.getJobParams();
-        Map<String, AutoBotJobParam> botInstanceParam = dbInstance.getJobParams();
-
-        // rpc map序列化范型丢失处理
-        Map<String, AutoBotJobParam> jobParams = dbInstance.getJobParams();
-        if (jobParams != null) {
-            for (String key : jobParams.keySet()) {
-                Object param = jobParams.get(key);
-                if (param instanceof JSONObject jb) {
-                    jobParams.put(key, JSONObject.parseObject(JSONObject.toJSONString(jb), AutoBotJobParam.class));
-                }
-            }
-        }
-
-        if (botJobParam.size() != botInstanceParam.size()) return true;
-
-        if (!botJobParam.keySet().containsAll(botInstanceParam.keySet())) {
+    private boolean judgeClassJobParamChanged(
+            Map<String, AutoBotJobParam> remoteBotJobParamMap, Map<String, AutoBotJobParam> classBotJobParamMap
+    ) {
+        if (remoteBotJobParamMap.size() != classBotJobParamMap.size()) return true;
+        if (!remoteBotJobParamMap.keySet().containsAll(classBotJobParamMap.keySet())) {
             return true;
         }
 
-        for (Map.Entry<String, AutoBotJobParam> entry : botJobParam.entrySet()) {
+        for (Map.Entry<String, AutoBotJobParam> entry : remoteBotJobParamMap.entrySet()) {
             String jobName = entry.getKey();
-            AutoBotJobParam param = entry.getValue();
-            AutoBotJobParam instanceParam = botInstanceParam.get(jobName);
-
-            if (param.getParams() == null) {
-                param.setParams(new HashMap<>());
-            }
-            if (!param.equals(instanceParam)) {
+            AutoBotJobParam remoteJobParam = entry.getValue();
+            AutoBotJobParam classJobParam = classBotJobParamMap.get(jobName);
+            if (remoteJobParam.equals(classJobParam)) {
                 return true;
             }
         }
@@ -585,21 +585,29 @@ public abstract class AbstractAutoBot {
         logger.info("database table init finish");
     }
 
+
     /**
-     * 合并BotInstance的db配置
+     * 合并job param map
      *
-     * @param dbInstance dbInstance
+     * @param oldBotJobParamMap oldBotJobParamMap
+     * @param newJobParamMap     newJobParamMap
      */
-    private void mergeDbBotInstance(BotInstance dbInstance) {
-        Map<String, AutoBotJobParam> jobParams = this.botInstance.getJobParams();
-        Map<String, AutoBotJobParam> dbJobParams = dbInstance.getJobParams();
-        for (Map.Entry<String, AutoBotJobParam> entry : jobParams.entrySet()) {
+    private static void mergeBotInfoJobParamMap(
+            Map<String, AutoBotJobParam> oldBotJobParamMap, Map<String, AutoBotJobParam> newJobParamMap
+    ) {
+        Iterator<Map.Entry<String, AutoBotJobParam>> iterator = oldBotJobParamMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, AutoBotJobParam> entry = iterator.next();
             String jobName = entry.getKey();
-            AutoBotJobParam dbJobParam = dbJobParams.get(jobName);
-            entry.setValue(dbJobParam);
+            AutoBotJobParam remoteJobParam = entry.getValue();
+            if (!newJobParamMap.containsKey(jobName)) {
+                iterator.remove();
+            } else if (remoteJobParam.getJobType().equals(newJobParamMap.get(jobName).getJobType())) {
+                // job类型变化，需要整个更新
+                entry.setValue(newJobParamMap.get(jobName));
+                newJobParamMap.remove(jobName);
+            }
         }
-        if (CollUtil.isNotEmpty(dbInstance.getParams())) {
-            this.botInstance.getParams().putAll(dbInstance.getParams());
-        }
+        oldBotJobParamMap.putAll(newJobParamMap);
     }
 }

@@ -93,7 +93,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
      * @param method           方法
      * @param botJobMethodAnno 方法上的BotMethod注解
      */
-    public String registryJobInBot(
+    public AutoBotJobParam registryJobInBot(
             Object invokeObj,
             Method method,
             Object[] extraParams,
@@ -147,8 +147,6 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
                 autoBotJobParam.setUniqueAccount(true);
             }
             // Step 4 设置
-            setJobParam(jobName, autoBotJobParam);
-
             getBotApi().getBotJobService().registerJobInvoker(
                     getScriptNodeName(),
                     getAutoBotConfig().getBotKey(),
@@ -156,7 +154,7 @@ public abstract class JobInvokeAutoBot extends AccountManageAutoBot implements A
                     this
             );
 
-            return jobName;
+            return autoBotJobParam;
         } catch (ParseException e) {
             throw new IllegalArgumentException(
                     String.format("[%s]-[%s]BotJobMethod上错误的cron表达式[%s]",

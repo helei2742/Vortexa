@@ -107,7 +107,7 @@ public class JarFileResolveUtil {
                 }
             }
 
-            metaInfo.setVersion(version);
+            metaInfo.setVersion_code(version);
             metaInfoMap.put(metaInfo.getBotName(), metaInfo);
             log.info("botName[{}]-[{}] meta info loaded", metaInfo.getBotName(), version);
         }

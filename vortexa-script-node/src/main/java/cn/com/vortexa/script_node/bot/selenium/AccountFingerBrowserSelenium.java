@@ -32,10 +32,6 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
     }
 
     /**
-     * 添加过的bot执行链的key set
-     */
-    private final Set<String> addedBotExecutionSet = new HashSet<>();
-    /**
      * 执行链信息
      */
     private final List<ACBotTypedSeleniumExecuteInfo> executeInfoList = new ArrayList<>();
@@ -81,15 +77,21 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
 
             for (ACBotTypedSeleniumExecuteInfo executeInfo : executeInfoList) {
                 try {
-                    getLogger().info("[%s]-[%s] start selenium execute...".formatted(getInstanceId(), executeInfo.getBotKey()));
+                    getLogger().info("[%s]-[%s]-[%s] start selenium execute...".formatted(
+                            getInstanceId(), executeInfo.getBotKey(), executeInfo.getJobName()
+                    ));
                     List<ExecuteGroup> seleniumExecuteChain = super.getSeleniumExecuteChain();
                     seleniumExecuteChain.clear();
                     seleniumExecuteChain.addAll(executeInfo.getSeleniumExecuteChain());
 
                     syncStart();
-                    getLogger().info("[%s]-[%s] selenium execute finish".formatted(getInstanceId(), executeInfo.getBotKey()));
+                    getLogger().info("[%s]-[%s]-[%s] selenium execute finish".formatted(
+                            getInstanceId(), executeInfo.getBotKey(), executeInfo.getJobName()
+                    ));
                 } catch (Exception e) {
-                    getLogger().error("[%s]-[%s] selenium execute error".formatted(getInstanceId(), executeInfo.getBotKey()), e);
+                    getLogger().error("[%s]-[%s]-[%s] selenium execute error".formatted(
+                            getInstanceId(), executeInfo.getBotKey(), executeInfo.getJobName()
+                    ), e);
                     randomWait(3);
                 }
             }
@@ -115,7 +117,6 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
         lock.lock();
         try {
             executeInfoList.add(executeInfo);
-            addedBotExecutionSet.add(executeInfo.getBotKey());
             log.info("[%s]-[%s] add execute info finish".formatted(getInstanceId(), executeInfo.getBotKey()));
         } finally {
             lock.unlock();
@@ -126,6 +127,5 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
     protected void doClose() {
         super.doClose();
         executeInfoList.clear();
-        addedBotExecutionSet.clear();
     }
 }
