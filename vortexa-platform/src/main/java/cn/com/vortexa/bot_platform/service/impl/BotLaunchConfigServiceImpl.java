@@ -71,6 +71,7 @@ public class BotLaunchConfigServiceImpl extends ServiceImpl<BotLaunchConfigMappe
     public AutoBotConfig queryScriptNodeBotLaunchConfig(String scriptNodeName, String botKey) {
         BotLaunchConfig botLaunchConfig = getOne(
                 new QueryWrapper<>(BotLaunchConfig.builder().scriptNodeName(scriptNodeName).build()));
+        if (botLaunchConfig == null) return null;
         return conventerBotLaunchConfig2AutoBotConfig(botLaunchConfig);
     }
 

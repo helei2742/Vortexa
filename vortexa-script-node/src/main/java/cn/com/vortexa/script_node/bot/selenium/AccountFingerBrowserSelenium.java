@@ -48,23 +48,23 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
         this.accountContext = accountContext;
     }
 
-    @Override
-    protected WebDriver createWebDriver(ChromeOptions chromeOptions) {
-        if (getWebDriver() != null) return getWebDriver();
-
-        try {
-            URL remoteWebDriverUrl = new URL(getParams().getDriverPath());
-            chromeOptions.setCapability("timeouts", new HashMap<String, Integer>() {{
-                put("script", 30000);  // 设置脚本执行超时
-                put("pageLoad", 30000);  // 设置页面加载超时
-                put("implicit", 30000);  // 设置隐式等待超时
-            }});
-            return new RemoteWebDriver(remoteWebDriverUrl, chromeOptions);
-        } catch (MalformedURLException e) {
-            log.error("[{}] create remote web driver error", getInstanceId(), e);
-            throw new RuntimeException(e);
-        }
-    }
+//    @Override
+//    protected WebDriver createWebDriver(ChromeOptions chromeOptions) {
+//        if (getWebDriver() != null) return getWebDriver();
+//
+//        try {
+//            URL remoteWebDriverUrl = new URL(getParams().getDriverPath());
+//            chromeOptions.setCapability("timeouts", new HashMap<String, Integer>() {{
+//                put("script", 30000);  // 设置脚本执行超时
+//                put("pageLoad", 30000);  // 设置页面加载超时
+//                put("implicit", 30000);  // 设置隐式等待超时
+//            }});
+//            return new RemoteWebDriver(remoteWebDriverUrl, chromeOptions);
+//        } catch (MalformedURLException e) {
+//            log.error("[{}] create remote web driver error", getInstanceId(), e);
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     /**
      * 开始账户指纹浏览器selenium控制
@@ -101,7 +101,7 @@ public class AccountFingerBrowserSelenium extends OptSeleniumInstance {
             getLogger().debug(getInstanceId() + "  closing webDriver");
             close();
             getLogger().debug(getInstanceId() + " close webDriver finish");
-
+            executeInfoList.clear();
             running = false;
             lock.unlock();
         }

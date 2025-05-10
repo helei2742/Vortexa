@@ -40,7 +40,7 @@ public abstract class FingerBrowserBot extends AutoLaunchBot<FingerBrowserBot> {
     private static final DiscardingBlockingQueue<Integer> currentWindowSeq = new DiscardingBlockingQueue<>(BROWSER_WINDOW_LIMIT);   //  当前窗口长度
     private static final ConcurrentHashMap<AccountContext, AccountFingerBrowserSelenium> accountFBSeleniumMap = new ConcurrentHashMap<>();  //  账户与指纹的缓存
     private static final Map<String, ACBotTypedSeleniumExecuteInfo> acExecuteInfos = new ConcurrentHashMap<>(); //  jobName -》 executeInfo
-    private static final Map<Integer, ReentrantLock> fingerBrowserLockMap = new HashMap<>();    //  浏览器锁
+    private static final Map<Integer, ReentrantLock> fingerBrowserLockMap = new ConcurrentHashMap<>();    //  浏览器锁
 
     private static volatile FingerprintBrowserDriver browserDriver;
     private static String chromeDriverUrl;
